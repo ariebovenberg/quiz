@@ -10,10 +10,10 @@ test-examples:
 	pytest examples/
 
 coverage:
-	pytest --live --cov=querist --cov-report html --cov-report term --cov-branch --cov-fail-under 100
+	pytest --live --cov=quiz --cov-report html --cov-report term --cov-branch --cov-fail-under 100
 
 publish: clean
-	rm -rf build dist .egg querist.egg-info
+	rm -rf build dist .egg quiz.egg-info
 	python setup.py sdist bdist_wheel
 	twine upload dist/*
 

@@ -9,16 +9,16 @@ def read(fname):
 
 
 metadata = {}
-exec(read('querist/__about__.py'), metadata)
+exec(read('quiz/__about__.py'), metadata)
 
 
 setup(
-    name='querist',
+    name='quiz',
     version=metadata['__version__'],
     description=metadata['__description__'],
     license='MIT',
     long_description=read('README.rst') + '\n\n' + read('HISTORY.rst'),
-    url='https://github.com/ariebovenberg/querist',
+    url='https://github.com/ariebovenberg/quiz',
 
     author=metadata['__author__'],
     author_email='a.c.bovenberg@gmail.com',
