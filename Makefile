@@ -1,7 +1,7 @@
 .PHONY: docs test build publish clean
 
 init:
-	pip install -r requirements/dev.txt
+	pip install -r requirements.txt
 
 test:
 	detox
