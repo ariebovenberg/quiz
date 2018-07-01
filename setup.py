@@ -38,9 +38,9 @@ setup(
         'Programming Language :: Python :: 3.7',
     ],
     install_requires=[
-        'typing>=3.6.2 ; python_version<"3.5"',
+        'typing>=3.6.2; python_version<"3.5"',
     ],
-    keywords=['graphql', 'http', 'async', 'graphql'],
+    keywords=['graphql', 'http', 'async'],
     python_requires='>=2.7',
     packages=find_packages(exclude=('examples', 'tests', 'docs', 'tutorial')),
 )
