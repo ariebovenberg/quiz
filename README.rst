@@ -16,7 +16,7 @@ Write GraphQL queries in python-syntax
 
 .. code-block:: python
 
-   from quiz import query, field_seq as _, execute
+   from quiz import query, field_chain as _, execute
 
    my_query = query [_
      .repository(owner='octocat', name='Hello-World') [_

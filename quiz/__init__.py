@@ -117,21 +117,21 @@ class Attribute:
 
 
 @dataclass
-class FieldSequence:
+class FieldChain:
     __fields__: t.Tuple[Attribute]
 
     def __getattr__(self, name):
-        return FieldSequence(self.__fields__ + (Attribute(name), ))
+        return FieldChain(self.__fields__ + (Attribute(name), ))
 
     def __getitem__(self, key):
         name = self.__fields__[-1].name
-        return FieldSequence(
+        return FieldChain(
             self.__fields__[:-1]
             + (NestedObject(name, key.__fields__), )
         )
 
     def __repr__(self):
-        return 'FieldSequence({!r})'.format(list(self.__fields__))
+        return 'FieldChain({!r})'.format(list(self.__fields__))
 
     def __gql__(self):
         return '\n'.join(map(gql, self.__fields__))
@@ -140,7 +140,7 @@ class FieldSequence:
 @dataclass
 class NestedObject:
     name: str
-    fields: FieldSequence
+    fields: FieldChain
 
     def __repr__(self):
         return 'Nested({}, {})'.format(self.name, list(self.fields))
@@ -159,10 +159,12 @@ class WithAttributes:
 @dataclass
 class SlicedObject(snug.Query):
     obj: object
-    fields: FieldSequence
+    fields: FieldChain
 
     def __gql__(self):
         return '{{\n{}\n}}'.format(indent(gql(self.fields), INDENT))
+
+    __str__ = __gql__
 
     def __iter__(self):
         response = yield snug.Request('POST', URL, content=json.dumps({
@@ -171,7 +173,7 @@ class SlicedObject(snug.Query):
         return json.loads(response.content)
 
 
-F = FieldSequence(())
+field_chain = FieldChain(())
 
 
 class Kind(enum.Enum):

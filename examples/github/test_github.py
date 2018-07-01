@@ -7,7 +7,7 @@ import snug
 
 import quiz
 
-_ = quiz.F
+_ = quiz.field_chain
 
 NAME = 'test_github.my_types'
 
@@ -59,11 +59,11 @@ execute = snug.executor(auth=bearer_auth, client=requests.Session())
 q = gh.query[
     _.rateLimit[
         _.remaining
-        .nodeCount
+        .resetAt
     ]
 ]
 
-print(quiz.gql(q))
+print(q)
 
 result = execute(q)
 
