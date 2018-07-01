@@ -7,7 +7,7 @@ import snug
 
 import quiz
 
-_ = quiz.field_chain
+_ = quiz.build.field_chain
 
 NAME = 'test_github.my_types'
 
@@ -50,16 +50,19 @@ SCALARS = {
 }
 
 
-classes = list(quiz.make_classes(schema, SCALARS))
-gh = quiz.make_namespace(classes)
+classes = list(quiz.schema.make_classes(schema, SCALARS))
+gh = quiz.build.Namespace(classes)
 # sys.modules[NAME] = quiz.make_module(NAME, classes)
 
 execute = snug.executor(auth=bearer_auth, client=requests.Session())
 
-q = gh.query[
+q = gh[
     _.rateLimit[
         _.remaining
         .resetAt
+    ]
+    .repository(owner='octocat', name='hello-world')[_
+        .createdAt
     ]
 ]
 

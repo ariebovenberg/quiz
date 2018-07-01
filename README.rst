@@ -29,10 +29,12 @@ Write GraphQL queries in python-syntax
 Todo
 ----
 
+* another demo besides github (SWAPI)
 * deserialization
 * introspection
-* non-basic GraphQL features
-* python2.7, 3.4, 3.5 support
+* mutations
+* advanced GraphQL features
+* python2.7, 3.4, 3.5, 3.6 support
 * more examples
 * proper CI
 * docs
