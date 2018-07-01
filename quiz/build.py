@@ -26,7 +26,7 @@ def _str_to_gql(obj):
 
 
 @dataclass
-class Attribute:
+class Field:
     name: str
     kwargs: t.Dict[str, t.Any]
 
@@ -44,7 +44,7 @@ class Attribute:
 
 @dataclass
 class NestedObject:
-    attr: Attribute
+    attr: Field
     fields: 'FieldChain'
 
     def __repr__(self):
@@ -57,10 +57,10 @@ class NestedObject:
 
 @dataclass
 class FieldChain:
-    __fields__: t.List[t.Union[Attribute, NestedObject]]
+    __fields__: t.List[t.Union[Field, NestedObject]]
 
     def __getattr__(self, name):
-        return FieldChain(self.__fields__ + [Attribute(name, {})])
+        return FieldChain(self.__fields__ + [Field(name, {})])
 
     def __getitem__(self, key):
         assert isinstance(key, FieldChain)
