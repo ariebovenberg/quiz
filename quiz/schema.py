@@ -10,18 +10,12 @@ from types import ModuleType
 from toolz import compose
 
 
-INTROSPECTION_QUERY = '''\
+INTROSPECTION_QUERY = '''
 query IntrospectionQuery {
   __schema {
-    queryType {
-      name
-    }
-    mutationType {
-      name
-    }
-    subscriptionType {
-      name
-    }
+    queryType { name }
+    mutationType { name }
+    subscriptionType { name }
     types {
       ...FullType
     }
@@ -93,7 +87,8 @@ fragment TypeRef on __Type {
       }
     }
   }
-}'''
+}
+'''
 
 
 class Kind(enum.Enum):
