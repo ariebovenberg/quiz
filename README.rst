@@ -30,6 +30,7 @@ Todo
 ----
 
 * another demo besides github (SWAPI)
+* query validation
 * deserialization
 * introspection
 * mutations
