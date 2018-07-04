@@ -1,16 +1,10 @@
-import abc
+"""Functionality relating to the raw GraphQL schema"""
 import enum
 import typing as t
-from collections import defaultdict
-from functools import partial
-from itertools import chain
-from operator import attrgetter
-from types import ModuleType
 
 from toolz import compose
 
-
-INTROSPECTION_QUERY = '''
+INTROSPECTION_QUERY = """
 query IntrospectionQuery {
   __schema {
     queryType { name }
@@ -88,51 +82,51 @@ fragment TypeRef on __Type {
     }
   }
 }
-'''
+"""
 
 
 class Kind(enum.Enum):
-    OBJECT = 'OBJECT'
-    SCALAR = 'SCALAR'
-    NON_NULL = 'NON_NULL'
-    LIST = 'LIST'
-    INTERFACE = 'INTERFACE'
-    ENUM = 'ENUM'
-    INPUT_OBJECT = 'INPUT_OBJECT'
-    UNION = 'UNION'
+    OBJECT = "OBJECT"
+    SCALAR = "SCALAR"
+    NON_NULL = "NON_NULL"
+    LIST = "LIST"
+    INTERFACE = "INTERFACE"
+    ENUM = "ENUM"
+    INPUT_OBJECT = "INPUT_OBJECT"
+    UNION = "UNION"
 
 
 class TypeRef(t.NamedTuple):
-    name:    t.Optional[str]
-    kind:    Kind
-    of_type: t.Optional['TypeRef']
+    name: t.Optional[str]
+    kind: Kind
+    of_type: t.Optional["TypeRef"]
 
 
 class InputValue(t.NamedTuple):
-    name:    str
-    desc:    str
-    type:    TypeRef
+    name: str
+    desc: str
+    type: TypeRef
     default: object
 
 
 class Field(t.NamedTuple):
-    name:               str
-    type:               TypeRef
-    args:               t.List[InputValue]
-    desc:               str
-    is_deprecated:      bool
+    name: str
+    type: TypeRef
+    args: t.List[InputValue]
+    desc: str
+    is_deprecated: bool
     deprecation_reason: t.Optional[str]
 
 
 class GeneralType(t.NamedTuple):
-    name:           t.Optional[str]
-    kind:           Kind
-    desc:           str
-    fields:         t.Optional[t.List[Field]]
-    input_fields:   t.Optional[t.List['InputValue']]
-    interfaces:     t.Optional[t.List[TypeRef]]
+    name: t.Optional[str]
+    kind: Kind
+    desc: str
+    fields: t.Optional[t.List[Field]]
+    input_fields: t.Optional[t.List["InputValue"]]
+    interfaces: t.Optional[t.List[TypeRef]]
     possible_types: t.Optional[t.List[TypeRef]]
-    enum_values:    t.Optional[t.List]
+    enum_values: t.Optional[t.List]
 
 
 class EnumValue(t.NamedTuple):
@@ -144,71 +138,70 @@ class EnumValue(t.NamedTuple):
 
 def make_inputvalue(conf):
     return InputValue(
-        name=conf['name'],
-        desc=conf['description'],
-        type=make_typeref(conf['type']),
-        default=conf['defaultValue'],
+        name=conf["name"],
+        desc=conf["description"],
+        type=make_typeref(conf["type"]),
+        default=conf["defaultValue"],
     )
 
 
 def make_typeref(conf):
     return TypeRef(
-        name=conf['name'],
-        kind=Kind(conf['kind']),
-        of_type=conf.get('ofType') and make_typeref(conf['ofType'])
+        name=conf["name"],
+        kind=Kind(conf["kind"]),
+        of_type=conf.get("ofType") and make_typeref(conf["ofType"]),
     )
 
 
 def make_field(conf):
     return Field(
-        name=conf['name'],
-        type=make_typeref(conf['type']),
-        args=list(map(make_inputvalue, conf['args'])),
-        desc=conf['description'],
-        is_deprecated=conf['isDeprecated'],
-        deprecation_reason=conf['deprecationReason'],
-
+        name=conf["name"],
+        type=make_typeref(conf["type"]),
+        args=list(map(make_inputvalue, conf["args"])),
+        desc=conf["description"],
+        is_deprecated=conf["isDeprecated"],
+        deprecation_reason=conf["deprecationReason"],
     )
 
 
 def make_enumval(conf):
     return EnumValue(
-        name=conf['name'],
-        desc=conf['description'],
-        is_deprecated=conf['isDeprecated'],
-        deprecation_reason=conf['deprecationReason'],
+        name=conf["name"],
+        desc=conf["description"],
+        is_deprecated=conf["isDeprecated"],
+        deprecation_reason=conf["deprecationReason"],
     )
 
 
-def deserialize_type(conf) -> GeneralType:
+def _deserialize_type(conf) -> GeneralType:
     return GeneralType(
-        name=conf['name'],
-        kind=Kind(conf['kind']),
-        desc=conf['description'],
-        fields=conf['fields'] and list(map(make_field, conf['fields'])),
-        input_fields=conf['inputFields'] and list(
-            map(make_inputvalue, conf['inputFields'])),
-        interfaces=conf['interfaces'] and list(
-            map(make_typeref, conf['interfaces'])),
-        possible_types=conf['possibleTypes'] and list(
-            map(make_typeref, conf['possibleTypes'])),
-        enum_values=conf['enumValues'] and list(
-            map(make_enumval, conf['enumValues']))
+        name=conf["name"],
+        kind=Kind(conf["kind"]),
+        desc=conf["description"],
+        fields=conf["fields"] and list(map(make_field, conf["fields"])),
+        input_fields=conf["inputFields"]
+        and list(map(make_inputvalue, conf["inputFields"])),
+        interfaces=conf["interfaces"]
+        and list(map(make_typeref, conf["interfaces"])),
+        possible_types=conf["possibleTypes"]
+        and list(map(make_typeref, conf["possibleTypes"])),
+        enum_values=conf["enumValues"]
+        and list(map(make_enumval, conf["enumValues"])),
     )
 
 
 class Interface(t.NamedTuple):
-    name:   str
-    desc:   str
+    name: str
+    desc: str
     fields: t.List[Field]
 
 
 class Object(t.NamedTuple):
-    name:         str
-    desc:         str
-    interfaces:   TypeRef
+    name: str
+    desc: str
+    interfaces: TypeRef
     input_fields: t.Optional[t.List[InputValue]]
-    fields:       t.List[Field]
+    fields: t.List[Field]
 
 
 class Scalar(t.NamedTuple):
@@ -234,17 +227,10 @@ class InputObject(t.NamedTuple):
     input_fields: t.List[InputValue]
 
 
-Typelike = t.Union[
-    Interface,
-    Object,
-    Scalar,
-    Enum,
-    Union,
-    InputObject,
-]
+Typelike = t.Union[Interface, Object, Scalar, Enum, Union, InputObject]
 
 
-def cast_type(typ: GeneralType) -> Typelike:
+def _cast_type(typ: GeneralType) -> Typelike:
     if typ.kind is Kind.SCALAR:
         assert typ.interfaces is None
         assert typ.input_fields is None
@@ -267,150 +253,29 @@ def cast_type(typ: GeneralType) -> Typelike:
         assert typ.interfaces is None
         assert typ.enum_values is None
         assert typ.possible_types is not None
-        return Interface(
-            name=typ.name,
-            desc=typ.desc,
-            fields=typ.fields,
-        )
+        return Interface(name=typ.name, desc=typ.desc, fields=typ.fields)
     elif typ.kind is Kind.ENUM:
         assert typ.interfaces is None
         assert typ.input_fields is None
         assert typ.fields is None
         assert typ.possible_types is None
-        return Enum(
-            name=typ.name,
-            desc=typ.desc,
-            values=typ.enum_values,
-        )
+        return Enum(name=typ.name, desc=typ.desc, values=typ.enum_values)
     elif typ.kind is Kind.UNION:
         assert typ.interfaces is None
         assert typ.input_fields is None
         assert typ.fields is None
-        return Union(
-            name=typ.name,
-            desc=typ.desc,
-            types=typ.possible_types,
-        )
+        return Union(name=typ.name, desc=typ.desc, types=typ.possible_types)
     elif typ.kind is Kind.INPUT_OBJECT:
         assert typ.fields is None
         assert typ.interfaces is None
         assert typ.possible_types is None
         assert typ.enum_values is None
         return InputObject(
-            name=typ.name,
-            desc=typ.desc,
-            input_fields=typ.input_fields,
+            name=typ.name, desc=typ.desc, input_fields=typ.input_fields
         )
     else:
         raise NotImplementedError(type.kind)
 
 
-def object_as_type(typ: Object,
-                   interfaces: t.Mapping[str, abc.ABCMeta],
-                   scalars: t.Mapping[str, type]) -> type:
-    f = type(typ.name,
-             tuple(interfaces[i.name] for i in typ.interfaces),
-             {**{field.name: make_stub(field, scalars=scalars)
-                 for field in typ.fields},
-              **{'__doc__': typ.desc}})
-    return f
-
-
-def make_typename(t: TypeRef, maybe_null: bool, scalars) -> str:
-    if t.kind is Kind.NON_NULL:
-        return make_typename(t.of_type, maybe_null=False, scalars=scalars)
-    elif t.kind is Kind.LIST:
-        return f'~typing.List[{make_typename(t.of_type, True, scalars)}]'
-    elif maybe_null:
-        return f'~typing.Optional[{make_typename(t, False, scalars)}]'
-    else:
-        return t.name
-
-
-def make_stub(field: Field,
-              scalars: t.Mapping[str, type]) -> abc.abstractproperty:
-
-    def stub(*args, **kwargs):
-        raise NotImplementedError()
-
-    stub.__name__ = field.name
-    stub.__doc__ = f'''\
-    {field.desc}
-
-    Returns
-    -------
-    {make_typename(field.type, True, scalars)}
-    '''
-    return abc.abstractproperty(stub)
-
-
-def interface_as_type(typ: Interface, scalars):
-    f = type(typ.name, (abc.ABC, ), {**{
-        field.name: make_stub(field, scalars)
-        for field in typ.fields
-    }, **{
-        '__doc__': typ.desc
-    }})
-    return f
-
-
-def enum_as_type(typ: Enum):
-    f = enum.Enum(typ.name, {v.name: v.name for v in typ.values})
-    members_desc = '\n\n    '.join(map('``{0.name}`` - {0.desc}'.format,
-                                       typ.values))
-    f.__doc__ = f'''
-    {typ.desc}
-
-    **Members**:
-
-    {members_desc} '''
-    return f
-
-
-def union_as_type(typ: Union, objs: t.Mapping[str, type]):
-    union = type(typ.name, (abc.ABC, ), {})
-    for o in typ.types:
-        union.register(objs[o.name])
-    union.__doc__ = '''\
-    union of: {}
-    '''.format(', '.join(o.name for o in typ.types))
-
-    # union = t.Union[tuple(objs[o.name] for o in typ.types)]
-    return union
-
-
-def make_module(name: str, classes: t.Iterable[type]) -> ModuleType:
-
-    my_module = ModuleType(name)
-    for cls in classes:
-        try:
-            cls.__module__ = my_module.__name__
-        except (AttributeError, TypeError):
-            pass
-        setattr(my_module, cls.__name__, cls)
-
-    return my_module
-
-
-def make_classes(schema: list,
-                 scalars: t.Mapping[str, type]) -> t.Iterator[type]:
-    loaded = map(compose(cast_type, deserialize_type), schema['types'])
-
-    by_kind = defaultdict(list)
-    for c in loaded:
-        by_kind[c.__class__].append(c)
-
-    interfaces = list(map(partial(interface_as_type, scalars=scalars),
-                          by_kind[Interface]))
-    scalars_ = map(compose(scalars.__getitem__, attrgetter('name')),
-                   by_kind[Scalar])
-    enums = map(enum_as_type, by_kind[Enum])
-    objs = list(map(partial(object_as_type,
-                            scalars=scalars,
-                            interfaces={i.__name__: i for i in interfaces}),
-                    by_kind[Object]))
-    unions = map(partial(union_as_type,
-                         objs={o.__name__: o for o in objs}),
-                 by_kind[Union])
-
-    return chain(interfaces, scalars_, enums, objs, unions)
+def load(schema: t.List[dict]) -> t.Iterator[Typelike]:
+    return map(compose(_cast_type, _deserialize_type), schema["types"])

@@ -24,7 +24,6 @@ def bearer_auth(req):
     })
 
 
-ID = type('ID', (str, ), {})
 URI = type('URI', (str, ), {})
 HTML = type('HTML', (str, ), {})
 GitObjectID = type('GitObjectID', (str, ), {})
@@ -34,36 +33,44 @@ GitSSHRemote = type('GitSSHRemote', (str, ), {})
 
 
 SCALARS = {
-    'Boolean':         bool,
-    'String':          str,
-    'ID':              ID,
     'URI':             URI,
-    'Int':             int,
     'DateTime':        datetime.datetime,
     'HTML':            HTML,
     'GitObjectID':     GitObjectID,
     'GitTimestamp':    GitTimestamp,
-    'Float':           float,
     'Date':            datetime.date,
     'X509Certificate': X509Certificate,
     'GitSSHRemote':    GitSSHRemote,
 }
 
 
-classes = list(quiz.schema.make_classes(schema, SCALARS))
+classes = quiz.types.build(quiz.schema.load(schema), SCALARS)
 gh = quiz.build.Namespace(classes)
-# sys.modules[NAME] = quiz.make_module(NAME, classes)
 
 execute = snug.executor(auth=bearer_auth, client=requests.Session())
 
 q = gh[
-    _.rateLimit[
-        _.remaining
+    _
+    .rateLimit[
+        _
+        .remaining
         .resetAt
     ]
-    .repository(owner='octocat', name='hello-world')[_
+    .repository(owner='octocat', name='hello-world')[
+        _
         .createdAt
     ]
+    .organization(login='github')['''
+      location
+      members(first: 10) {
+        edges {
+          node {
+            id
+          }
+        }
+      }
+    ''']
+    # .hubRepo: _.repository(owner='github', name='hub')[_.createdAt]
 ]
 
 print(q)
