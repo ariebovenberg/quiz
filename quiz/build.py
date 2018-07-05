@@ -75,6 +75,7 @@ class FieldChain:
         return FieldChain(self.__fields__ + [Field(name, {})])
 
     def __getitem__(self, selection):
+        # TODO: check duplicate fieldnames
         *rest, target = self.__fields__
         if isinstance(selection, str):
             selection = RawGraphQL(dedent(selection).strip())

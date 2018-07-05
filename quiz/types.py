@@ -4,13 +4,26 @@ import typing as t
 from collections import ChainMap, defaultdict
 from functools import partial
 from itertools import chain
-from operator import attrgetter
-
-from toolz import compose
 
 from . import schema
 
 ClassDict = t.Dict[str, type]
+
+
+class ID(str):
+    """represents a unique identifier, often used to refetch an object
+    or as the key for a cache. The ID type is serialized in the same way
+    as a String; however, defining it as an ID signifies that it is not
+    intended to be human‐readable"""
+
+
+BUILTIN_SCALARS = {
+    "Boolean": bool,
+    "String": str,
+    "ID": ID,
+    "Float": float,
+    "Int": int,
+}
 
 
 class InputValue(t.NamedTuple):
@@ -24,8 +37,8 @@ class Field(t.NamedTuple):
     desc: str
     type: type
     args: InputValue
-    deprecated: bool
-    deprecation_reason = t.Optional[str]
+    is_deprecated: bool
+    deprecation_reason: str
 
 
 def _namedict(classes):
@@ -48,8 +61,9 @@ def interface_as_type(typ: schema.Interface):
 
 def enum_as_type(typ: schema.Enum) -> t.Type[enum.Enum]:
     cls = enum.Enum(typ.name, {v.name: v.name for v in typ.values})
-    cls.__doc__ = typ.desc
-    cls.__schema__ = typ
+    for member, conf in zip(cls.__members__.values(), typ.values):
+        member.__doc__ = conf.desc
+        member.__schema__ = conf
     return cls
 
 
@@ -60,10 +74,31 @@ def union_as_type(typ: schema.Union, objs: ClassDict):
     return union
 
 
+def inputobject_as_type(typ: schema.InputObject):
+    return type(typ.name, (), {"__doc__": typ.desc, "__schema__": typ})
+
+
 def _add_fields(obj, classes) -> None:
-    obj.__fields__ = {
-        f.name: resolve_typeref(f.type, classes) for f in obj.__schema__.fields
-    }
+    for f in obj.__schema__.fields:
+        setattr(
+            obj,
+            f.name,
+            Field(
+                name=f.name,
+                desc=f.name,
+                args=[
+                    InputValue(
+                        name=i.name,
+                        desc=i.desc,
+                        type=resolve_typeref(i.type, classes),
+                    )
+                    for i in f.args
+                ],
+                is_deprecated=f.is_deprecated,
+                deprecation_reason=f.deprecation_reason,
+                type=resolve_typeref(f.type, classes),
+            ),
+        )
     return obj
 
 
@@ -78,26 +113,7 @@ def _resolve_typeref_required(ref, classes) -> type:
     assert ref.kind is not schema.Kind.NON_NULL
     if ref.kind is schema.Kind.LIST:
         return t.List[resolve_typeref(ref.of_type, classes)]
-    elif ref.kind in (
-        schema.Kind.OBJECT,
-        schema.Kind.INTERFACE,
-        schema.Kind.SCALAR,
-        schema.Kind.UNION,
-        schema.Kind.ENUM,
-    ):
-        return classes[ref.name]
-    else:
-        breakpoint()
-
-
-ID = type("ID", (str,), {})
-BUILTIN_SCALARS = {
-    "Boolean": bool,
-    "String": str,
-    "ID": ID,
-    "Float": float,
-    "Int": int,
-}
+    return classes[ref.name]
 
 
 def build(types: t.Iterable[schema.Typelike], scalars: ClassDict) -> ClassDict:
@@ -122,24 +138,16 @@ def build(types: t.Iterable[schema.Typelike], scalars: ClassDict) -> ClassDict:
     unions = _namedict(
         map(partial(union_as_type, objs=objs), by_kind[schema.Union])
     )
+    input_objects = _namedict(
+        map(inputobject_as_type, by_kind[schema.InputObject])
+    )
 
-    classes = ChainMap(scalars_, interfaces, enums, objs, unions)
+    classes = ChainMap(
+        scalars_, interfaces, enums, objs, unions, input_objects
+    )
 
     # we can only add fields after all classes have been created.
     for obj in chain(objs.values(), interfaces.values()):
         _add_fields(obj, classes)
 
     return classes
-
-
-def make_module(name: str, classes: t.Iterable[type]) -> ModuleType:
-
-    my_module = ModuleType(name)
-    for cls in classes:
-        try:
-            cls.__module__ = my_module.__name__
-        except (AttributeError, TypeError):
-            pass
-        setattr(my_module, cls.__name__, cls)
-
-    return my_module
