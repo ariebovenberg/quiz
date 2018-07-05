@@ -1,4 +1,5 @@
 """Functionality relating to the raw GraphQL schema"""
+from dataclasses import dataclass
 import enum
 import typing as t
 
@@ -96,20 +97,23 @@ class Kind(enum.Enum):
     UNION = "UNION"
 
 
-class TypeRef(t.NamedTuple):
+@dataclass
+class TypeRef:
     name: t.Optional[str]
     kind: Kind
     of_type: t.Optional["TypeRef"]
 
 
-class InputValue(t.NamedTuple):
+@dataclass
+class InputValue:
     name: str
     desc: str
     type: TypeRef
     default: object
 
 
-class Field(t.NamedTuple):
+@dataclass
+class Field:
     name: str
     type: TypeRef
     args: t.List[InputValue]
@@ -118,7 +122,8 @@ class Field(t.NamedTuple):
     deprecation_reason: t.Optional[str]
 
 
-class GeneralType(t.NamedTuple):
+@dataclass
+class GeneralType:
     name: t.Optional[str]
     kind: Kind
     desc: str
@@ -129,7 +134,8 @@ class GeneralType(t.NamedTuple):
     enum_values: t.Optional[t.List]
 
 
-class EnumValue(t.NamedTuple):
+@dataclass
+class EnumValue:
     name: str
     desc: str
     is_deprecated: bool
@@ -190,13 +196,15 @@ def _deserialize_type(conf) -> GeneralType:
     )
 
 
-class Interface(t.NamedTuple):
+@dataclass
+class Interface:
     name: str
     desc: str
     fields: t.List[Field]
 
 
-class Object(t.NamedTuple):
+@dataclass
+class Object:
     name: str
     desc: str
     interfaces: TypeRef
@@ -204,24 +212,28 @@ class Object(t.NamedTuple):
     fields: t.List[Field]
 
 
-class Scalar(t.NamedTuple):
+@dataclass
+class Scalar:
     name: str
     desc: str
 
 
-class Enum(t.NamedTuple):
+@dataclass
+class Enum:
     name: str
     desc: str
     values: t.List[EnumValue]
 
 
-class Union(t.NamedTuple):
+@dataclass
+class Union:
     name: str
     desc: str
     types: t.List[TypeRef]
 
 
-class InputObject(t.NamedTuple):
+@dataclass
+class InputObject:
     name: str
     desc: str
     input_fields: t.List[InputValue]
@@ -278,4 +290,5 @@ def _cast_type(typ: GeneralType) -> Typelike:
 
 
 def load(schema: t.List[dict]) -> t.Iterator[Typelike]:
+    breakpoint()
     return map(compose(_cast_type, _deserialize_type), schema["types"])
