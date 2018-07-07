@@ -10,8 +10,6 @@ from . import types
 
 INDENT = "  "
 NEWLINE = ""
-URL = "https://api.github.com/graphql"
-
 
 gql = methodcaller("__gql__")
 
@@ -78,6 +76,7 @@ class FieldChain:
         # TODO: check duplicate fieldnames
         *rest, target = self.__fields__
         if isinstance(selection, str):
+            # parse the string?
             selection = RawGraphQL(dedent(selection).strip())
         elif isinstance(selection, FieldChain):
             assert len(selection.__fields__) >= 1
@@ -96,6 +95,7 @@ class FieldChain:
 
 @dataclass
 class Query(snug.Query):
+    url:    str
     fields: FieldChain
 
     def __gql__(self):
@@ -105,7 +105,7 @@ class Query(snug.Query):
 
     def __iter__(self):
         response = yield snug.Request(
-            "POST", URL, content=json.dumps({"query": gql(self)})
+            "POST", self.url, content=json.dumps({"query": gql(self)})
         )
         return json.loads(response.content)
 
@@ -114,9 +114,10 @@ field_chain = FieldChain([])
 
 
 class Namespace:
-    def __init__(self, classes: types.ClassDict):
+    def __init__(self, url: str, classes: types.ClassDict):
+        self._url = url
         for name, cls in classes.items():
             setattr(self, name, cls)
 
     def __getitem__(self, key):
-        return Query(key)
+        return Query(self._url, key)

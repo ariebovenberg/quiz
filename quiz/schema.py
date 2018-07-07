@@ -290,5 +290,4 @@ def _cast_type(typ: GeneralType) -> Typelike:
 
 
 def load(schema: t.List[dict]) -> t.Iterator[Typelike]:
-    breakpoint()
     return map(compose(_cast_type, _deserialize_type), schema["types"])

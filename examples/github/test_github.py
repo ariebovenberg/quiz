@@ -9,7 +9,8 @@ import quiz
 
 _ = quiz.build.field_chain
 
-NAME = 'test_github.my_types'
+# NAME = 'test_github.my_types'
+URL = "https://api.github.com/graphql"
 
 SCHEMA_PATH = Path(__file__).parent / 'schema.json'
 with SCHEMA_PATH.open('rt') as rfile:
@@ -45,11 +46,11 @@ SCALARS = {
 
 
 classes = quiz.types.build(quiz.schema.load(schema), SCALARS)
-gh = quiz.build.Namespace(classes)
+gh = quiz.build.Namespace(URL, classes)
 
 execute = snug.executor(auth=bearer_auth, client=requests.Session())
 
-q = gh[
+example_query = gh[
     _
     .rateLimit[
         _
@@ -73,9 +74,12 @@ q = gh[
     # .hubRepo: _.repository(owner='github', name='hub')[_.createdAt]
 ]
 
-print(q)
+print(example_query)
 
-result = execute(q)
+breakpoint()
+result = execute(example_query)
+
+# example_mutation = gh.mutation
 
 print(result)
 
