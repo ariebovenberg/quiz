@@ -13,6 +13,12 @@ _ = quiz.build.field_chain
 URL = "https://api.github.com/graphql"
 
 SCHEMA_PATH = Path(__file__).parent / 'schema.json'
+
+# uncomment to retrieve the lastest schema
+# schema = execute(quiz.schema.get(URL))
+# with SCHEMA_PATH.open('w') as rfile:
+#     schema = json.dump(schema, rfile)
+
 with SCHEMA_PATH.open('rt') as rfile:
     schema = json.load(rfile)
 

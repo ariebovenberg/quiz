@@ -1,11 +1,13 @@
+import enum
 import json
 import typing as t
 from dataclasses import dataclass, replace
 from functools import singledispatch
 from operator import methodcaller
-from textwrap import indent, dedent
+from textwrap import dedent, indent
 
 import snug
+
 from . import types
 
 INDENT = "  "
@@ -15,13 +17,20 @@ gql = methodcaller("__gql__")
 
 
 @singledispatch
-def primitive_to_gql(obj):
+def argument_as_gql(obj):
     raise TypeError("cannot serialize to GraphQL: {}".format(type(obj)))
 
 
-@primitive_to_gql.register(str)
+@argument_as_gql.register(str)
 def _str_to_gql(obj):
     return f'"{obj}"'
+
+
+# TODO: make specific enum subclass to ensure
+# only graphql compatible enums are set?
+@argument_as_gql.register(enum.Enum)
+def _enum_to_gql(obj):
+    return obj.value
 
 
 @dataclass
@@ -40,7 +49,7 @@ class Field:
     def __gql__(self):
         if self.kwargs:
             joined = ", ".join(
-                "{}: {}".format(k, primitive_to_gql(v))
+                "{}: {}".format(k, argument_as_gql(v))
                 for k, v in self.kwargs.items()
             )
             return f"{self.name}({joined})"
@@ -105,7 +114,8 @@ class Query(snug.Query):
 
     def __iter__(self):
         response = yield snug.Request(
-            "POST", self.url, content=json.dumps({"query": gql(self)})
+            "POST", self.url, content=json.dumps({"query": gql(self)}),
+            headers={'Content-Type': 'application/json'}
         )
         return json.loads(response.content)
 
@@ -114,6 +124,7 @@ field_chain = FieldChain([])
 
 
 class Namespace:
+
     def __init__(self, url: str, classes: types.ClassDict):
         self._url = url
         for name, cls in classes.items():

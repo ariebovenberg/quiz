@@ -1,9 +1,13 @@
 """Functionality relating to the raw GraphQL schema"""
-from dataclasses import dataclass
+import json
 import enum
 import typing as t
+from dataclasses import dataclass
 
+import snug
 from toolz import compose
+
+Schema = t.List[dict]
 
 INTROSPECTION_QUERY = """
 query IntrospectionQuery {
@@ -289,5 +293,12 @@ def _cast_type(typ: GeneralType) -> Typelike:
         raise NotImplementedError(type.kind)
 
 
-def load(schema: t.List[dict]) -> t.Iterator[Typelike]:
+def load(schema: Schema) -> t.Iterator[Typelike]:
     return map(compose(_cast_type, _deserialize_type), schema["types"])
+
+
+def get(url: str) -> snug.Query[Schema]:
+    response = yield snug.Request('POST', url, json.dumps({
+        'query': INTROSPECTION_QUERY
+    }), headers={'Content-Type': 'application/json'})
+    return json.loads(response.content)['data']['__schema']
