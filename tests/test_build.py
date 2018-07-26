@@ -43,6 +43,10 @@ class TestFieldChain:
             )
         ])
 
+    def test_getitem_empty(self):
+        with pytest.raises(Error):
+            _['bla']
+
     def test_getitem_nested(self):
         assert _.foo[
             _

@@ -79,7 +79,10 @@ class FieldChain:
 
     def __getitem__(self, selection):
         # TODO: check duplicate fieldnames
-        *rest, target = self.__fields__
+        try:
+            *rest, target = self.__fields__
+        except ValueError:
+            raise Error('cannot select fields form empty field list')
         if isinstance(selection, str):
             # parse the string?
             # selection = RawGraphQL(dedent(selection).strip())
