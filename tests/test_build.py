@@ -83,3 +83,33 @@ class TestFieldChain:
     def test_invalid_call(self):
         with pytest.raises(Error):
             _()
+
+    def test_combination(self):
+        assert _.foo.bar[
+            _
+            .bing(param1=4.1)
+            .baz
+            .foo_bar_bla(p2=None, r='')[
+                _
+                .height(unit='cm')
+            ]
+            .oof
+            .qux()
+        ] == FieldChain([
+            Field('foo', {}),
+            NestedObject(
+                Field('bar', {}),
+                FieldChain([
+                    Field('bing', {'param1': 4.1}),
+                    Field('baz', {}),
+                    NestedObject(
+                        Field('foo_bar_bla', {'p2': None, 'r': ''}),
+                        FieldChain([
+                            Field('height', {'unit': 'cm'})
+                        ])
+                    ),
+                    Field('oof', {}),
+                    Field('qux', {}),
+                ])
+            )
+        ])

@@ -70,7 +70,7 @@ class Error(Exception):
     """an error relating to building a query"""
 
 
-@dataclass
+@dataclass(repr=False, frozen=True)
 class FieldChain:
     __fields__: t.List[t.Union[Field, NestedObject]]
 
