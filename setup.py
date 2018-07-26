@@ -39,6 +39,8 @@ setup(
     ],
     install_requires=[
         'typing>=3.6.2; python_version<"3.5"',
+        'snug~=1.3',
+        'toolz~=0.9',
     ],
     keywords=['graphql', 'http', 'async'],
     python_requires='>=2.7',
