@@ -4,7 +4,7 @@ import typing as t
 from dataclasses import dataclass, replace
 from functools import singledispatch
 from operator import methodcaller
-from textwrap import dedent, indent
+from textwrap import indent
 
 import snug
 
@@ -34,14 +34,6 @@ def _enum_to_gql(obj):
 
 
 @dataclass
-class RawGraphQL:
-    text: str
-
-    def __gql__(self):
-        return self.text
-
-
-@dataclass
 class Field:
     name: str
     kwargs: t.Dict[str, t.Any]
@@ -63,15 +55,19 @@ class Field:
 @dataclass
 class NestedObject:
     attr: Field
-    fields: t.Union["FieldChain", RawGraphQL]
+    fields: 'FieldChain'
 
     def __repr__(self):
-        return "Nested({}, {})".format(self.name, list(self.fields))
+        return "Nested({}, {})".format(self.attr.name, list(self.fields))
 
     def __gql__(self):
         return "{} {{\n{}\n}}".format(
             gql(self.attr), indent(gql(self.fields), INDENT)
         )
+
+
+class Error(Exception):
+    """an error relating to building a query"""
 
 
 @dataclass
@@ -86,7 +82,8 @@ class FieldChain:
         *rest, target = self.__fields__
         if isinstance(selection, str):
             # parse the string?
-            selection = RawGraphQL(dedent(selection).strip())
+            # selection = RawGraphQL(dedent(selection).strip())
+            raise NotImplementedError('raw GraphQL not yet implemented')
         elif isinstance(selection, FieldChain):
             assert len(selection.__fields__) >= 1
         return FieldChain(rest + [NestedObject(target, selection)])
@@ -95,8 +92,17 @@ class FieldChain:
         return "FieldChain({!r})".format(list(self.__fields__))
 
     def __call__(self, **kwargs):
-        *rest, target = self.__fields__
+        try:
+            *rest, target = self.__fields__
+        except ValueError:
+            raise Error('cannot call empty field list')
         return FieldChain(rest + [replace(target, kwargs=kwargs)])
+
+    def __iter__(self):
+        return iter(self.__fields__)
+
+    def __len__(self):
+        return len(self.__fields__)
 
     def __gql__(self):
         return "\n".join(map(gql, self.__fields__))
@@ -131,4 +137,7 @@ class Namespace:
             setattr(self, name, cls)
 
     def __getitem__(self, key):
-        return Query(self._url, key)
+        # TODO: determine query type dynamically
+        return self.Query[key]
+        # breakpoint()
+        # return Query(self._url, key)
