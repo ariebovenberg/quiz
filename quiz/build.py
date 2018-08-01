@@ -3,12 +3,14 @@ import json
 import typing as t
 from dataclasses import dataclass, replace
 from functools import singledispatch
-from operator import methodcaller
+from operator import methodcaller, attrgetter
 from textwrap import indent
 
 import snug
 
 from . import types
+
+# TODO: __slots__
 
 INDENT = "  "
 NEWLINE = ""
@@ -16,14 +18,17 @@ NEWLINE = ""
 gql = methodcaller("__gql__")
 
 
+FieldName = str
+"""a valid GraphQL fieldname"""
+
+
 @singledispatch
 def argument_as_gql(obj):
     raise TypeError("cannot serialize to GraphQL: {}".format(type(obj)))
 
 
-@argument_as_gql.register(str)
-def _str_to_gql(obj):
-    return f'"{obj}"'
+argument_as_gql.register(str, '"{}"'.format)
+argument_as_gql.register(int, str)
 
 
 # TODO: make specific enum subclass to ensure
@@ -33,10 +38,31 @@ def _enum_to_gql(obj):
     return obj.value
 
 
-@dataclass
+class _FrozenDict(t.Mapping):
+    __slots__ = '_inner'
+
+    def __init__(self, inner=()):
+        self._inner = dict(inner)
+
+    __len__ = property(attrgetter('_inner.__len__'))
+    __iter__ = property(attrgetter('_inner.__iter__'))
+    __getitem__ = property(attrgetter('_inner.__getitem__'))
+    __repr__ = property(attrgetter('_inner.__repr__'))
+
+    def __hash__(self):
+        return hash(frozenset(self._inner.items()))
+
+
+@dataclass(frozen=True, init=False)
 class Field:
-    name: str
-    kwargs: t.Dict[str, t.Any]
+    name: FieldName
+    kwargs: _FrozenDict = _FrozenDict()
+
+    def __init__(self, name, kwargs=()):
+        self.__dict__.update({
+            'name': name,
+            'kwargs': _FrozenDict(kwargs)
+        })
 
     def __gql__(self):
         if self.kwargs:
@@ -52,30 +78,45 @@ class Field:
         return f".{self.name}"
 
 
-@dataclass
+@dataclass(frozen=True)
 class NestedObject:
-    attr: Field
-    fields: 'FieldChain'
+    attr:   Field
+    fields: t.Tuple['Fieldlike']
 
     def __repr__(self):
         return "Nested({}, {})".format(self.attr.name, list(self.fields))
 
     def __gql__(self):
         return "{} {{\n{}\n}}".format(
-            gql(self.attr), indent(gql(self.fields), INDENT)
+            gql(self.attr), indent('\n'.join(map(gql, self.fields)),
+                                   INDENT)
         )
+
+
+Fieldlike = t.Union[Field, NestedObject]
 
 
 class Error(Exception):
     """an error relating to building a query"""
 
 
-@dataclass(repr=False, frozen=True)
+@dataclass(repr=False, frozen=True, init=False)
 class FieldChain:
-    __fields__: t.List[t.Union[Field, NestedObject]]
+    """A "magic" field sequence builder"""
+    # the attribute needs to have a dunder name to prevent
+    # comflicts with GraphQL field names
+    __fields__: t.Tuple[Fieldlike]
+    # TODO: should this be unordered? (i.e. frozenset)
+
+    def __init__(self, *fields):
+        self.__dict__['__fields__'] = fields
+
+    @classmethod
+    def _make(cls, fields):
+        return cls(*fields)
 
     def __getattr__(self, name):
-        return FieldChain(self.__fields__ + [Field(name, {})])
+        return FieldChain._make(self.__fields__ + (Field(name, {}), ))
 
     def __getitem__(self, selection):
         # TODO: check duplicate fieldnames
@@ -89,26 +130,26 @@ class FieldChain:
             raise NotImplementedError('raw GraphQL not yet implemented')
         elif isinstance(selection, FieldChain):
             assert len(selection.__fields__) >= 1
-        return FieldChain(rest + [NestedObject(target, selection)])
+        return FieldChain._make(tuple(rest) +
+                                (NestedObject(target, selection.__fields__), ))
 
     def __repr__(self):
         return "FieldChain({!r})".format(list(self.__fields__))
 
+    # TODO: prevent `self` from conflicting with kwargs
     def __call__(self, **kwargs):
         try:
             *rest, target = self.__fields__
         except ValueError:
             raise Error('cannot call empty field list')
-        return FieldChain(rest + [replace(target, kwargs=kwargs)])
+        return FieldChain._make(tuple(rest) +
+                                (replace(target, kwargs=kwargs), ))
 
     def __iter__(self):
         return iter(self.__fields__)
 
     def __len__(self):
         return len(self.__fields__)
-
-    def __gql__(self):
-        return "\n".join(map(gql, self.__fields__))
 
 
 @dataclass
@@ -129,7 +170,7 @@ class Query(snug.Query):
         return json.loads(response.content)
 
 
-field_chain = FieldChain([])
+field_chain = FieldChain()
 
 
 class Namespace:

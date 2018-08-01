@@ -1,47 +1,67 @@
 import pytest
 
-from quiz.build import Field, FieldChain, NestedObject, Error
+from quiz.build import Field, FieldChain, NestedObject, Error, gql
 from quiz.build import field_chain as _
+
+
+class TestField:
+
+    def test_defaults(self):
+        f = Field('foo')
+        assert f.kwargs == {}
+
+    def test_hash(self):
+        assert hash(Field('foo', {'bar': 3})) == hash(Field('foo', {'bar': 3}))
+        assert hash(Field('bla', {'bla': 4})) != hash(Field('bla'))
+
+    @pytest.mark.parametrize('field, expect', [
+        (Field('foo'), 'foo'),
+        (Field('bla', {'boo': 9}), 'bla(boo: 9)')
+    ])
+    def test_gql(self, field, expect):
+        assert gql(field) == expect
 
 
 class TestFieldChain:
 
     def test_empty(self):
-        assert _ == FieldChain([])
+        assert _ == FieldChain()
 
-    # def test_hash(self):
-    #     assert hash(FieldChain([])) == hash(FieldChain([]))
+    def test_hash(self):
+        assert hash(FieldChain()) == hash(FieldChain())
+        assert hash(_.foo.bar) == hash(_.foo.bar)
+        assert hash(_.bar.foo) != hash(_.foo.bar)
 
     def test_getattr(self):
-        assert _.foo_field.bla == FieldChain([
-            Field('foo_field', {}),
-            Field('bla', {}),
-        ])
+        assert _.foo_field.bla == FieldChain(
+            Field('foo_field'),
+            Field('bla'),
+        )
 
     def test_iter(self):
-        items = [
-            Field('foo', {}),
-            Field('bar', {}),
-        ]
-        assert list(FieldChain(items)) == items
-        assert len(FieldChain(items)) == 2
+        items = (
+            Field('foo'),
+            Field('bar'),
+        )
+        assert tuple(FieldChain(*items)) == items
+        assert len(FieldChain(*items)) == 2
 
     def test_getitem(self):
         assert _.foo.bar.blabla[
             _
             .foobar
             .bing
-        ] == FieldChain([
-            Field('foo', {}),
-            Field('bar', {}),
+        ] == FieldChain(
+            Field('foo'),
+            Field('bar'),
             NestedObject(
-                Field('blabla', {}),
-                FieldChain([
-                    Field('foobar', {}),
-                    Field('bing', {}),
-                ])
+                Field('blabla'),
+                (
+                    Field('foobar'),
+                    Field('bing'),
+                )
             )
-        ])
+        )
 
     def test_getitem_empty(self):
         with pytest.raises(Error):
@@ -55,30 +75,30 @@ class TestFieldChain:
                 _
                 .blabla
             ]
-        ] == FieldChain([
+        ] == FieldChain(
             NestedObject(
-                Field('foo', {}),
-                FieldChain([
-                    Field('bar', {}),
+                Field('foo'),
+                (
+                    Field('bar'),
                     NestedObject(
-                        Field('bing', {}),
-                        FieldChain([
-                            Field('blabla', {})
-                        ])
+                        Field('bing'),
+                        (
+                            Field('blabla'),
+                        )
                     )
-                ])
+                )
             )
-        ])
+        )
 
     def test_call(self):
-        assert _.foo(bla=4, bar=None) == FieldChain([
-            Field('foo', {'bla': 4, 'bar': None})
-        ])
+        assert _.foo(bla=4, bar=None) == FieldChain(
+            Field('foo', {'bla': 4, 'bar': None}),
+        )
 
     def test_call_empty(self):
-        assert _.foo() == FieldChain([
-            Field('foo', {})
-        ])
+        assert _.foo() == FieldChain(
+            Field('foo'),
+        )
 
     def test_invalid_call(self):
         with pytest.raises(Error):
@@ -95,21 +115,21 @@ class TestFieldChain:
             ]
             .oof
             .qux()
-        ] == FieldChain([
+        ] == FieldChain(
             Field('foo', {}),
             NestedObject(
-                Field('bar', {}),
-                FieldChain([
+                Field('bar'),
+                (
                     Field('bing', {'param1': 4.1}),
-                    Field('baz', {}),
+                    Field('baz'),
                     NestedObject(
                         Field('foo_bar_bla', {'p2': None, 'r': ''}),
-                        FieldChain([
-                            Field('height', {'unit': 'cm'})
-                        ])
+                        (
+                            Field('height', {'unit': 'cm'}),
+                        )
                     ),
-                    Field('oof', {}),
-                    Field('qux', {}),
-                ])
+                    Field('oof'),
+                    Field('qux'),
+                )
             )
-        ])
+        )
