@@ -100,3 +100,41 @@ class TestInterfaceAsType:
         assert created.__name__ == 'Foo'
         assert created.__doc__ == 'my interface!'
         assert created.__schema__ == interface_schema
+
+
+class TestResolveTypeRef:
+
+    def test_default(self):
+        ref = schema.TypeRef('Foo', schema.Kind.ENUM, None)
+
+        classes = {'Foo': types.Enum('Foo', {})}
+        resolved = types.resolve_typeref(ref, classes)
+        assert resolved == t.Optional[classes['Foo']]
+
+    def test_non_null(self):
+        ref = schema.TypeRef(None, schema.Kind.NON_NULL,
+                             schema.TypeRef('Foo', schema.Kind.OBJECT, None))
+
+        classes = {'Foo': type('Foo', (), {})}
+        resolved = types.resolve_typeref(ref, classes)
+        assert resolved == classes['Foo']
+
+    def test_list(self):
+        ref = schema.TypeRef(None, schema.Kind.LIST,
+                             schema.TypeRef('Foo', schema.Kind.OBJECT, None))
+        classes = {'Foo': type('Foo', (), {})}
+        resolved = types.resolve_typeref(ref, classes)
+        assert resolved == t.Optional[t.List[t.Optional[classes['Foo']]]]
+
+    def test_list_non_null(self):
+        ref = schema.TypeRef(
+            None, schema.Kind.NON_NULL,
+            schema.TypeRef(
+                None, schema.Kind.LIST,
+                schema.TypeRef(
+                    None, schema.Kind.NON_NULL,
+                    schema.TypeRef('Foo', schema.Kind.OBJECT, None)
+                )))
+        classes = {'Foo': type('Foo', (), {})}
+        resolved = types.resolve_typeref(ref, classes)
+        assert resolved == t.List[classes['Foo']]

@@ -58,7 +58,7 @@ def _namedict(classes):
 
 
 def object_as_type(
-    typ: schema.Object, interfaces: t.Mapping[str, abc.ABCMeta]
+    typ: schema.Object, interfaces: t.Mapping[str, type(Interface)]
 ) -> type:
     return type(
         typ.name,
@@ -133,6 +133,7 @@ def resolve_typeref(ref: schema.TypeRef, classes: ClassDict) -> type:
         return t.Optional[_resolve_typeref_required(ref, classes)]
 
 
+# TODO: exception handling
 def _resolve_typeref_required(ref, classes) -> type:
     assert ref.kind is not schema.Kind.NON_NULL
     if ref.kind is schema.Kind.LIST:
