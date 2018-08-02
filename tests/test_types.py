@@ -102,6 +102,44 @@ class TestInterfaceAsType:
         assert created.__schema__ == interface_schema
 
 
+class TestObjectAsType:
+
+    def test_simple(self):
+        obj_schema = schema.Object(
+            'Foo',
+            'the foo description!',
+            interfaces=[
+                schema.TypeRef('Interface1', schema.Kind.INTERFACE, None),
+                schema.TypeRef('BlaInterface', schema.Kind.INTERFACE, None),
+            ],
+            input_fields=None,
+            fields=[
+                schema.Field(
+                    'blabla',
+                    type=schema.TypeRef('String', schema.Kind.SCALAR, None),
+                    args=[],
+                    desc='my description',
+                    is_deprecated=False,
+                    deprecation_reason=None,
+                ),
+            ]
+        )
+        interfaces = {
+            'Interface1': type('Interface1', (types.Interface, ), {}),
+            'BlaInterface': type('BlaInterface', (types.Interface, ), {}),
+            'Qux': type('Qux', (types.Interface, ), {}),
+        }
+        created = types.object_as_type(obj_schema, interfaces)
+        assert issubclass(created, types.Object)
+        assert created.__name__ == 'Foo'
+        assert created.__doc__ == 'the foo description!'
+        assert created.__schema__ == obj_schema
+        assert issubclass(created, interfaces['Interface1'])
+        assert issubclass(created, interfaces['BlaInterface'])
+
+    # TODO: test without interfaces
+
+
 class TestResolveTypeRef:
 
     def test_default(self):

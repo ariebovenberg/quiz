@@ -211,7 +211,7 @@ class Interface:
 class Object:
     name: str
     desc: str
-    interfaces: TypeRef
+    interfaces: t.List[TypeRef]
     input_fields: t.Optional[t.List[InputValue]]
     fields: t.List[Field]
 

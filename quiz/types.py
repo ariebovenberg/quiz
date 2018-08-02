@@ -26,6 +26,25 @@ BUILTIN_SCALARS = {
 }
 
 
+class ObjectMeta(abc.ABCMeta):
+
+    # TODO: creates query
+    def __getitem__(self, key):
+        breakpoint()
+
+    # TODO: prevent direct instantiation
+
+
+class Object(metaclass=ObjectMeta):
+    """a graphQL object"""
+
+
+# - InputObject: calling instantiates an instance,
+#   results must be instances of the class
+class InputObject:
+    pass
+
+
 # separate class to distinguish graphql enums from normal Enums
 # TODO: include deprecation attributes in instances?
 # TODO: a __repr__ which includes the description, deprecation, etc?
@@ -57,12 +76,11 @@ def _namedict(classes):
     return {c.__name__: c for c in classes}
 
 
-def object_as_type(
-    typ: schema.Object, interfaces: t.Mapping[str, type(Interface)]
-) -> type:
+def object_as_type(typ: schema.Object,
+                   interfaces: t.Mapping[str, type(Interface)]) -> type:
     return type(
         typ.name,
-        tuple(interfaces[i.name] for i in typ.interfaces),
+        (Object, ) + tuple(interfaces[i.name] for i in typ.interfaces),
         {"__doc__": typ.desc, "__schema__": typ},
     )
 

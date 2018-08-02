@@ -8,8 +8,6 @@ from textwrap import indent
 
 import snug
 
-from . import types
-
 # TODO: __slots__
 
 INDENT = "  "
@@ -152,19 +150,6 @@ class FieldChain:
         return len(self.__fields__)
 
 
-# def validate(cls: GraphQLType, fields):
-#     pass
-
-
-# what must a class be able to do
-# - slice creates query
-# - calling instantiates an instance
-# - results must be instances of the class
-class GraphQLType(type):
-    __schema__ = NotImplemented  # class members must set this value
-    # __getitem__ = validate
-
-
 @dataclass
 class Query(snug.Query):
     url:    str
@@ -188,7 +173,7 @@ field_chain = FieldChain()
 
 class Namespace:
 
-    def __init__(self, url: str, classes: types.ClassDict):
+    def __init__(self, url: str, classes: t.Dict[str, type]):
         self._url = url
         for name, cls in classes.items():
             setattr(self, name, cls)
