@@ -1,3 +1,4 @@
+import typing as t
 import enum
 
 from quiz import schema, types
@@ -27,7 +28,7 @@ class TestEnumAsType:
             )
         ])
         created = types.enum_as_type(enum_schema)
-        assert issubclass(created, types.GraphqlEnum)
+        assert issubclass(created, types.Enum)
         assert issubclass(created, enum.Enum)
 
         assert created.__name__ == 'MyValues'
@@ -46,7 +47,7 @@ class TestEnumAsType:
 
     def test_empty(self):
         created = types.enum_as_type(schema.Enum('MyValues', '', values=[]))
-        assert issubclass(created, types.GraphqlEnum)
+        assert issubclass(created, types.Enum)
         assert issubclass(created, enum.Enum)
         assert len(created.__members__) == 0
 
@@ -70,9 +71,32 @@ class TestUnionAsType:
         created = types.union_as_type(union_schema, objs)
         assert created.__name__ == 'Foo'
         assert created.__doc__ == 'my union!'
+        assert created.__origin__ == t.Union
+        assert created.__schema__ == union_schema
 
         assert created.__args__ == (
             objs['BlaType'],
             objs['Quxlike'],
             objs['Foobar'],
         )
+
+
+class TestInterfaceAsType:
+
+    def test_simple(self):
+        interface_schema = schema.Interface('Foo', 'my interface!', [
+            schema.Field(
+                'blabla',
+                type=schema.TypeRef('String', schema.Kind.SCALAR, None),
+                args=[],
+                desc='my description',
+                is_deprecated=False,
+                deprecation_reason=None,
+            ),
+        ])
+        created = types.interface_as_type(interface_schema)
+
+        assert issubclass(created, types.Interface)
+        assert created.__name__ == 'Foo'
+        assert created.__doc__ == 'my interface!'
+        assert created.__schema__ == interface_schema

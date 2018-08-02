@@ -26,10 +26,15 @@ BUILTIN_SCALARS = {
 }
 
 
-class GraphqlEnum(enum.Enum):
-    # members of this class may be serialized to graphql
-    # TODO: include deprecation attributes in instances?
-    # TODO: a __repr__ which includes the description, deprecation, etc?
+# separate class to distinguish graphql enums from normal Enums
+# TODO: include deprecation attributes in instances?
+# TODO: a __repr__ which includes the description, deprecation, etc?
+class Enum(enum.Enum):
+    pass
+
+
+# separate class to distinguish graphql interfaces from normal ABCs
+class Interface(abc.ABC):
     pass
 
 
@@ -62,13 +67,17 @@ def object_as_type(
     )
 
 
+# NOTE: fields are not added yet. These must be added later with _add_fields
+# why is this? Circular references may exist, which can only be added
+# when all classes have been built
 def interface_as_type(typ: schema.Interface):
-    return type(typ.name, (abc.ABC,), {"__doc__": typ.desc, "__schema__": typ})
+    return type(typ.name, (Interface, ),
+                {"__doc__": typ.desc, "__schema__": typ})
 
 
 def enum_as_type(typ: schema.Enum) -> t.Type[enum.Enum]:
     # TODO: convert camelcase to snake-case?
-    cls = GraphqlEnum(typ.name, {v.name: v.name for v in typ.values})
+    cls = Enum(typ.name, {v.name: v.name for v in typ.values})
     cls.__doc__ = typ.desc
     cls.__schema__ = typ
     for member, conf in zip(cls.__members__.values(), typ.values):
@@ -85,6 +94,7 @@ def union_as_type(typ: schema.Union, objs: ClassDict):
     union = t.Union[tuple(objs[o.name] for o in typ.types)]
     union.__name__ = typ.name
     union.__doc__ = typ.desc
+    union.__schema__ = typ
     return union
 
 
