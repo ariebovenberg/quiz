@@ -29,7 +29,6 @@ Write GraphQL queries in python-syntax
 Todo
 ----
 
-* another demo besides github (SWAPI)
 * query validation
 * deserialization
 * introspection
@@ -39,3 +38,6 @@ Todo
 * more examples
 * proper CI
 * docs
+* warnings on using deprecated objects
+* pickling
+* handling markdown (CommonMark) in descriptions
