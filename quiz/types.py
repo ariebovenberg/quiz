@@ -26,6 +26,11 @@ BUILTIN_SCALARS = {
 }
 
 
+class GraphqlEnum(enum.Enum):
+    # members of this class may be serialized to graphql
+    pass
+
+
 class InputValue(t.NamedTuple):
     name: str
     desc: str
@@ -60,7 +65,9 @@ def interface_as_type(typ: schema.Interface):
 
 
 def enum_as_type(typ: schema.Enum) -> t.Type[enum.Enum]:
-    cls = enum.Enum(typ.name, {v.name: v.name for v in typ.values})
+    cls = GraphqlEnum(typ.name, {v.name: v.name for v in typ.values})
+    cls.__doc__ = typ.desc
+    cls.__schema__ = typ
     for member, conf in zip(cls.__members__.values(), typ.values):
         member.__doc__ = conf.desc
         member.__schema__ = conf
