@@ -28,6 +28,8 @@ BUILTIN_SCALARS = {
 
 class GraphqlEnum(enum.Enum):
     # members of this class may be serialized to graphql
+    # TODO: include deprecation attributes in instances?
+    # TODO: a __repr__ which includes the description, deprecation, etc?
     pass
 
 
@@ -65,6 +67,7 @@ def interface_as_type(typ: schema.Interface):
 
 
 def enum_as_type(typ: schema.Enum) -> t.Type[enum.Enum]:
+    # TODO: convert camelcase to snake-case?
     cls = GraphqlEnum(typ.name, {v.name: v.name for v in typ.values})
     cls.__doc__ = typ.desc
     cls.__schema__ = typ
@@ -74,6 +77,10 @@ def enum_as_type(typ: schema.Enum) -> t.Type[enum.Enum]:
     return cls
 
 
+# TODO: better error handling:
+# - empty list of types
+# - types not found
+# python flattens unions, this is OK because GQL does not allow nested unions
 def union_as_type(typ: schema.Union, objs: ClassDict):
     union = t.Union[tuple(objs[o.name] for o in typ.types)]
     union.__name__ = typ.name

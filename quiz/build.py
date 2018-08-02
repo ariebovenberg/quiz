@@ -152,6 +152,19 @@ class FieldChain:
         return len(self.__fields__)
 
 
+# def validate(cls: GraphQLType, fields):
+#     pass
+
+
+# what must a class be able to do
+# - slice creates query
+# - calling instantiates an instance
+# - results must be instances of the class
+class GraphQLType(type):
+    __schema__ = NotImplemented  # class members must set this value
+    # __getitem__ = validate
+
+
 @dataclass
 class Query(snug.Query):
     url:    str

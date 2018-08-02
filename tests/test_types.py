@@ -30,6 +30,7 @@ class TestEnumAsType:
         assert issubclass(created, types.GraphqlEnum)
         assert issubclass(created, enum.Enum)
 
+        assert created.__name__ == 'MyValues'
         assert created.__doc__ == 'my enum!'
         assert created.__schema__ == enum_schema
 
@@ -47,3 +48,31 @@ class TestEnumAsType:
         created = types.enum_as_type(schema.Enum('MyValues', '', values=[]))
         assert issubclass(created, types.GraphqlEnum)
         assert issubclass(created, enum.Enum)
+        assert len(created.__members__) == 0
+
+
+class TestUnionAsType:
+
+    def test_simple(self):
+        union_schema = schema.Union('Foo', 'my union!', [
+            schema.TypeRef('BlaType', schema.Kind.OBJECT, None),
+            schema.TypeRef('Quxlike', schema.Kind.INTERFACE, None),
+            schema.TypeRef('Foobar', schema.Kind.UNION, None),
+        ])
+
+        objs = {
+            'BlaType': type('BlaType', (), {}),
+            'Quxlike': type('Quxlike', (), {}),
+            'Foobar': type('Foobar', (), {}),
+            'Bla': type('Bla', (), {}),
+        }
+
+        created = types.union_as_type(union_schema, objs)
+        assert created.__name__ == 'Foo'
+        assert created.__doc__ == 'my union!'
+
+        assert created.__args__ == (
+            objs['BlaType'],
+            objs['Quxlike'],
+            objs['Foobar'],
+        )

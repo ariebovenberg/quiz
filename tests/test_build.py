@@ -133,3 +133,7 @@ class TestFieldChain:
                 )
             )
         )
+
+
+class TestSchemaValidation:
+    pass
