@@ -2,10 +2,11 @@ import abc
 import enum
 import typing as t
 from collections import ChainMap, defaultdict
+from dataclasses import dataclass
 from functools import partial
 from itertools import chain
 
-from . import schema
+from . import schema, build
 
 ClassDict = t.Dict[str, type]
 
@@ -26,11 +27,34 @@ BUILTIN_SCALARS = {
 }
 
 
+@dataclass(frozen=True)
+class NoSuchField(Exception):
+    on: type
+    name: str
+
+
+# TODO: besides Field, allow InlineFragment, FragmentSpread
+SelectionSet = t.Tuple['Field']
+
+
+@dataclass(frozen=True)
+class InlineFragment:
+    on: type
+    selection_set: SelectionSet
+    # TODO: add:
+    # - directives
+    # - selection_set
+
+
 class ObjectMeta(abc.ABCMeta):
 
     # TODO: creates query
-    def __getitem__(self, key):
-        breakpoint()
+    def __getitem__(self, selection_set: SelectionSet) -> InlineFragment:
+        for selection in selection_set:
+            assert isinstance(selection, build.Field)
+            if not hasattr(self, selection.name):
+                raise NoSuchField(self, selection.name)
+        return InlineFragment(self, selection_set)
 
     # TODO: prevent direct instantiation
 
@@ -67,9 +91,9 @@ class Field(t.NamedTuple):
     name: str
     desc: str
     type: type
-    args: InputValue
+    args: t.Tuple[InputValue]
     is_deprecated: bool
-    deprecation_reason: str
+    deprecation_reason: t.Optional[str]
 
 
 def _namedict(classes):
@@ -159,7 +183,7 @@ def _resolve_typeref_required(ref, classes) -> type:
     return classes[ref.name]
 
 
-def build(types: t.Iterable[schema.Typelike], scalars: ClassDict) -> ClassDict:
+def gen(types: t.Iterable[schema.Typelike], scalars: ClassDict) -> ClassDict:
 
     by_kind = defaultdict(list)
     for tp in types:

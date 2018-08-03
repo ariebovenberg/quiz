@@ -1,7 +1,17 @@
-import typing as t
 import enum
+import typing as t
+from functools import partial
 
-from quiz import schema, types
+import pytest
+
+from quiz import schema, types, build
+from quiz.build import field_chain as _
+
+mkfield = partial(types.Field,
+                  args=(),
+                  is_deprecated=False,
+                  desc='',
+                  deprecation_reason=None)
 
 
 class TestEnumAsType:
@@ -176,3 +186,42 @@ class TestResolveTypeRef:
         classes = {'Foo': type('Foo', (), {})}
         resolved = types.resolve_typeref(ref, classes)
         assert resolved == t.List[classes['Foo']]
+
+
+Command = types.Enum('Command', {'SIT': 'SIT', 'DOWN': 'DOWN'})
+
+
+class Dog(types.Object):
+    """An example type"""
+    name = mkfield('name', type=str)
+    is_housetrained = mkfield('is_housetrained', type=bool)
+    bark_volume = mkfield('bark_volume', type=int)
+    knows_command = mkfield(
+        'knows_command',
+        args=(
+            types.InputValue(
+                'command',
+                'the command',
+                type=Command
+            ),
+        ),
+        type=bool
+    )
+
+
+class TestObjectGetItem:
+
+    def test_valid(self):
+        selection_set = _.name.bark_volume.knows_command(command=Command.SIT)
+        fragment = Dog[selection_set]
+        assert fragment == types.InlineFragment(Dog, selection_set)
+
+    def test_no_such_field(self):
+        with pytest.raises(types.NoSuchField) as exc:
+            Dog[
+                _
+                .name
+                .foo
+                .knows_command(command=Command.SIT)
+            ]
+        assert exc.value == types.NoSuchField(Dog, 'foo')

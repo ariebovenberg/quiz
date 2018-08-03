@@ -28,6 +28,8 @@ def argument_as_gql(obj):
 argument_as_gql.register(str, '"{}"'.format)
 argument_as_gql.register(int, str)
 
+# TODO: float, with exponent form
+
 
 # TODO: make specific enum subclass to ensure
 # only graphql compatible enums are set?
@@ -55,6 +57,10 @@ class _FrozenDict(t.Mapping):
 class Field:
     name: FieldName
     kwargs: _FrozenDict = _FrozenDict()
+    # TODO: unify with `NestedObject`?
+    # - alias
+    # - selection_set
+    # - directives
 
     def __init__(self, name, kwargs=()):
         self.__dict__.update({
@@ -104,7 +110,7 @@ class FieldChain:
     # the attribute needs to have a dunder name to prevent
     # comflicts with GraphQL field names
     __fields__: t.Tuple[Fieldlike]
-    # TODO: should this be unordered? (i.e. frozenset)
+    # according to the GQL spec: this is ordered
 
     def __init__(self, *fields):
         self.__dict__['__fields__'] = fields
