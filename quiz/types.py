@@ -7,8 +7,10 @@ from functools import partial
 from itertools import chain
 
 from . import schema, build
+from .utils import FrozenDict
 
 ClassDict = t.Dict[str, type]
+NoneType = type(None)
 
 
 class ID(str):
@@ -27,9 +29,36 @@ BUILTIN_SCALARS = {
 }
 
 
+class Error(Exception):
+    """base for all graphQL errors"""
+
+
 @dataclass(frozen=True)
-class NoSuchField(Exception):
+class NoSuchField(Error):
     on: type
+    name: str
+
+
+@dataclass(frozen=True)
+class NoSuchArgument(Error):
+    on: type
+    field: 'Field'
+    name: str
+
+
+@dataclass(frozen=True)
+class InvalidArgumentType(Error):
+    on: type
+    field: 'Field'
+    name: str
+    value: object
+    expect_type: type
+
+
+@dataclass(frozen=True)
+class MissingArgument(Error):
+    on: type
+    field: 'Field'
     name: str
 
 
@@ -46,14 +75,45 @@ class InlineFragment:
     # - selection_set
 
 
+def _is_optional(typ):
+    """check whether type type is a typing.Optional"""
+    try:
+        return typ.__origin__ is t.Union and NoneType in typ.__args__
+    except AttributeError:
+        return False
+
+
+def _check_args(cls, field, kwargs) -> t.NoReturn:
+    invalid_args = kwargs.keys() - field.args.keys()
+    if invalid_args:
+        raise NoSuchArgument(cls, field, invalid_args.pop())
+
+    # TODO: refactor with map/filter
+    for param in field.args.values():
+        try:
+            value = kwargs[param.name]
+        except KeyError:
+            if not _is_optional(param.type):
+                raise MissingArgument(cls, field, param.name)
+        else:
+            if not isinstance(value, param.type):
+                raise InvalidArgumentType(
+                    cls, field.name, value
+                )
+
+
+# inherit from ABCMeta to allow mixing with other ABCs
 class ObjectMeta(abc.ABCMeta):
 
-    # TODO: creates query
     def __getitem__(self, selection_set: SelectionSet) -> InlineFragment:
-        for selection in selection_set:
-            assert isinstance(selection, build.Field)
-            if not hasattr(self, selection.name):
-                raise NoSuchField(self, selection.name)
+        for field in selection_set:
+            assert isinstance(field, build.Field)
+            try:
+                schema = getattr(self, field.name)
+            except AttributeError:
+                raise NoSuchField(self, field.name)
+
+            _check_args(self, schema, field.kwargs)
         return InlineFragment(self, selection_set)
 
     # TODO: prevent direct instantiation
@@ -91,7 +151,7 @@ class Field(t.NamedTuple):
     name: str
     desc: str
     type: type
-    args: t.Tuple[InputValue]
+    args: FrozenDict  # TODO: use type parameters
     is_deprecated: bool
     deprecation_reason: t.Optional[str]
 
@@ -152,14 +212,14 @@ def _add_fields(obj, classes) -> None:
             Field(
                 name=f.name,
                 desc=f.name,
-                args=[
-                    InputValue(
+                args=FrozenDict({
+                    i.name: InputValue(
                         name=i.name,
                         desc=i.desc,
                         type=resolve_typeref(i.type, classes),
                     )
                     for i in f.args
-                ],
+                }),
                 is_deprecated=f.is_deprecated,
                 deprecation_reason=f.deprecation_reason,
                 type=resolve_typeref(f.type, classes),

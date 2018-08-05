@@ -4,11 +4,12 @@ from functools import partial
 
 import pytest
 
-from quiz import schema, types, build
+from quiz import schema, types
 from quiz.build import field_chain as _
+from quiz.utils import FrozenDict
 
 mkfield = partial(types.Field,
-                  args=(),
+                  args=FrozenDict(),
                   is_deprecated=False,
                   desc='',
                   deprecation_reason=None)
@@ -194,17 +195,26 @@ Command = types.Enum('Command', {'SIT': 'SIT', 'DOWN': 'DOWN'})
 class Dog(types.Object):
     """An example type"""
     name = mkfield('name', type=str)
-    is_housetrained = mkfield('is_housetrained', type=bool)
+    is_housetrained = mkfield(
+        'is_housetrained',
+        args=FrozenDict({
+            'at_other_homes': types.InputValue(
+                'at_other_homes',
+                '',
+                type=t.Optional[bool]
+            )
+        }),
+        type=bool)
     bark_volume = mkfield('bark_volume', type=int)
     knows_command = mkfield(
         'knows_command',
-        args=(
-            types.InputValue(
+        args=FrozenDict({
+            'command': types.InputValue(
                 'command',
                 'the command',
                 type=Command
             ),
-        ),
+        }),
         type=bool
     )
 
@@ -212,7 +222,13 @@ class Dog(types.Object):
 class TestObjectGetItem:
 
     def test_valid(self):
-        selection_set = _.name.bark_volume.knows_command(command=Command.SIT)
+        selection_set = (
+            _
+            .name
+            .bark_volume
+            .knows_command(command=Command.SIT)
+            .is_housetrained
+        )
         fragment = Dog[selection_set]
         assert fragment == types.InlineFragment(Dog, selection_set)
 
@@ -225,3 +241,19 @@ class TestObjectGetItem:
                 .knows_command(command=Command.SIT)
             ]
         assert exc.value == types.NoSuchField(Dog, 'foo')
+
+    def test_no_such_argument(self):
+        selection_set = _.name(foo=4)
+        with pytest.raises(types.NoSuchArgument) as exc:
+            Dog[selection_set]
+        assert exc.value == types.NoSuchArgument(Dog, Dog.name, 'foo')
+
+    def test_missing_arguments(self):
+        selection_set = _.knows_command()
+        with pytest.raises(types.MissingArgument) as exc:
+            Dog[selection_set]
+        assert exc.value == types.MissingArgument(Dog, Dog.knows_command,
+                                                  'command')
+
+    def test_invalid_argument_type(self):
+        pass

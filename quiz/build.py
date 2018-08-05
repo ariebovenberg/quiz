@@ -3,8 +3,10 @@ import json
 import typing as t
 from dataclasses import dataclass, replace
 from functools import singledispatch
-from operator import methodcaller, attrgetter
+from operator import methodcaller
 from textwrap import indent
+
+from .utils import FrozenDict
 
 import snug
 
@@ -38,25 +40,10 @@ def _enum_to_gql(obj):
     return obj.value
 
 
-class _FrozenDict(t.Mapping):
-    __slots__ = '_inner'
-
-    def __init__(self, inner=()):
-        self._inner = dict(inner)
-
-    __len__ = property(attrgetter('_inner.__len__'))
-    __iter__ = property(attrgetter('_inner.__iter__'))
-    __getitem__ = property(attrgetter('_inner.__getitem__'))
-    __repr__ = property(attrgetter('_inner.__repr__'))
-
-    def __hash__(self):
-        return hash(frozenset(self._inner.items()))
-
-
 @dataclass(frozen=True, init=False)
 class Field:
     name: FieldName
-    kwargs: _FrozenDict = _FrozenDict()
+    kwargs: FrozenDict = FrozenDict()
     # TODO: unify with `NestedObject`?
     # - alias
     # - selection_set
@@ -65,7 +52,7 @@ class Field:
     def __init__(self, name, kwargs=()):
         self.__dict__.update({
             'name': name,
-            'kwargs': _FrozenDict(kwargs)
+            'kwargs': FrozenDict(kwargs)
         })
 
     def __gql__(self):
