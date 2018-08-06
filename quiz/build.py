@@ -91,9 +91,10 @@ class Error(Exception):
     """an error relating to building a query"""
 
 
+# TODO: ** operator for specifying fragments
 @dataclass(repr=False, frozen=True, init=False)
-class FieldChain:
-    """A "magic" field sequence builder"""
+class SelectionSet:
+    """A "magic" selection set builder"""
     # the attribute needs to have a dunder name to prevent
     # comflicts with GraphQL field names
     __fields__: t.Tuple[Fieldlike]
@@ -107,7 +108,7 @@ class FieldChain:
         return cls(*fields)
 
     def __getattr__(self, name):
-        return FieldChain._make(self.__fields__ + (Field(name, {}), ))
+        return SelectionSet._make(self.__fields__ + (Field(name, {}), ))
 
     def __getitem__(self, selection):
         # TODO: check duplicate fieldnames
@@ -119,13 +120,13 @@ class FieldChain:
             # parse the string?
             # selection = RawGraphQL(dedent(selection).strip())
             raise NotImplementedError('raw GraphQL not yet implemented')
-        elif isinstance(selection, FieldChain):
+        elif isinstance(selection, SelectionSet):
             assert len(selection.__fields__) >= 1
-        return FieldChain._make(tuple(rest) +
-                                (NestedObject(target, selection.__fields__), ))
+        return SelectionSet._make(
+            tuple(rest) + (NestedObject(target, selection.__fields__), ))
 
     def __repr__(self):
-        return "FieldChain({!r})".format(list(self.__fields__))
+        return "SelectionSet({!r})".format(list(self.__fields__))
 
     # TODO: prevent `self` from conflicting with kwargs
     def __call__(self, **kwargs):
@@ -133,8 +134,8 @@ class FieldChain:
             *rest, target = self.__fields__
         except ValueError:
             raise Error('cannot call empty field list')
-        return FieldChain._make(tuple(rest) +
-                                (replace(target, kwargs=kwargs), ))
+        return SelectionSet._make(
+            tuple(rest) + (replace(target, kwargs=kwargs), ))
 
     def __iter__(self):
         return iter(self.__fields__)
@@ -146,7 +147,7 @@ class FieldChain:
 @dataclass
 class Query(snug.Query):
     url:    str
-    fields: FieldChain
+    fields: SelectionSet
 
     def __gql__(self):
         return "{{\n{}\n}}".format(indent(gql(self.fields), INDENT))
@@ -161,7 +162,7 @@ class Query(snug.Query):
         return json.loads(response.content)
 
 
-field_chain = FieldChain()
+field_chain = SelectionSet()
 
 
 class Namespace:

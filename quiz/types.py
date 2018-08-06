@@ -69,9 +69,23 @@ SelectionSet = t.Tuple['Field']
 class InlineFragment:
     on: type
     selection_set: SelectionSet
-    # TODO: add:
-    # - directives
-    # - selection_set
+    # TODO: add directives
+
+
+class OperationType(enum.Enum):
+    QUERY = 'query'
+    MUTATION = 'mutation'
+    SUBSCRIPTION = 'subscription'
+
+
+@dataclass(frozen=True)
+class Operation:
+    type: OperationType
+    selection_set = SelectionSet
+    # TODO:
+    # - name (optional)
+    # - variable_defs (optional)
+    # - directives (optional)
 
 
 def _is_optional(typ):

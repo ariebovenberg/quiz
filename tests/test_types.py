@@ -192,6 +192,10 @@ class TestResolveTypeRef:
 Command = types.Enum('Command', {'SIT': 'SIT', 'DOWN': 'DOWN'})
 
 
+class Human(types.Object):
+    name = mkfield('name', type=str)
+
+
 class Dog(types.Object):
     """An example type"""
     name = mkfield('name', type=str)
@@ -217,6 +221,11 @@ class Dog(types.Object):
         }),
         type=bool
     )
+    owner = mkfield('owner', type=Human)
+
+
+class Query(types.Object):
+    doc = mkfield('dog', type=Dog)
 
 
 class TestObjectGetItem:
@@ -260,4 +269,4 @@ class TestObjectGetItem:
         with pytest.raises(types.InvalidArgumentType) as exc:
             Dog[selection_set]
         assert exc.value == types.InvalidArgumentType(
-            Dog, Dog.knows_command, 'command', 'foobar')
+            Dog, Dog.knows_command, 'command', 'foobar')  # noqa

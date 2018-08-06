@@ -1,6 +1,6 @@
 import pytest
 
-from quiz.build import Field, FieldChain, NestedObject, Error, gql
+from quiz.build import Field, SelectionSet, NestedObject, Error, gql
 from quiz.build import field_chain as _
 
 
@@ -25,15 +25,15 @@ class TestField:
 class TestFieldChain:
 
     def test_empty(self):
-        assert _ == FieldChain()
+        assert _ == SelectionSet()
 
     def test_hash(self):
-        assert hash(FieldChain()) == hash(FieldChain())
+        assert hash(SelectionSet()) == hash(SelectionSet())
         assert hash(_.foo.bar) == hash(_.foo.bar)
         assert hash(_.bar.foo) != hash(_.foo.bar)
 
     def test_getattr(self):
-        assert _.foo_field.bla == FieldChain(
+        assert _.foo_field.bla == SelectionSet(
             Field('foo_field'),
             Field('bla'),
         )
@@ -43,15 +43,15 @@ class TestFieldChain:
             Field('foo'),
             Field('bar'),
         )
-        assert tuple(FieldChain(*items)) == items
-        assert len(FieldChain(*items)) == 2
+        assert tuple(SelectionSet(*items)) == items
+        assert len(SelectionSet(*items)) == 2
 
     def test_getitem(self):
         assert _.foo.bar.blabla[
             _
             .foobar
             .bing
-        ] == FieldChain(
+        ] == SelectionSet(
             Field('foo'),
             Field('bar'),
             NestedObject(
@@ -75,7 +75,7 @@ class TestFieldChain:
                 _
                 .blabla
             ]
-        ] == FieldChain(
+        ] == SelectionSet(
             NestedObject(
                 Field('foo'),
                 (
@@ -91,12 +91,12 @@ class TestFieldChain:
         )
 
     def test_call(self):
-        assert _.foo(bla=4, bar=None) == FieldChain(
+        assert _.foo(bla=4, bar=None) == SelectionSet(
             Field('foo', {'bla': 4, 'bar': None}),
         )
 
     def test_call_empty(self):
-        assert _.foo() == FieldChain(
+        assert _.foo() == SelectionSet(
             Field('foo'),
         )
 
@@ -115,7 +115,7 @@ class TestFieldChain:
             ]
             .oof
             .qux()
-        ] == FieldChain(
+        ] == SelectionSet(
             Field('foo', {}),
             NestedObject(
                 Field('bar'),
