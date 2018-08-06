@@ -256,4 +256,8 @@ class TestObjectGetItem:
                                                   'command')
 
     def test_invalid_argument_type(self):
-        pass
+        selection_set = _.knows_command(command='foobar')
+        with pytest.raises(types.InvalidArgumentType) as exc:
+            Dog[selection_set]
+        assert exc.value == types.InvalidArgumentType(
+            Dog, Dog.knows_command, 'command', 'foobar')

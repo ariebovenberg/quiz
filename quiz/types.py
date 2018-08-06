@@ -52,7 +52,6 @@ class InvalidArgumentType(Error):
     field: 'Field'
     name: str
     value: object
-    expect_type: type
 
 
 @dataclass(frozen=True)
@@ -98,7 +97,7 @@ def _check_args(cls, field, kwargs) -> t.NoReturn:
         else:
             if not isinstance(value, param.type):
                 raise InvalidArgumentType(
-                    cls, field.name, value
+                    cls, field, param.name, value
                 )
 
 
