@@ -59,6 +59,12 @@ class MissingArgument(Error):
 
 
 @dataclass(frozen=True)
+class InvalidSelection(Error):
+    on: type
+    field: 'FieldSchema'
+
+
+@dataclass(frozen=True)
 class InlineFragment:
     on: type
     selection_set: SelectionSet
@@ -108,18 +114,25 @@ def _check_args(cls, field, kwargs) -> t.NoReturn:
                 )
 
 
+def _check_field(parent, field) -> t.NoReturn:
+    assert isinstance(field, build.Field)
+    try:
+        schema = getattr(parent, field.name)
+    except AttributeError:
+        raise NoSuchField(parent, field.name)
+
+    _check_args(parent, schema, field.kwargs)
+
+    for f in field.selection_set:
+        _check_field(schema.type, f)
+
+
 # inherit from ABCMeta to allow mixing with other ABCs
 class ObjectMeta(abc.ABCMeta):
 
     def __getitem__(self, selection_set: SelectionSet) -> InlineFragment:
         for field in selection_set:
-            assert isinstance(field, build.Field)
-            try:
-                schema = getattr(self, field.name)
-            except AttributeError:
-                raise NoSuchField(self, field.name)
-
-            _check_args(self, schema, field.kwargs)
+            _check_field(self, field)
         return InlineFragment(self, selection_set)
 
     # TODO: prevent direct instantiation
@@ -177,7 +190,7 @@ def object_as_type(typ: schema.Object,
 
 # NOTE: fields are not added yet. These must be added later with _add_fields
 # why is this? Circular references may exist, which can only be added
-# when all classes have been built
+# after all classes have been defined
 def interface_as_type(typ: schema.Interface):
     return type(typ.name, (Interface, ),
                 {"__doc__": typ.desc, "__schema__": typ})

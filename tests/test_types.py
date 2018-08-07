@@ -237,6 +237,10 @@ class TestObjectGetItem:
             .bark_volume
             .knows_command(command=Command.SIT)
             .is_housetrained
+            .owner[
+                _
+                .name
+            ]
         )
         fragment = Dog[selection_set]
         assert fragment == types.InlineFragment(Dog, selection_set)
@@ -270,3 +274,22 @@ class TestObjectGetItem:
             Dog[selection_set]
         assert exc.value == types.InvalidArgumentType(
             Dog, Dog.knows_command, 'command', 'foobar')  # noqa
+
+    def test_invalid_nested(self):
+        with pytest.raises(types.NoSuchField) as exc:
+            Dog[_.owner[_.name.foo]]
+        assert exc.value == types.NoSuchField(Human, 'foo')
+
+    def test_selection_set_on_non_object(self):
+        # TODO: maybe a more descriptive error
+        with pytest.raises(types.NoSuchField) as exc:
+            Dog[_.name[_.foo]]
+        assert exc.value == types.NoSuchField(str, 'foo')
+
+
+# class TestInlineFragment:
+
+#     @pytest.mark.xfail
+#     def test_gql(self):
+#         assert False
+

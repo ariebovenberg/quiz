@@ -82,6 +82,9 @@ class Selector(t.Iterable[Selection], t.Sized):
     __selections__: t.Tuple[Field]
     # according to the GQL spec: this is ordered
 
+    # why can't this subclass tuple?
+    # Then we would have unwanted methods like index()
+
     def __init__(self, *selections):
         self.__dict__['__selections__'] = selections
 
@@ -160,4 +163,3 @@ class Namespace:
         return self.Query[key]
         # breakpoint()
         # return Query(self._url, key)
-
