@@ -3,7 +3,7 @@ import json
 import typing as t
 from dataclasses import dataclass, replace
 from functools import singledispatch
-from operator import methodcaller
+from operator import methodcaller, attrgetter
 from textwrap import indent
 
 from .utils import FrozenDict
@@ -40,19 +40,26 @@ def _enum_to_gql(obj):
     return obj.value
 
 
+Selection = t.Union['Field', 'FragmentSpread', 'InlineFragment']
+
+
+class SelectionSet(t.Tuple[Selection]):
+    __slots__ = ()
+
+
 @dataclass(frozen=True, init=False)
 class Field:
     name: FieldName
     kwargs: FrozenDict = FrozenDict()
-    # TODO: unify with `NestedObject`?
+    selection_set: SelectionSet = SelectionSet()
     # - alias
-    # - selection_set
     # - directives
 
-    def __init__(self, name, kwargs=()):
+    def __init__(self, name, kwargs=(), selection_set=()):
         self.__dict__.update({
             'name': name,
-            'kwargs': FrozenDict(kwargs)
+            'kwargs': FrozenDict(kwargs),
+            'selection_set': SelectionSet(selection_set)
         })
 
     def __gql__(self):
@@ -65,27 +72,6 @@ class Field:
         else:
             return self.name
 
-    def __repr__(self):
-        return f".{self.name}"
-
-
-@dataclass(frozen=True)
-class NestedObject:
-    attr:   Field
-    fields: t.Tuple['Fieldlike']
-
-    def __repr__(self):
-        return "Nested({}, {})".format(self.attr.name, list(self.fields))
-
-    def __gql__(self):
-        return "{} {{\n{}\n}}".format(
-            gql(self.attr), indent('\n'.join(map(gql, self.fields)),
-                                   INDENT)
-        )
-
-
-Fieldlike = t.Union[Field, NestedObject]
-
 
 class Error(Exception):
     """an error relating to building a query"""
@@ -93,61 +79,62 @@ class Error(Exception):
 
 # TODO: ** operator for specifying fragments
 @dataclass(repr=False, frozen=True, init=False)
-class SelectionSet:
+class Selector:
     """A "magic" selection set builder"""
     # the attribute needs to have a dunder name to prevent
     # comflicts with GraphQL field names
-    __fields__: t.Tuple[Fieldlike]
+    __selection_set__: t.Tuple[Field]
     # according to the GQL spec: this is ordered
 
-    def __init__(self, *fields):
-        self.__dict__['__fields__'] = fields
+    def __init__(self, *selections):
+        self.__dict__['__selection_set__'] = selections
 
+    # TODO: optimize
     @classmethod
-    def _make(cls, fields):
-        return cls(*fields)
+    def _make(cls, selections):
+        return cls(*selections)
 
     def __getattr__(self, name):
-        return SelectionSet._make(self.__fields__ + (Field(name, {}), ))
+        return Selector._make(self.__selection_set__ + (Field(name, {}), ))
 
+    # TODO: support raw graphql strings
     def __getitem__(self, selection):
         # TODO: check duplicate fieldnames
         try:
-            *rest, target = self.__fields__
+            *rest, target = self.__selection_set__
         except ValueError:
-            raise Error('cannot select fields form empty field list')
-        if isinstance(selection, str):
-            # parse the string?
-            # selection = RawGraphQL(dedent(selection).strip())
-            raise NotImplementedError('raw GraphQL not yet implemented')
-        elif isinstance(selection, SelectionSet):
-            assert len(selection.__fields__) >= 1
-        return SelectionSet._make(
-            tuple(rest) + (NestedObject(target, selection.__fields__), ))
+            raise Error('cannot select fields from empty field list')
+
+        assert isinstance(selection, Selector)
+        assert len(selection.__selection_set__) >= 1
+
+        return Selector._make(
+            tuple(rest)
+            + (replace(target, selection_set=selection.__selection_set__), ))
 
     def __repr__(self):
-        return "SelectionSet({!r})".format(list(self.__fields__))
+        return "Selector({!r})".format(list(self.__selection_set__))
 
     # TODO: prevent `self` from conflicting with kwargs
     def __call__(self, **kwargs):
         try:
-            *rest, target = self.__fields__
+            *rest, target = self.__selection_set__
         except ValueError:
             raise Error('cannot call empty field list')
-        return SelectionSet._make(
+        return Selector._make(
             tuple(rest) + (replace(target, kwargs=kwargs), ))
 
     def __iter__(self):
-        return iter(self.__fields__)
+        return iter(self.__selection_set__)
 
     def __len__(self):
-        return len(self.__fields__)
+        return len(self.__selection_set__)
 
 
 @dataclass
 class Query(snug.Query):
     url:    str
-    fields: SelectionSet
+    fields: Selector
 
     def __gql__(self):
         return "{{\n{}\n}}".format(indent(gql(self.fields), INDENT))
@@ -162,7 +149,7 @@ class Query(snug.Query):
         return json.loads(response.content)
 
 
-field_chain = SelectionSet()
+field_chain = Selector()
 
 
 class Namespace:

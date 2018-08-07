@@ -1,6 +1,6 @@
 import pytest
 
-from quiz.build import Field, SelectionSet, NestedObject, Error, gql
+from quiz.build import Field, Selector, Error, gql
 from quiz.build import field_chain as _
 
 
@@ -9,6 +9,7 @@ class TestField:
     def test_defaults(self):
         f = Field('foo')
         assert f.kwargs == {}
+        assert f.selection_set == ()
 
     def test_hash(self):
         assert hash(Field('foo', {'bar': 3})) == hash(Field('foo', {'bar': 3}))
@@ -22,18 +23,18 @@ class TestField:
         assert gql(field) == expect
 
 
-class TestFieldChain:
+class TestSelector:
 
     def test_empty(self):
-        assert _ == SelectionSet()
+        assert _ == Selector()
 
     def test_hash(self):
-        assert hash(SelectionSet()) == hash(SelectionSet())
+        assert hash(Selector()) == hash(Selector())
         assert hash(_.foo.bar) == hash(_.foo.bar)
         assert hash(_.bar.foo) != hash(_.foo.bar)
 
     def test_getattr(self):
-        assert _.foo_field.bla == SelectionSet(
+        assert _.foo_field.bla == Selector(
             Field('foo_field'),
             Field('bla'),
         )
@@ -43,24 +44,21 @@ class TestFieldChain:
             Field('foo'),
             Field('bar'),
         )
-        assert tuple(SelectionSet(*items)) == items
-        assert len(SelectionSet(*items)) == 2
+        assert tuple(Selector(*items)) == items
+        assert len(Selector(*items)) == 2
 
     def test_getitem(self):
         assert _.foo.bar.blabla[
             _
             .foobar
             .bing
-        ] == SelectionSet(
+        ] == Selector(
             Field('foo'),
             Field('bar'),
-            NestedObject(
-                Field('blabla'),
-                (
-                    Field('foobar'),
-                    Field('bing'),
-                )
-            )
+            Field('blabla', selection_set=(
+                Field('foobar'),
+                Field('bing'),
+            ))
         )
 
     def test_getitem_empty(self):
@@ -75,28 +73,22 @@ class TestFieldChain:
                 _
                 .blabla
             ]
-        ] == SelectionSet(
-            NestedObject(
-                Field('foo'),
-                (
-                    Field('bar'),
-                    NestedObject(
-                        Field('bing'),
-                        (
-                            Field('blabla'),
-                        )
-                    )
-                )
-            )
+        ] == Selector(
+            Field('foo', selection_set=(
+                Field('bar'),
+                Field('bing', selection_set=(
+                    Field('blabla'),
+                ))
+            ))
         )
 
     def test_call(self):
-        assert _.foo(bla=4, bar=None) == SelectionSet(
+        assert _.foo(bla=4, bar=None) == Selector(
             Field('foo', {'bla': 4, 'bar': None}),
         )
 
     def test_call_empty(self):
-        assert _.foo() == SelectionSet(
+        assert _.foo() == Selector(
             Field('foo'),
         )
 
@@ -115,23 +107,17 @@ class TestFieldChain:
             ]
             .oof
             .qux()
-        ] == SelectionSet(
-            Field('foo', {}),
-            NestedObject(
-                Field('bar'),
-                (
-                    Field('bing', {'param1': 4.1}),
-                    Field('baz'),
-                    NestedObject(
-                        Field('foo_bar_bla', {'p2': None, 'r': ''}),
-                        (
-                            Field('height', {'unit': 'cm'}),
-                        )
-                    ),
-                    Field('oof'),
-                    Field('qux'),
-                )
-            )
+        ] == Selector(
+            Field('foo'),
+            Field('bar', selection_set=(
+                Field('bing', {'param1': 4.1}),
+                Field('baz'),
+                Field('foo_bar_bla', {'p2': None, 'r': ''}, selection_set=(
+                    Field('height', {'unit': 'cm'}),
+                )),
+                Field('oof'),
+                Field('qux'),
+            ))
         )
 
 
