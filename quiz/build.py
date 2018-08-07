@@ -145,7 +145,7 @@ class Query(snug.Query):
         return json.loads(response.content)
 
 
-field_chain = Selector()
+selector = Selector()
 
 
 class Namespace:

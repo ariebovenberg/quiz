@@ -8,6 +8,7 @@ from itertools import chain
 
 from . import schema, build
 from .utils import FrozenDict, Error
+from .build import SelectionSet
 
 ClassDict = t.Dict[str, type]
 NoneType = type(None)
@@ -38,14 +39,14 @@ class NoSuchField(Error):
 @dataclass(frozen=True)
 class NoSuchArgument(Error):
     on: type
-    field: 'Field'
+    field: 'FieldSchema'
     name: str
 
 
 @dataclass(frozen=True)
 class InvalidArgumentType(Error):
     on: type
-    field: 'Field'
+    field: 'FieldSchema'
     name: str
     value: object
 
@@ -53,12 +54,8 @@ class InvalidArgumentType(Error):
 @dataclass(frozen=True)
 class MissingArgument(Error):
     on: type
-    field: 'Field'
+    field: 'FieldSchema'
     name: str
-
-
-# TODO: besides Field, allow InlineFragment, FragmentSpread
-SelectionSet = t.Tuple['Field']
 
 
 @dataclass(frozen=True)
@@ -156,7 +153,7 @@ class InputValue(t.NamedTuple):
     type: type
 
 
-class Field(t.NamedTuple):
+class FieldSchema(t.NamedTuple):
     name: str
     desc: str
     type: type
@@ -218,7 +215,7 @@ def _add_fields(obj, classes) -> None:
         setattr(
             obj,
             f.name,
-            Field(
+            FieldSchema(
                 name=f.name,
                 desc=f.name,
                 args=FrozenDict({

@@ -5,10 +5,10 @@ from functools import partial
 import pytest
 
 from quiz import schema, types
-from quiz.build import field_chain as _
+from quiz.build import selector as _
 from quiz.utils import FrozenDict
 
-mkfield = partial(types.Field,
+mkfield = partial(types.FieldSchema,
                   args=FrozenDict(),
                   is_deprecated=False,
                   desc='',
