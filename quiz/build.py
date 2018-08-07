@@ -3,10 +3,10 @@ import json
 import typing as t
 from dataclasses import dataclass, replace
 from functools import singledispatch
-from operator import methodcaller, attrgetter
+from operator import methodcaller
 from textwrap import indent
 
-from .utils import FrozenDict
+from .utils import FrozenDict, Error
 
 import snug
 
@@ -73,21 +73,17 @@ class Field:
             return self.name
 
 
-class Error(Exception):
-    """an error relating to building a query"""
-
-
 # TODO: ** operator for specifying fragments
 @dataclass(repr=False, frozen=True, init=False)
-class Selector:
+class Selector(t.Iterable[Selection], t.Sized):
     """A "magic" selection set builder"""
     # the attribute needs to have a dunder name to prevent
     # comflicts with GraphQL field names
-    __selection_set__: t.Tuple[Field]
+    __selections__: t.Tuple[Field]
     # according to the GQL spec: this is ordered
 
     def __init__(self, *selections):
-        self.__dict__['__selection_set__'] = selections
+        self.__dict__['__selections__'] = selections
 
     # TODO: optimize
     @classmethod
@@ -95,40 +91,40 @@ class Selector:
         return cls(*selections)
 
     def __getattr__(self, name):
-        return Selector._make(self.__selection_set__ + (Field(name, {}), ))
+        return Selector._make(self.__selections__ + (Field(name, {}), ))
 
     # TODO: support raw graphql strings
     def __getitem__(self, selection):
         # TODO: check duplicate fieldnames
         try:
-            *rest, target = self.__selection_set__
+            *rest, target = self.__selections__
         except ValueError:
             raise Error('cannot select fields from empty field list')
 
         assert isinstance(selection, Selector)
-        assert len(selection.__selection_set__) >= 1
+        assert len(selection.__selections__) >= 1
 
         return Selector._make(
             tuple(rest)
-            + (replace(target, selection_set=selection.__selection_set__), ))
+            + (replace(target, selection_set=selection.__selections__), ))
 
     def __repr__(self):
-        return "Selector({!r})".format(list(self.__selection_set__))
+        return "Selector({!r})".format(list(self.__selections__))
 
     # TODO: prevent `self` from conflicting with kwargs
     def __call__(self, **kwargs):
         try:
-            *rest, target = self.__selection_set__
+            *rest, target = self.__selections__
         except ValueError:
             raise Error('cannot call empty field list')
         return Selector._make(
             tuple(rest) + (replace(target, kwargs=kwargs), ))
 
     def __iter__(self):
-        return iter(self.__selection_set__)
+        return iter(self.__selections__)
 
     def __len__(self):
-        return len(self.__selection_set__)
+        return len(self.__selections__)
 
 
 @dataclass
@@ -164,3 +160,4 @@ class Namespace:
         return self.Query[key]
         # breakpoint()
         # return Query(self._url, key)
+

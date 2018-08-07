@@ -7,7 +7,7 @@ from functools import partial
 from itertools import chain
 
 from . import schema, build
-from .utils import FrozenDict
+from .utils import FrozenDict, Error
 
 ClassDict = t.Dict[str, type]
 NoneType = type(None)
@@ -27,10 +27,6 @@ BUILTIN_SCALARS = {
     "Float": float,
     "Int": int,
 }
-
-
-class Error(Exception):
-    """base for all graphQL errors"""
 
 
 @dataclass(frozen=True)

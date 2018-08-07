@@ -2,6 +2,10 @@ import typing as t
 from operator import attrgetter
 
 
+class Error(Exception):
+    """Base error class"""
+
+
 class FrozenDict(t.Mapping):
     __slots__ = '_inner'
 
