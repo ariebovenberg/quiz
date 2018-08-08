@@ -290,7 +290,6 @@ class TestObjectGetItem:
 
 class TestInlineFragment:
 
-    @pytest.mark.xfail
     def test_gql(self):
         fragment = Dog[
             _
@@ -313,7 +312,7 @@ class TestInlineFragment:
             name
           }
         }
-        ''')
+        ''').strip()
 
 
 class TestFieldGraphQL:

@@ -47,6 +47,14 @@ Selection = t.Union['Field', 'FragmentSpread', 'InlineFragment']
 SelectionSet = t.Tuple[Selection]
 
 
+def _selection_set_graphql(selections: SelectionSet) -> str:
+    return '{{\n{}\n}}'.format(
+        '\n'.join(
+            indent(f.graphql(), INDENT) for f in selections
+        )
+    ) if selections else ''
+
+
 @dataclass(frozen=True, init=False)
 class Field:
     name: FieldName
@@ -70,11 +78,9 @@ class Field:
                 for k, v in self.kwargs.items()
             )
         ) if self.kwargs else ''
-        selection_set = ' {{\n{}\n}}'.format(
-            '\n'.join(
-                indent(f.graphql(), INDENT) for f in self.selection_set
-            )
-        ) if self.selection_set else ''
+        selection_set = (
+            ' ' + _selection_set_graphql(self.selection_set)
+            if self.selection_set else '')
         return self.name + arguments + selection_set
 
     __gql__ = graphql
@@ -238,9 +244,9 @@ class InlineFragment(Representable):
     # TODO: add directives
 
     def graphql(self):
-        return '... on {} {{{}}}'.format(
-            type.__name__,
-
+        return '... on {} {}'.format(
+            self.on.__name__,
+            _selection_set_graphql(self.selection_set)
         )
 
 
