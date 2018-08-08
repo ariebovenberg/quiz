@@ -28,6 +28,7 @@ def argument_as_gql(obj):
 
 
 argument_as_gql.register(str, '"{}"'.format)
+# TODO: string escape
 argument_as_gql.register(int, str)
 
 # TODO: float, with exponent form
@@ -52,6 +53,7 @@ class Field:
     name: FieldName
     kwargs: FrozenDict = FrozenDict()
     selection_set: SelectionSet = SelectionSet()
+    # TODO:
     # - alias
     # - directives
 
@@ -62,15 +64,21 @@ class Field:
             'selection_set': SelectionSet(selection_set)
         })
 
-    def __gql__(self):
-        if self.kwargs:
-            joined = ", ".join(
+    def graphql(self):
+        arguments = '({})'.format(
+            ', '.join(
                 "{}: {}".format(k, argument_as_gql(v))
                 for k, v in self.kwargs.items()
             )
-            return f"{self.name}({joined})"
-        else:
-            return self.name
+        ) if self.kwargs else ''
+        selection_set = ' {{\n{}\n}}'.format(
+            '\n'.join(
+                indent(f.graphql(), INDENT) for f in self.selection_set
+            )
+        ) if self.selection_set else ''
+        return self.name + arguments + selection_set
+
+    __gql__ = graphql
 
 
 # TODO: ** operator for specifying fragments

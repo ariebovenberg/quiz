@@ -64,11 +64,26 @@ class InvalidSelection(Error):
     field: 'FieldSchema'
 
 
+class Representable(abc.ABC):
+    """Interface for GraphQL-representable objects"""
+
+    # TODO: allow specifying custom/none indent
+    @abc.abstractmethod
+    def graphql(self):
+        pass
+
+
 @dataclass(frozen=True)
-class InlineFragment:
+class InlineFragment(Representable):
     on: type
     selection_set: SelectionSet
     # TODO: add directives
+
+    def graphql(self):
+        return '... on {} {{{}}}'.format(
+            type.__name__,
+
+        )
 
 
 class OperationType(enum.Enum):

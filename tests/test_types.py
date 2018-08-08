@@ -1,11 +1,12 @@
 import enum
 import typing as t
 from functools import partial
+from textwrap import dedent
 
 import pytest
 
 from quiz import schema, types
-from quiz.build import selector as _
+from quiz.build import selector as _, Field
 from quiz.utils import FrozenDict
 
 mkfield = partial(types.FieldSchema,
@@ -287,9 +288,65 @@ class TestObjectGetItem:
         assert exc.value == types.NoSuchField(str, 'foo')
 
 
-# class TestInlineFragment:
+class TestInlineFragment:
 
-#     @pytest.mark.xfail
-#     def test_gql(self):
-#         assert False
+    @pytest.mark.xfail
+    def test_gql(self):
+        fragment = Dog[
+            _
+            .name
+            .bark_volume
+            .knows_command(command=Command.SIT)
+            .is_housetrained
+            .owner[
+                _
+                .name
+            ]
+        ]
+        assert fragment.graphql() == dedent('''\
+        ... on Dog {
+          name
+          bark_volume
+          knows_command(command: SIT)
+          is_housetrained
+          owner {
+            name
+          }
+        }
+        ''')
 
+
+class TestFieldGraphQL:
+
+    def test_empty(self):
+        assert Field('foo').graphql() == 'foo'
+
+    def test_arguments(self):
+        field = Field('foo', {
+            'foo': 4,
+            'blabla': 'my string!',
+        })
+
+        # arguments are unordered, multiple valid options
+        assert field.graphql() in [
+            'foo(foo: 4, blabla: "my string!")',
+            'foo(blabla: "my string!", foo: 4)',
+        ]
+
+    def test_selection_set(self):
+        field = Field('bla', {'q': 9}, selection_set=(
+            Field('blabla'),
+            Field('foobar', {'qux': 'another string'}),
+            Field('other', selection_set=(
+                Field('baz'),
+            ))
+        ))
+        assert field.graphql() == dedent('''
+        bla(q: 9) {
+          blabla
+          foobar(qux: "another string")
+          other {
+            baz
+          }
+        }
+        ''').strip()
