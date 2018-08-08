@@ -1,7 +1,7 @@
 import pytest
 
-from quiz.build import Field, Selector, Error, gql
-from quiz.build import selector as _
+from quiz.types import Field, Selector, Error, gql
+from quiz.types import selector as _
 
 
 class TestField:

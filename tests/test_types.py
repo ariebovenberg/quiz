@@ -6,7 +6,7 @@ from textwrap import dedent
 import pytest
 
 from quiz import schema, types
-from quiz.build import selector as _, Field
+from quiz.types import selector as _, Field
 from quiz.utils import FrozenDict
 
 mkfield = partial(types.FieldSchema,

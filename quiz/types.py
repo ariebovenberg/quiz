@@ -1,17 +1,175 @@
+"""main module for constructing graphQL queries"""
+# TODO: __slots__
 import abc
 import enum
+import json
 import typing as t
 from collections import ChainMap, defaultdict
-from dataclasses import dataclass
-from functools import partial
+from dataclasses import dataclass, replace
+from functools import partial, singledispatch
 from itertools import chain
+from operator import methodcaller
+from textwrap import indent
 
-from . import schema, build
-from .utils import FrozenDict, Error
-from .build import SelectionSet
+import snug
+
+from . import schema
+from .utils import Error, FrozenDict
 
 ClassDict = t.Dict[str, type]
 NoneType = type(None)
+INDENT = "  "
+
+gql = methodcaller("__gql__")
+
+FieldName = str
+"""a valid GraphQL fieldname"""
+
+
+@singledispatch
+def argument_as_gql(obj):
+    raise TypeError("cannot serialize to GraphQL: {}".format(type(obj)))
+
+
+argument_as_gql.register(str, '"{}"'.format)
+# TODO: string escape
+argument_as_gql.register(int, str)
+
+# TODO: float, with exponent form
+
+
+@argument_as_gql.register(enum.Enum)
+def _enum_to_gql(obj):
+    return obj.value
+
+
+Selection = t.Union['Field', 'FragmentSpread', 'InlineFragment']
+SelectionSet = t.Tuple[Selection]
+
+
+@dataclass(frozen=True, init=False)
+class Field:
+    name: FieldName
+    kwargs: FrozenDict = FrozenDict()
+    selection_set: SelectionSet = ()
+    # TODO:
+    # - alias
+    # - directives
+
+    def __init__(self, name, kwargs=(), selection_set=()):
+        self.__dict__.update({
+            'name': name,
+            'kwargs': FrozenDict(kwargs),
+            'selection_set': selection_set,
+        })
+
+    def graphql(self):
+        arguments = '({})'.format(
+            ', '.join(
+                "{}: {}".format(k, argument_as_gql(v))
+                for k, v in self.kwargs.items()
+            )
+        ) if self.kwargs else ''
+        selection_set = ' {{\n{}\n}}'.format(
+            '\n'.join(
+                indent(f.graphql(), INDENT) for f in self.selection_set
+            )
+        ) if self.selection_set else ''
+        return self.name + arguments + selection_set
+
+    __gql__ = graphql
+
+
+# TODO: ** operator for specifying fragments
+@dataclass(repr=False, frozen=True, init=False)
+class Selector(t.Iterable[Selection], t.Sized):
+    """A "magic" selection set builder"""
+    # the attribute needs to have a dunder name to prevent
+    # comflicts with GraphQL field names
+    __selections__: t.Tuple[Field]
+    # according to the GQL spec: this is ordered
+
+    # why can't this subclass tuple?
+    # Then we would have unwanted methods like index()
+
+    def __init__(self, *selections):
+        self.__dict__['__selections__'] = selections
+
+    # TODO: optimize
+    @classmethod
+    def _make(cls, selections):
+        return cls(*selections)
+
+    def __getattr__(self, name):
+        return Selector._make(self.__selections__ + (Field(name, {}), ))
+
+    # TODO: support raw graphql strings
+    def __getitem__(self, selection):
+        # TODO: check duplicate fieldnames
+        try:
+            *rest, target = self.__selections__
+        except ValueError:
+            raise Error('cannot select fields from empty field list')
+
+        assert isinstance(selection, Selector)
+        assert len(selection.__selections__) >= 1
+
+        return Selector._make(
+            tuple(rest)
+            + (replace(target, selection_set=selection.__selections__), ))
+
+    def __repr__(self):
+        return "Selector({!r})".format(list(self.__selections__))
+
+    # TODO: prevent `self` from conflicting with kwargs
+    def __call__(self, **kwargs):
+        try:
+            *rest, target = self.__selections__
+        except ValueError:
+            raise Error('cannot call empty field list')
+        return Selector._make(
+            tuple(rest) + (replace(target, kwargs=kwargs), ))
+
+    def __iter__(self):
+        return iter(self.__selections__)
+
+    def __len__(self):
+        return len(self.__selections__)
+
+
+# @dataclass
+# class Query(snug.Query):
+#     url:    str
+#     fields: Selector
+
+#     def __gql__(self):
+#         return "{{\n{}\n}}".format(indent(gql(self.fields), INDENT))
+
+#     __str__ = __gql__
+
+#     def __iter__(self):
+#         response = yield snug.Request(
+#             "POST", self.url, content=json.dumps({"query": gql(self)}),
+#             headers={'Content-Type': 'application/json'}
+#         )
+#         return json.loads(response.content)
+
+
+selector = Selector()
+
+
+# class Namespace:
+
+#     def __init__(self, url: str, classes: t.Dict[str, type]):
+#         self._url = url
+#         for name, cls in classes.items():
+#             setattr(self, name, cls)
+
+#     def __getitem__(self, key):
+#         # TODO: determine query type dynamically
+#         return self.Query[key]
+#         # breakpoint()
+#         # return Query(self._url, key)
 
 
 class ID(str):
@@ -23,10 +181,10 @@ class ID(str):
 
 BUILTIN_SCALARS = {
     "Boolean": bool,
-    "String": str,
-    "ID": ID,
-    "Float": float,
-    "Int": int,
+    "String":  str,
+    "ID":      ID,
+    "Float":   float,
+    "Int":     int,
 }
 
 
@@ -115,7 +273,6 @@ def _check_args(cls, field, kwargs) -> t.NoReturn:
     if invalid_args:
         raise NoSuchArgument(cls, field, invalid_args.pop())
 
-    # TODO: refactor with map/filter
     for param in field.args.values():
         try:
             value = kwargs[param.name]
@@ -130,7 +287,7 @@ def _check_args(cls, field, kwargs) -> t.NoReturn:
 
 
 def _check_field(parent, field) -> t.NoReturn:
-    assert isinstance(field, build.Field)
+    assert isinstance(field, Field)
     try:
         schema = getattr(parent, field.name)
     except AttributeError:
