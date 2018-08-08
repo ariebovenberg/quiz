@@ -6,7 +6,7 @@ from textwrap import dedent
 import pytest
 
 from quiz import schema, types
-from quiz.types import selector as _, Field
+from quiz.types import selector as _, Field, InlineFragment
 from quiz.utils import FrozenDict
 
 mkfield = partial(types.FieldSchema,
@@ -338,7 +338,17 @@ class TestFieldGraphQL:
             Field('foobar', {'qux': 'another string'}),
             Field('other', selection_set=(
                 Field('baz'),
-            ))
+            )),
+            InlineFragment(
+                on=Dog,
+                selection_set=(
+                    Field('name'),
+                    Field('bark_volume'),
+                    Field('owner', selection_set=(
+                        Field('name'),
+                    ))
+                )
+            ),
         ))
         assert field.graphql() == dedent('''
         bla(q: 9) {
@@ -346,6 +356,13 @@ class TestFieldGraphQL:
           foobar(qux: "another string")
           other {
             baz
+          }
+          ... on Dog {
+            name
+            bark_volume
+            owner {
+              name
+            }
           }
         }
         ''').strip()
