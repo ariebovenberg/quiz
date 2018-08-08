@@ -47,7 +47,7 @@ Selection = t.Union['Field', 'FragmentSpread', 'InlineFragment']
 SelectionSet = t.Tuple[Selection]
 
 
-def _selection_set_graphql(selections: SelectionSet) -> str:
+def selection_set_gql(selections: SelectionSet) -> str:
     return '{{\n{}\n}}'.format(
         '\n'.join(
             indent(f.graphql(), INDENT) for f in selections
@@ -79,7 +79,7 @@ class Field:
             )
         ) if self.kwargs else ''
         selection_set = (
-            ' ' + _selection_set_graphql(self.selection_set)
+            ' ' + selection_set_gql(self.selection_set)
             if self.selection_set else '')
         return self.name + arguments + selection_set
 
@@ -246,7 +246,7 @@ class InlineFragment(Representable):
     def graphql(self):
         return '... on {} {}'.format(
             self.on.__name__,
-            _selection_set_graphql(self.selection_set)
+            selection_set_gql(self.selection_set)
         )
 
 
@@ -267,7 +267,7 @@ class Operation:
 
 
 def _is_optional(typ):
-    """check whether type type is a typing.Optional"""
+    """check whether a type is a typing.Optional"""
     try:
         return typ.__origin__ is t.Union and NoneType in typ.__args__
     except AttributeError:
