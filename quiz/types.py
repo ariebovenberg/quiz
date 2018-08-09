@@ -251,6 +251,10 @@ class Operation:
     # - variable_defs (optional)
     # - directives (optional)
 
+    def graphql(self):
+        return '{} {}'.format(self.type.value,
+                              selection_set_gql(self.selection_set))
+
 
 def _is_optional(typ):
     """check whether a type is a typing.Optional"""

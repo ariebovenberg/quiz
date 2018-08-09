@@ -415,4 +415,22 @@ class TestNamespace:
 
 
 class TestOperation:
-    pass
+
+    def test_graphql(self):
+        operation = types.Operation(
+            types.OperationType.QUERY,
+            (
+                types.Field('foo'),
+                types.Field('qux', {'buz': 99}, (
+                    types.Field('nested'),
+                ))
+            )
+        )
+        assert operation.graphql() == dedent('''
+        query {
+          foo
+          qux(buz: 99) {
+            nested
+          }
+        }
+        ''').strip()
