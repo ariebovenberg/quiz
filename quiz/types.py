@@ -264,6 +264,13 @@ def _is_optional(typ):
         return False
 
 
+def _unwrap_optional(type_):
+    if _is_optional(type_):
+        return t.Union[tuple(c for c in type_.__args__
+                             if c is not NoneType)]
+    return type_
+
+
 def _check_args(cls, field, kwargs) -> t.NoReturn:
     invalid_args = kwargs.keys() - field.args.keys()
     if invalid_args:
@@ -292,7 +299,7 @@ def _check_field(parent, field) -> t.NoReturn:
     _check_args(parent, schema, field.kwargs)
 
     for f in field.selection_set:
-        _check_field(schema.type, f)
+        _check_field(_unwrap_optional(schema.type), f)
 
 
 # inherit from ABCMeta to allow mixing with other ABCs
@@ -473,7 +480,7 @@ class Namespace:
         # TODO: support schema's where "Query" is not the query type
         assert 'Query' in classes
         # TODO: check in the spec whether this is always the case
-        assert all(c[0].isupper() for c in classes)
+        assert all(c[0].isupper() or c.startswith('__') for c in classes)
 
         self.url = url
         self.classes = classes

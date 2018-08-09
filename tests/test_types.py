@@ -49,7 +49,7 @@ class Dog(types.Object):
         }),
         type=bool
     )
-    owner = mkfield('owner', type=Human)
+    owner = mkfield('owner', type=t.Optional[Human])
 
 
 class Query(types.Object):
