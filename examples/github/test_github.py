@@ -7,7 +7,7 @@ import snug
 
 import quiz
 
-_ = quiz.build.field_chain
+_ = quiz.types.selector
 
 # NAME = 'test_github.my_types'
 URL = "https://api.github.com/graphql"
@@ -51,12 +51,12 @@ SCALARS = {
 }
 
 
-classes = quiz.types.build(quiz.schema.load(schema), SCALARS)
-gh = quiz.build.Namespace(URL, classes)
+classes = quiz.types.gen(quiz.schema.load(schema), SCALARS)
+gh = quiz.types.Namespace(URL, classes)
 
 execute = snug.executor(auth=bearer_auth, client=requests.Session())
 
-example_query = gh[
+example_query = gh.query(
     _
     .rateLimit[
         _
@@ -67,18 +67,29 @@ example_query = gh[
         _
         .createdAt
     ]
-    .organization(login='github')['''
-      location
-      members(first: 10) {
-        edges {
-          node {
-            id
-          }
-        }
-      }
-    ''']
-    # .hubRepo: _.repository(owner='github', name='hub')[_.createdAt]
-]
+    .organization(login='github')[
+        _
+        .location
+        .members(first=10)[
+            _.edges[
+                _.node[
+                    _.id
+                ]
+            ]
+        ]
+    ]
+    # TODO: support raw graphql
+    # .organization(login='github')['''
+    #   location
+    #   members(first: 10) {
+    #     edges {
+    #       node {
+    #         id
+    #       }
+    #     }
+    #   }
+    # ''']
+)
 
 print(example_query)
 
