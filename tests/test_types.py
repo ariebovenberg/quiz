@@ -20,11 +20,20 @@ mkfield = partial(types.FieldSchema,
 Command = types.Enum('Command', {'SIT': 'SIT', 'DOWN': 'DOWN'})
 
 
-class Human(types.Object):
+class Sentient(types.Interface):
     name = mkfield('name', type=str)
 
 
-class Dog(types.Object):
+class Human(Sentient, types.Object):
+    name = mkfield('name', type=str)
+
+
+class Alien (Sentient, types.Object):
+    name = mkfield('name', type=str)
+    home_planet = mkfield('home_planer', type=t.Optional[str])
+
+
+class Dog(Sentient, types.Object):
     """An example type"""
     name = mkfield('name', type=str)
     is_housetrained = mkfield(
@@ -50,6 +59,7 @@ class Dog(types.Object):
         type=bool
     )
     owner = mkfield('owner', type=t.Optional[Human])
+    best_friend = mkfield('best_friend', type=t.Optional[Sentient])
 
 
 class Query(types.Object):
@@ -248,6 +258,10 @@ class TestObjectGetItem:
             .knows_command(command=Command.SIT)
             .is_housetrained
             .owner[
+                _
+                .name
+            ]
+            .best_friend[
                 _
                 .name
             ]

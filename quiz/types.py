@@ -256,7 +256,7 @@ class Operation:
                               selection_set_gql(self.selection_set))
 
 
-def _is_optional(typ):
+def _is_optional(typ: type) -> bool:
     """check whether a type is a typing.Optional"""
     try:
         return typ.__origin__ is t.Union and NoneType in typ.__args__
@@ -264,10 +264,19 @@ def _is_optional(typ):
         return False
 
 
-def _unwrap_optional(type_):
+def _unwrap_optional(type_: type) -> type:
     if _is_optional(type_):
         return t.Union[tuple(c for c in type_.__args__
                              if c is not NoneType)]
+    return type_
+
+
+def _unwrap_union(type_: type) -> t.Union[type, t.Tuple[type, ...]]:
+    try:
+        if type_.__origin__ is t.Union:
+            return type_.__args__
+    except AttributeError:
+        pass
     return type_
 
 
@@ -283,7 +292,7 @@ def _check_args(cls, field, kwargs) -> t.NoReturn:
             if not _is_optional(param.type):
                 raise MissingArgument(cls, field, param.name)
         else:
-            if not isinstance(value, param.type):
+            if not isinstance(value, _unwrap_union(param.type)):
                 raise InvalidArgumentType(
                     cls, field, param.name, value
                 )
