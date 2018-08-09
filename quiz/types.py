@@ -164,20 +164,6 @@ class Selector(t.Iterable[Selection], t.Sized):
 selector = Selector()
 
 
-# class Namespace:
-
-#     def __init__(self, url: str, classes: t.Dict[str, type]):
-#         self._url = url
-#         for name, cls in classes.items():
-#             setattr(self, name, cls)
-
-#     def __getitem__(self, key):
-#         # TODO: determine query type dynamically
-#         return self.Query[key]
-#         # breakpoint()
-#         # return Query(self._url, key)
-
-
 class ID(str):
     """represents a unique identifier, often used to refetch an object
     or as the key for a cache. The ID type is serialized in the same way
@@ -259,7 +245,7 @@ class OperationType(enum.Enum):
 @dataclass(frozen=True)
 class Operation:
     type: OperationType
-    selection_set = SelectionSet
+    selection_set: SelectionSet = ()
     # TODO:
     # - name (optional)
     # - variable_defs (optional)
@@ -475,3 +461,23 @@ def gen(types: t.Iterable[schema.Typelike], scalars: ClassDict) -> ClassDict:
         _add_fields(obj, classes)
 
     return classes
+
+
+class Namespace:
+
+    def __init__(self, url: str, classes: t.Dict[str, type]):
+        # TODO: support schema's where "Query" is not the query type
+        assert 'Query' in classes
+        # TODO: check in the spec whether this is always the case
+        assert all(c[0].isupper() for c in classes)
+
+        self.url = url
+        self.classes = classes
+        # TODO: maybe do __getattr__ delegating to self.classes
+        # instead of setting attributes
+        self.__dict__.update(classes)
+
+    def query(self, selection_set: SelectionSet) -> Operation:
+        for field in selection_set:
+            _check_field(self.Query, field)
+        return Operation(OperationType.QUERY, selection_set)

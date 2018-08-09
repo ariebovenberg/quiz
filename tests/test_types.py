@@ -16,6 +16,54 @@ mkfield = partial(types.FieldSchema,
                   deprecation_reason=None)
 
 
+# TODO: move example schema to separate file?
+Command = types.Enum('Command', {'SIT': 'SIT', 'DOWN': 'DOWN'})
+
+
+class Human(types.Object):
+    name = mkfield('name', type=str)
+
+
+class Dog(types.Object):
+    """An example type"""
+    name = mkfield('name', type=str)
+    is_housetrained = mkfield(
+        'is_housetrained',
+        args=FrozenDict({
+            'at_other_homes': types.InputValue(
+                'at_other_homes',
+                '',
+                type=t.Optional[bool]
+            )
+        }),
+        type=bool)
+    bark_volume = mkfield('bark_volume', type=int)
+    knows_command = mkfield(
+        'knows_command',
+        args=FrozenDict({
+            'command': types.InputValue(
+                'command',
+                'the command',
+                type=Command
+            ),
+        }),
+        type=bool
+    )
+    owner = mkfield('owner', type=Human)
+
+
+class Query(types.Object):
+    dog = mkfield('dog', type=Dog)
+
+
+CLASSES = {
+    'Dog': Dog,
+    'Query': Query,
+    'Command': Command,
+    'Human': Human,
+}
+
+
 class TestEnumAsType:
 
     def test_simple(self):
@@ -190,45 +238,6 @@ class TestResolveTypeRef:
         assert resolved == t.List[classes['Foo']]
 
 
-Command = types.Enum('Command', {'SIT': 'SIT', 'DOWN': 'DOWN'})
-
-
-class Human(types.Object):
-    name = mkfield('name', type=str)
-
-
-class Dog(types.Object):
-    """An example type"""
-    name = mkfield('name', type=str)
-    is_housetrained = mkfield(
-        'is_housetrained',
-        args=FrozenDict({
-            'at_other_homes': types.InputValue(
-                'at_other_homes',
-                '',
-                type=t.Optional[bool]
-            )
-        }),
-        type=bool)
-    bark_volume = mkfield('bark_volume', type=int)
-    knows_command = mkfield(
-        'knows_command',
-        args=FrozenDict({
-            'command': types.InputValue(
-                'command',
-                'the command',
-                type=Command
-            ),
-        }),
-        type=bool
-    )
-    owner = mkfield('owner', type=Human)
-
-
-class Query(types.Object):
-    doc = mkfield('dog', type=Dog)
-
-
 class TestObjectGetItem:
 
     def test_valid(self):
@@ -366,3 +375,44 @@ class TestFieldGraphQL:
           }
         }
         ''').strip()
+
+
+class TestNamespace:
+
+    def test_init(self):
+        namespace = types.Namespace('my/url', CLASSES)
+        assert namespace.url == 'my/url'
+        assert namespace.classes == CLASSES
+        assert namespace.Dog is Dog
+
+    def test_query(self):
+        ns = types.Namespace('my/url', CLASSES)
+        query = ns.query(
+            _
+            .dog[
+                _
+                .name
+                .is_housetrained
+            ]
+        )
+        assert isinstance(query, types.Operation)
+        assert query.type is types.OperationType.QUERY  # noqa
+        assert len(query.selection_set) == 1
+
+    def test_validation(self):
+        ns = types.Namespace('my/url', CLASSES)
+        with pytest.raises(types.NoSuchField) as exc:
+            ns.query(
+                _
+                .dog[
+                    _
+                    .name
+                    .is_housetrained
+                    .foobar
+                ]
+            )
+        assert exc.value == types.NoSuchField(Dog, 'foobar')
+
+
+class TestOperation:
+    pass
