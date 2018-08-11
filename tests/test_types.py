@@ -24,8 +24,14 @@ class Sentient(types.Interface):
     name = mkfield('name', type=str)
 
 
+class Hobby(types.Object):
+    name = mkfield('name', type=str)
+    cool_factor = mkfield('description', type=int)
+
+
 class Human(Sentient, types.Object):
     name = mkfield('name', type=str)
+    hobbies = mkfield('hobbies', type=t.Optional[t.List[t.Optional[Hobby]]])
 
 
 class Alien (Sentient, types.Object):
@@ -64,6 +70,11 @@ class Dog(Sentient, types.Object):
 
 class Query(types.Object):
     dog = mkfield('dog', type=Dog)
+
+
+HumanOrAlien = t.Union[Human, Alien]
+
+Human.best_friend = mkfield('best_friend', type=t.Optional[HumanOrAlien])
 
 
 CLASSES = {
@@ -254,12 +265,16 @@ class TestObjectGetItem:
         selection_set = (
             _
             .name
-            .bark_volume
             .knows_command(command=Command.SIT)
             .is_housetrained
             .owner[
                 _
                 .name
+                .hobbies[
+                    _
+                    .name
+                    .cool_factor
+                ]
             ]
             .best_friend[
                 _
@@ -301,14 +316,16 @@ class TestObjectGetItem:
 
     def test_invalid_nested(self):
         with pytest.raises(types.NoSuchField) as exc:
-            Dog[_.owner[_.name.foo]]
-        assert exc.value == types.NoSuchField(Human, 'foo')
+            Dog[_.owner[_.hobbies[_.foo]]]
+        assert exc.value == types.NoSuchField(Hobby, 'foo')
 
     def test_selection_set_on_non_object(self):
         # TODO: maybe a more descriptive error
         with pytest.raises(types.NoSuchField) as exc:
             Dog[_.name[_.foo]]
         assert exc.value == types.NoSuchField(str, 'foo')
+
+    # TODO: check union
 
 
 class TestInlineFragment:

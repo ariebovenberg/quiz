@@ -264,10 +264,13 @@ def _is_optional(typ: type) -> bool:
         return False
 
 
-def _unwrap_optional(type_: type) -> type:
+def _unwrap_type(type_: type) -> type:
     if _is_optional(type_):
-        return t.Union[tuple(c for c in type_.__args__
-                             if c is not NoneType)]
+        return _unwrap_type(
+            t.Union[tuple(c for c in type_.__args__
+                          if c is not NoneType)])
+    elif getattr(type_, '__origin__', None) is list:
+        return _unwrap_type(type_.__args__[0])
     return type_
 
 
@@ -308,7 +311,7 @@ def _check_field(parent, field) -> t.NoReturn:
     _check_args(parent, schema, field.kwargs)
 
     for f in field.selection_set:
-        _check_field(_unwrap_optional(schema.type), f)
+        _check_field(_unwrap_type(schema.type), f)
 
 
 # inherit from ABCMeta to allow mixing with other ABCs
