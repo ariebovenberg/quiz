@@ -29,10 +29,11 @@ Write GraphQL queries in python-syntax
 Todo
 ----
 
-* deserialization
-* introspection
-* mutations
 * better custom primitives handling
+* deserialization
+* mutations
+* type inference for enum values
+* improved introspection
 * python2.7, 3.4, 3.5, 3.6 support
 * more examples
 * proper CI
