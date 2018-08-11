@@ -29,11 +29,10 @@ Write GraphQL queries in python-syntax
 Todo
 ----
 
-* query validation
 * deserialization
 * introspection
 * mutations
-* advanced GraphQL features
+* better custom primitives handling
 * python2.7, 3.4, 3.5, 3.6 support
 * more examples
 * proper CI
@@ -41,3 +40,5 @@ Todo
 * warnings on using deprecated objects
 * pickling
 * handling markdown (CommonMark) in descriptions
+* schema to .rst
+* schema to .py
