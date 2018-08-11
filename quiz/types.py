@@ -13,6 +13,7 @@ from textwrap import indent
 
 import snug
 
+
 from . import schema
 from .utils import Error, FrozenDict
 
@@ -342,8 +343,8 @@ class Enum(enum.Enum):
     pass
 
 
-# separate class to distinguish graphql interfaces from normal ABCs
-class Interface(abc.ABC):
+# TODO: this should be a metaclass
+class Interface:
     pass
 
 
@@ -353,6 +354,7 @@ class InputValue(t.NamedTuple):
     type: type
 
 
+# TODO: nice repr for help() display
 class FieldSchema(t.NamedTuple):
     name: str
     desc: str
@@ -370,7 +372,7 @@ def object_as_type(typ: schema.Object,
                    interfaces: t.Mapping[str, type(Interface)]) -> type:
     return type(
         typ.name,
-        (Object, ) + tuple(interfaces[i.name] for i in typ.interfaces),
+        tuple(interfaces[i.name] for i in typ.interfaces) + (Object, ),
         {"__doc__": typ.desc, "__schema__": typ},
     )
 
@@ -380,17 +382,15 @@ def object_as_type(typ: schema.Object,
 # after all classes have been defined
 def interface_as_type(typ: schema.Interface):
     return type(typ.name, (Interface, ),
-                {"__doc__": typ.desc, "__schema__": typ})
+                {"__doc__": typ.desc, '__schema__': typ})
 
 
 def enum_as_type(typ: schema.Enum) -> t.Type[enum.Enum]:
     # TODO: convert camelcase to snake-case?
     cls = Enum(typ.name, {v.name: v.name for v in typ.values})
     cls.__doc__ = typ.desc
-    cls.__schema__ = typ
     for member, conf in zip(cls.__members__.values(), typ.values):
         member.__doc__ = conf.desc
-        member.__schema__ = conf
     return cls
 
 
@@ -402,12 +402,11 @@ def union_as_type(typ: schema.Union, objs: ClassDict):
     union = t.Union[tuple(objs[o.name] for o in typ.types)]
     union.__name__ = typ.name
     union.__doc__ = typ.desc
-    union.__schema__ = typ
     return union
 
 
 def inputobject_as_type(typ: schema.InputObject):
-    return type(typ.name, (), {"__doc__": typ.desc, "__schema__": typ})
+    return type(typ.name, (), {"__doc__": typ.desc})
 
 
 def _add_fields(obj, classes) -> None:
@@ -431,6 +430,7 @@ def _add_fields(obj, classes) -> None:
                 type=resolve_typeref(f.type, classes),
             ),
         )
+    del obj.__schema__
     return obj
 
 
@@ -449,6 +449,7 @@ def _resolve_typeref_required(ref, classes) -> type:
     return classes[ref.name]
 
 
+# TODO: set __module__
 def gen(types: t.Iterable[schema.Typelike], scalars: ClassDict) -> ClassDict:
 
     by_kind = defaultdict(list)
@@ -486,21 +487,29 @@ def gen(types: t.Iterable[schema.Typelike], scalars: ClassDict) -> ClassDict:
     return classes
 
 
-class Namespace:
+def query(selection_set, cls: type) -> Operation:
+    """Create a query operation
 
-    def __init__(self, url: str, classes: t.Dict[str, type]):
-        # TODO: support schema's where "Query" is not the query type
-        assert 'Query' in classes
-        # TODO: check in the spec whether this is always the case
-        assert all(c[0].isupper() or c.startswith('__') for c in classes)
+    selection_set
+        The selection set
+    cls
+        The query type
+    """
+    for field in selection_set:
+        _check_field(cls, field)
+    return Operation(OperationType.QUERY, selection_set)
 
-        self.url = url
-        self.classes = classes
-        # TODO: maybe do __getattr__ delegating to self.classes
-        # instead of setting attributes
-        self.__dict__.update(classes)
 
-    def query(self, selection_set: SelectionSet) -> Operation:
-        for field in selection_set:
-            _check_field(self.Query, field)
-        return Operation(OperationType.QUERY, selection_set)
+def _request(operation: Operation, url: str) -> snug.Query['JSON']:
+    response = yield snug.Request('POST', url, json.dumps({
+        'query': operation.graphql(),
+    }).encode('ascii'), headers={'Content-Type': 'application/json'})
+    return json.loads(response.content)
+
+
+def execute(operation: Operation, url: str, **kwargs) -> 'JSON':
+    return snug.execute(_request(operation, url), **kwargs)
+
+
+def executor(url: str, **kwargs) -> t.Callable[[Operation], 'JSON']:
+    return partial(execute, url=url, **kwargs)

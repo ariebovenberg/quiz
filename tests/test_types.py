@@ -5,6 +5,7 @@ from textwrap import dedent
 
 import pytest
 
+import quiz
 from quiz import schema, types
 from quiz.types import selector as _, Field, InlineFragment
 from quiz.utils import FrozenDict
@@ -114,7 +115,6 @@ class TestEnumAsType:
 
         assert created.__name__ == 'MyValues'
         assert created.__doc__ == 'my enum!'
-        assert created.__schema__ == enum_schema
 
         assert len(created.__members__) == 3
 
@@ -123,7 +123,6 @@ class TestEnumAsType:
             assert name == member_schema.name
             assert member.name == name
             assert member.value == name
-            assert member.__schema__ == member_schema
             assert member.__doc__ == member_schema.desc
 
     def test_empty(self):
@@ -153,7 +152,6 @@ class TestUnionAsType:
         assert created.__name__ == 'Foo'
         assert created.__doc__ == 'my union!'
         assert created.__origin__ == t.Union
-        assert created.__schema__ == union_schema
 
         assert created.__args__ == (
             objs['BlaType'],
@@ -180,7 +178,6 @@ class TestInterfaceAsType:
         assert issubclass(created, types.Interface)
         assert created.__name__ == 'Foo'
         assert created.__doc__ == 'my interface!'
-        assert created.__schema__ == interface_schema
 
 
 class TestObjectAsType:
@@ -214,7 +211,6 @@ class TestObjectAsType:
         assert issubclass(created, types.Object)
         assert created.__name__ == 'Foo'
         assert created.__doc__ == 'the foo description!'
-        assert created.__schema__ == obj_schema
         assert issubclass(created, interfaces['Interface1'])
         assert issubclass(created, interfaces['BlaInterface'])
 
@@ -327,6 +323,8 @@ class TestObjectGetItem:
 
     # TODO: check union
 
+    # TODO: check objects always have selection sets
+
 
 class TestInlineFragment:
 
@@ -408,17 +406,10 @@ class TestFieldGraphQL:
         ''').strip()
 
 
-class TestNamespace:
+class TestQuery:
 
-    def test_init(self):
-        namespace = types.Namespace('my/url', CLASSES)
-        assert namespace.url == 'my/url'
-        assert namespace.classes == CLASSES
-        assert namespace.Dog is Dog
-
-    def test_query(self):
-        ns = types.Namespace('my/url', CLASSES)
-        query = ns.query(
+    def test_valid(self):
+        selection_set = (
             _
             .dog[
                 _
@@ -426,21 +417,22 @@ class TestNamespace:
                 .is_housetrained
             ]
         )
+        query = quiz.query(selection_set, cls=Query)
         assert isinstance(query, types.Operation)
         assert query.type is types.OperationType.QUERY  # noqa
         assert len(query.selection_set) == 1
 
     def test_validation(self):
-        ns = types.Namespace('my/url', CLASSES)
         with pytest.raises(types.NoSuchField) as exc:
-            ns.query(
+            quiz.query(
                 _
                 .dog[
                     _
                     .name
                     .is_housetrained
                     .foobar
-                ]
+                ],
+                cls=Query,
             )
         assert exc.value == types.NoSuchField(Dog, 'foobar')
 
