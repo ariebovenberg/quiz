@@ -8,11 +8,10 @@ from collections import ChainMap, defaultdict
 from dataclasses import dataclass, replace
 from functools import partial, singledispatch
 from itertools import chain
-from operator import methodcaller
+from operator import attrgetter, methodcaller
 from textwrap import indent
 
 import snug
-
 
 from . import schema
 from .utils import Error, FrozenDict
@@ -44,56 +43,17 @@ def _enum_to_gql(obj):
     return obj.value
 
 
-Selection = t.Union['Field', 'FragmentSpread', 'InlineFragment']
-SelectionSet = t.Tuple[Selection]
-
-
-def selection_set_gql(selections: SelectionSet) -> str:
-    return '{{\n{}\n}}'.format(
-        '\n'.join(
-            indent(f.graphql(), INDENT) for f in selections
-        )
-    ) if selections else ''
-
-
-@dataclass(frozen=True, init=False)
-class Field:
-    name: FieldName
-    kwargs: FrozenDict = FrozenDict()
-    selection_set: SelectionSet = ()
-    # TODO:
-    # - alias
-    # - directives
-
-    def __init__(self, name, kwargs=(), selection_set=()):
-        self.__dict__.update({
-            'name': name,
-            'kwargs': FrozenDict(kwargs),
-            'selection_set': selection_set,
-        })
-
-    def graphql(self):
-        arguments = '({})'.format(
-            ', '.join(
-                "{}: {}".format(k, argument_as_gql(v))
-                for k, v in self.kwargs.items()
-            )
-        ) if self.kwargs else ''
-        selection_set = (
-            ' ' + selection_set_gql(self.selection_set)
-            if self.selection_set else '')
-        return self.name + arguments + selection_set
-
-    __gql__ = graphql
+# TODO: add fragmentspread
+Selection = t.Union['Field', 'InlineFragment']
 
 
 # TODO: ** operator for specifying fragments
 @dataclass(repr=False, frozen=True, init=False)
-class Selector(t.Iterable[Selection], t.Sized):
+class SelectionSet(t.Iterable[Selection], t.Sized):
     """A "magic" selection set builder"""
     # the attribute needs to have a dunder name to prevent
     # comflicts with GraphQL field names
-    __selections__: t.Tuple[Field]
+    __selections__: t.Tuple[Selection]
     # according to the GQL spec: this is ordered
 
     # why can't this subclass tuple?
@@ -108,25 +68,25 @@ class Selector(t.Iterable[Selection], t.Sized):
         return cls(*selections)
 
     def __getattr__(self, name):
-        return Selector._make(self.__selections__ + (Field(name, {}), ))
+        return SelectionSet._make(self.__selections__ + (Field(name), ))
 
     # TODO: support raw graphql strings
-    def __getitem__(self, selection):
+    def __getitem__(self, selection_set):
         # TODO: check duplicate fieldnames
         try:
             *rest, target = self.__selections__
         except ValueError:
             raise Error('cannot select fields from empty field list')
 
-        assert isinstance(selection, Selector)
-        assert len(selection.__selections__) >= 1
+        assert isinstance(selection_set, SelectionSet)
+        assert len(selection_set.__selections__) >= 1
 
-        return Selector._make(
+        return SelectionSet._make(
             tuple(rest)
-            + (replace(target, selection_set=selection.__selections__), ))
+            + (replace(target, selection_set=selection_set), ))
 
     def __repr__(self):
-        return "Selector({!r})".format(list(self.__selections__))
+        return "<SelectionSet> {}".format(gql(self))
 
     # TODO: prevent `self` from conflicting with kwargs
     def __call__(self, **kwargs):
@@ -134,8 +94,8 @@ class Selector(t.Iterable[Selection], t.Sized):
             *rest, target = self.__selections__
         except ValueError:
             raise Error('cannot call empty field list')
-        return Selector._make(
-            tuple(rest) + (replace(target, kwargs=kwargs), ))
+        return SelectionSet._make(
+            tuple(rest) + (replace(target, kwargs=FrozenDict(kwargs)), ))
 
     def __iter__(self):
         return iter(self.__selections__)
@@ -143,26 +103,48 @@ class Selector(t.Iterable[Selection], t.Sized):
     def __len__(self):
         return len(self.__selections__)
 
+    def __gql__(self) -> str:
+        return '{{\n{}\n}}'.format(
+            '\n'.join(
+                indent(gql(f), INDENT) for f in self.__selections__
+            )
+        ) if self.__selections__ else ''
 
-# @dataclass
-# class Query(snug.Query):
-#     url:    str
-#     fields: Selector
+    __hash__ = property(attrgetter('__selections__.__hash__'))
 
-#     def __gql__(self):
-#         return "{{\n{}\n}}".format(indent(gql(self.fields), INDENT))
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return other.__selections__ == self.__selections__
+        return NotImplemented
 
-#     __str__ = __gql__
-
-#     def __iter__(self):
-#         response = yield snug.Request(
-#             "POST", self.url, content=json.dumps({"query": gql(self)}),
-#             headers={'Content-Type': 'application/json'}
-#         )
-#         return json.loads(response.content)
+    def __ne__(self, other):
+        equality = self.__eq__(other)
+        return NotImplemented if equality is NotImplemented else not equality
 
 
-selector = Selector()
+@dataclass(frozen=True)
+class Field:
+    name: FieldName
+    kwargs: FrozenDict = FrozenDict.EMPTY
+    selection_set: SelectionSet = SelectionSet()
+    # TODO:
+    # - alias
+    # - directives
+
+    def __gql__(self):
+        arguments = '({})'.format(
+            ', '.join(
+                "{}: {}".format(k, argument_as_gql(v))
+                for k, v in self.kwargs.items()
+            )
+        ) if self.kwargs else ''
+        selection_set = (
+            ' ' + gql(self.selection_set)
+            if self.selection_set else '')
+        return self.name + arguments + selection_set
+
+
+selector = SelectionSet()
 
 
 class ID(str):
@@ -215,25 +197,16 @@ class InvalidSelection(Error):
     field: 'FieldSchema'
 
 
-class Representable(abc.ABC):
-    """Interface for GraphQL-representable objects"""
-
-    # TODO: allow specifying custom/none indent
-    @abc.abstractmethod
-    def graphql(self):
-        pass
-
-
 @dataclass(frozen=True)
-class InlineFragment(Representable):
+class InlineFragment:
     on: type
     selection_set: SelectionSet
     # TODO: add directives
 
-    def graphql(self):
+    def __gql__(self):
         return '... on {} {}'.format(
             self.on.__name__,
-            selection_set_gql(self.selection_set)
+            gql(self.selection_set)
         )
 
 
@@ -246,15 +219,15 @@ class OperationType(enum.Enum):
 @dataclass(frozen=True)
 class Operation:
     type: OperationType
-    selection_set: SelectionSet = ()
+    selection_set: SelectionSet = SelectionSet()
     # TODO:
     # - name (optional)
     # - variable_defs (optional)
     # - directives (optional)
 
-    def graphql(self):
+    def __gql__(self):
         return '{} {}'.format(self.type.value,
-                              selection_set_gql(self.selection_set))
+                              gql(self.selection_set))
 
 
 def _is_optional(typ: type) -> bool:
@@ -450,31 +423,35 @@ def _resolve_typeref_required(ref, classes) -> type:
 
 
 # TODO: set __module__
-def gen(types: t.Iterable[schema.Typelike], scalars: ClassDict) -> ClassDict:
+def build_schema(types: t.Iterable[schema.Typelike],
+                 scalars: ClassDict) -> ClassDict:
 
     by_kind = defaultdict(list)
     for tp in types:
         by_kind[tp.__class__].append(tp)
 
     scalars_ = ChainMap(scalars, BUILTIN_SCALARS)
-    assert not {tp.name for tp in by_kind[schema.Scalar]} - scalars_.keys()
+    undefined_scalars = {
+        tp.name for tp in by_kind[schema.Scalar]} - scalars_.keys()
+    if undefined_scalars:
+        # TODO: special exception class
+        raise Exception('Undefined scalars: {}'.format(list(
+            undefined_scalars)))
 
     interfaces = _namedict(map(interface_as_type, by_kind[schema.Interface]))
     enums = _namedict(map(enum_as_type, by_kind[schema.Enum]))
-    objs = _namedict(
-        list(
-            map(
-                partial(object_as_type, interfaces=interfaces),
-                by_kind[schema.Object],
-            )
-        )
-    )
-    unions = _namedict(
-        map(partial(union_as_type, objs=objs), by_kind[schema.Union])
-    )
-    input_objects = _namedict(
-        map(inputobject_as_type, by_kind[schema.InputObject])
-    )
+    objs = _namedict(map(
+        partial(object_as_type, interfaces=interfaces),
+        by_kind[schema.Object],
+    ))
+    unions = _namedict(map(
+        partial(union_as_type, objs=objs),
+        by_kind[schema.Union]
+    ))
+    input_objects = _namedict(map(
+        inputobject_as_type,
+        by_kind[schema.InputObject]
+    ))
 
     classes = ChainMap(
         scalars_, interfaces, enums, objs, unions, input_objects
@@ -504,7 +481,11 @@ def _request(operation: Operation, url: str) -> snug.Query['JSON']:
     response = yield snug.Request('POST', url, json.dumps({
         'query': operation.graphql(),
     }).encode('ascii'), headers={'Content-Type': 'application/json'})
-    return json.loads(response.content)
+    content = json.loads(response.content)
+    if 'errors' in content:
+        # TODO: special exception class
+        raise Exception(content['errors'])
+    return content['data']
 
 
 def execute(operation: Operation, url: str, **kwargs) -> 'JSON':

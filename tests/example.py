@@ -5,7 +5,7 @@ from quiz import types
 from quiz.utils import FrozenDict
 
 mkfield = partial(types.FieldSchema,
-                  args=FrozenDict(),
+                  args=FrozenDict.EMPTY,
                   is_deprecated=False,
                   desc='',
                   deprecation_reason=None)

@@ -7,10 +7,10 @@ from dataclasses import dataclass
 import snug
 from toolz import compose
 
-Schema = t.List[dict]
+RawSchema = t.List[dict]
 
 INTROSPECTION_QUERY = """
-query IntrospectionQuery {
+{
   __schema {
     queryType { name }
     mutationType { name }
@@ -127,7 +127,7 @@ class Field:
 
 
 @dataclass
-class GeneralType:
+class Type:
     name: t.Optional[str]
     kind: Kind
     desc: str
@@ -183,8 +183,8 @@ def make_enumval(conf):
     )
 
 
-def _deserialize_type(conf) -> GeneralType:
-    return GeneralType(
+def _deserialize_type(conf) -> Type:
+    return Type(
         name=conf["name"],
         kind=Kind(conf["kind"]),
         desc=conf["description"],
@@ -246,7 +246,7 @@ class InputObject:
 Typelike = t.Union[Interface, Object, Scalar, Enum, Union, InputObject]
 
 
-def _cast_type(typ: GeneralType) -> Typelike:
+def _cast_type(typ: Type) -> Typelike:
     if typ.kind is Kind.SCALAR:
         assert typ.interfaces is None
         assert typ.input_fields is None
@@ -293,11 +293,11 @@ def _cast_type(typ: GeneralType) -> Typelike:
         raise NotImplementedError(type.kind)
 
 
-def load(schema: Schema) -> t.Iterator[Typelike]:
-    return map(compose(_cast_type, _deserialize_type), schema["types"])
+def load(raw_schema: RawSchema) -> t.Iterator[Typelike]:
+    return map(compose(_cast_type, _deserialize_type), raw_schema["types"])
 
 
-def get(url: str) -> snug.Query[Schema]:
+def get(url: str) -> snug.Query[RawSchema]:
     response = yield snug.Request('POST', url, json.dumps({
         'query': INTROSPECTION_QUERY
     }), headers={'Content-Type': 'application/json'})

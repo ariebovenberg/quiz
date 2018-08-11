@@ -1,7 +1,8 @@
 import pytest
 
-from quiz.types import Field, Selector, Error, gql
+from quiz.types import Field, SelectionSet, Error, gql, SelectionSet
 from quiz.types import selector as _
+from quiz.utils import FrozenDict as fdict
 
 
 class TestField:
@@ -9,32 +10,35 @@ class TestField:
     def test_defaults(self):
         f = Field('foo')
         assert f.kwargs == {}
-        assert f.selection_set == ()
+        assert isinstance(f.kwargs, fdict)
+        assert f.selection_set == SelectionSet()
+        assert isinstance(f.selection_set, SelectionSet)
 
     def test_hash(self):
-        assert hash(Field('foo', {'bar': 3})) == hash(Field('foo', {'bar': 3}))
-        assert hash(Field('bla', {'bla': 4})) != hash(Field('bla'))
+        assert hash(Field('foo', fdict({'bar': 3}))) == hash(
+            Field('foo', fdict({'bar': 3})))
+        assert hash(Field('bla', fdict({'bla': 4}))) != hash(Field('bla'))
 
     @pytest.mark.parametrize('field, expect', [
         (Field('foo'), 'foo'),
-        (Field('bla', {'boo': 9}), 'bla(boo: 9)')
+        (Field('bla', fdict({'boo': 9})), 'bla(boo: 9)')
     ])
     def test_gql(self, field, expect):
         assert gql(field) == expect
 
 
-class TestSelector:
+class TestSelectionSet:
 
     def test_empty(self):
-        assert _ == Selector()
+        assert _ == SelectionSet()
 
     def test_hash(self):
-        assert hash(Selector()) == hash(Selector())
+        assert hash(SelectionSet()) == hash(SelectionSet())
         assert hash(_.foo.bar) == hash(_.foo.bar)
         assert hash(_.bar.foo) != hash(_.foo.bar)
 
     def test_getattr(self):
-        assert _.foo_field.bla == Selector(
+        assert _.foo_field.bla == SelectionSet(
             Field('foo_field'),
             Field('bla'),
         )
@@ -44,18 +48,18 @@ class TestSelector:
             Field('foo'),
             Field('bar'),
         )
-        assert tuple(Selector(*items)) == items
-        assert len(Selector(*items)) == 2
+        assert tuple(SelectionSet(*items)) == items
+        assert len(SelectionSet(*items)) == 2
 
     def test_getitem(self):
         assert _.foo.bar.blabla[
             _
             .foobar
             .bing
-        ] == Selector(
+        ] == SelectionSet(
             Field('foo'),
             Field('bar'),
-            Field('blabla', selection_set=(
+            Field('blabla', selection_set=SelectionSet(
                 Field('foobar'),
                 Field('bing'),
             ))
@@ -73,22 +77,22 @@ class TestSelector:
                 _
                 .blabla
             ]
-        ] == Selector(
-            Field('foo', selection_set=(
+        ] == SelectionSet(
+            Field('foo', selection_set=SelectionSet(
                 Field('bar'),
-                Field('bing', selection_set=(
+                Field('bing', selection_set=SelectionSet(
                     Field('blabla'),
                 ))
             ))
         )
 
     def test_call(self):
-        assert _.foo(bla=4, bar=None) == Selector(
+        assert _.foo(bla=4, bar=None) == SelectionSet(
             Field('foo', {'bla': 4, 'bar': None}),
         )
 
     def test_call_empty(self):
-        assert _.foo() == Selector(
+        assert _.foo() == SelectionSet(
             Field('foo'),
         )
 
@@ -107,19 +111,17 @@ class TestSelector:
             ]
             .oof
             .qux()
-        ] == Selector(
+        ] == SelectionSet(
             Field('foo'),
-            Field('bar', selection_set=(
-                Field('bing', {'param1': 4.1}),
+            Field('bar', selection_set=SelectionSet(
+                Field('bing', fdict({'param1': 4.1})),
                 Field('baz'),
-                Field('foo_bar_bla', {'p2': None, 'r': ''}, selection_set=(
-                    Field('height', {'unit': 'cm'}),
-                )),
+                Field('foo_bar_bla',
+                      fdict({'p2': None, 'r': ''}),
+                      SelectionSet(
+                          Field('height', {'unit': 'cm'}),
+                      )),
                 Field('oof'),
                 Field('qux'),
             ))
         )
-
-
-class TestSchemaValidation:
-    pass

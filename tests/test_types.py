@@ -5,10 +5,12 @@ from textwrap import dedent
 import pytest
 
 import quiz
-from quiz import schema, types
-from quiz.types import selector as _, Field, InlineFragment
+from quiz import gql, schema, types
+from quiz.types import Field, InlineFragment, SelectionSet
+from quiz.types import selector as _
+from quiz.utils import FrozenDict as fdict
 
-from .example import Dog, Query, Command, Hobby
+from .example import Command, Dog, Hobby, Query
 
 
 class TestEnumAsType:
@@ -265,7 +267,7 @@ class TestInlineFragment:
                 .name
             ]
         ]
-        assert fragment.graphql() == dedent('''\
+        assert gql(fragment) == dedent('''\
         ... on Dog {
           name
           bark_volume
@@ -281,7 +283,7 @@ class TestInlineFragment:
 class TestFieldGraphQL:
 
     def test_empty(self):
-        assert Field('foo').graphql() == 'foo'
+        assert gql(Field('foo')) == 'foo'
 
     def test_arguments(self):
         field = Field('foo', {
@@ -290,30 +292,30 @@ class TestFieldGraphQL:
         })
 
         # arguments are unordered, multiple valid options
-        assert field.graphql() in [
+        assert gql(field) in [
             'foo(foo: 4, blabla: "my string!")',
             'foo(blabla: "my string!", foo: 4)',
         ]
 
     def test_selection_set(self):
-        field = Field('bla', {'q': 9}, selection_set=(
+        field = Field('bla', fdict({'q': 9}), selection_set=SelectionSet(
             Field('blabla'),
-            Field('foobar', {'qux': 'another string'}),
-            Field('other', selection_set=(
+            Field('foobar', fdict({'qux': 'another string'})),
+            Field('other', selection_set=SelectionSet(
                 Field('baz'),
             )),
             InlineFragment(
                 on=Dog,
-                selection_set=(
+                selection_set=SelectionSet(
                     Field('name'),
                     Field('bark_volume'),
-                    Field('owner', selection_set=(
+                    Field('owner', selection_set=SelectionSet(
                         Field('name'),
                     ))
                 )
             ),
         ))
-        assert field.graphql() == dedent('''
+        assert gql(field) == dedent('''
         bla(q: 9) {
           blabla
           foobar(qux: "another string")
@@ -367,14 +369,14 @@ class TestOperation:
     def test_graphql(self):
         operation = types.Operation(
             types.OperationType.QUERY,
-            (
+            SelectionSet(
                 types.Field('foo'),
-                types.Field('qux', {'buz': 99}, (
+                types.Field('qux', fdict({'buz': 99}), SelectionSet(
                     types.Field('nested'),
                 ))
             )
         )
-        assert operation.graphql() == dedent('''
+        assert gql(operation) == dedent('''
         query {
           foo
           qux(buz: 99) {
