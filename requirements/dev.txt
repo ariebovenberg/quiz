@@ -1,4 +1,5 @@
 -e .
+-r docs.txt
 pytest
 pytest-coverage
 wheel
