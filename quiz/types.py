@@ -3,10 +3,8 @@ import abc
 import enum
 import json
 import typing as t
-from collections import ChainMap, defaultdict
 from dataclasses import dataclass, replace
 from functools import partial, singledispatch
-from itertools import chain
 from operator import attrgetter, methodcaller
 from textwrap import indent
 
@@ -15,7 +13,6 @@ import snug
 from . import schema
 from .utils import Error, FrozenDict
 
-ClassDict = t.Dict[str, type]
 NoneType = type(None)
 INDENT = "  "
 
@@ -30,7 +27,7 @@ def argument_as_gql(obj: object) -> str:
     raise TypeError("cannot serialize to GraphQL: {}".format(type(obj)))
 
 
-# TODO: IMPORTANT! string escape
+# TODO: IMPORTANT! implement string escape
 argument_as_gql.register(str, '"{}"'.format)
 
 # TODO: limit to 32 bit integers!
@@ -39,7 +36,6 @@ argument_as_gql.register(NoneType, 'null'.format)
 argument_as_gql.register(bool, {True: 'true', False: 'false'}.__getitem__)
 
 # TODO: float, with exponent form
-# TODO: long (when py2 support is needed)
 
 
 @argument_as_gql.register(enum.Enum)
@@ -349,133 +345,6 @@ class FieldSchema(t.NamedTuple):
     deprecation_reason: t.Optional[str]
 
 
-def _namedict(classes):
-    return {c.__name__: c for c in classes}
-
-
-def object_as_type(typ: schema.Object,
-                   interfaces: t.Mapping[str, type(Interface)]) -> type:
-    return type(
-        typ.name,
-        tuple(interfaces[i.name] for i in typ.interfaces) + (Object, ),
-        {"__doc__": typ.desc, "__schema__": typ},
-    )
-
-
-# NOTE: fields are not added yet. These must be added later with _add_fields
-# why is this? Circular references may exist, which can only be added
-# after all classes have been defined
-def interface_as_type(typ: schema.Interface):
-    return type(typ.name, (Interface, ),
-                {"__doc__": typ.desc, '__schema__': typ})
-
-
-def enum_as_type(typ: schema.Enum) -> t.Type[enum.Enum]:
-    # TODO: convert camelcase to snake-case?
-    cls = Enum(typ.name, {v.name: v.name for v in typ.values})
-    cls.__doc__ = typ.desc
-    for member, conf in zip(cls.__members__.values(), typ.values):
-        member.__doc__ = conf.desc
-    return cls
-
-
-# TODO: better error handling:
-# - empty list of types
-# - types not found
-# python flattens unions, this is OK because GQL does not allow nested unions
-def union_as_type(typ: schema.Union, objs: ClassDict):
-    union = t.Union[tuple(objs[o.name] for o in typ.types)]
-    union.__name__ = typ.name
-    union.__doc__ = typ.desc
-    return union
-
-
-def inputobject_as_type(typ: schema.InputObject):
-    return type(typ.name, (), {"__doc__": typ.desc})
-
-
-def _add_fields(obj, classes) -> None:
-    for f in obj.__schema__.fields:
-        setattr(
-            obj,
-            f.name,
-            FieldSchema(
-                name=f.name,
-                desc=f.name,
-                args=FrozenDict({
-                    i.name: InputValue(
-                        name=i.name,
-                        desc=i.desc,
-                        type=resolve_typeref(i.type, classes),
-                    )
-                    for i in f.args
-                }),
-                is_deprecated=f.is_deprecated,
-                deprecation_reason=f.deprecation_reason,
-                type=resolve_typeref(f.type, classes),
-            ),
-        )
-    del obj.__schema__
-    return obj
-
-
-def resolve_typeref(ref: schema.TypeRef, classes: ClassDict) -> type:
-    if ref.kind is schema.Kind.NON_NULL:
-        return _resolve_typeref_required(ref.of_type, classes)
-    else:
-        return t.Optional[_resolve_typeref_required(ref, classes)]
-
-
-# TODO: exception handling
-def _resolve_typeref_required(ref, classes) -> type:
-    assert ref.kind is not schema.Kind.NON_NULL
-    if ref.kind is schema.Kind.LIST:
-        return t.List[resolve_typeref(ref.of_type, classes)]
-    return classes[ref.name]
-
-
-# TODO: set __module__
-def build_schema(types: t.Iterable[schema.TypeSchema],
-                 scalars: ClassDict) -> ClassDict:
-
-    by_kind = defaultdict(list)
-    for tp in types:
-        by_kind[tp.__class__].append(tp)
-
-    scalars_ = ChainMap(scalars, BUILTIN_SCALARS)
-    undefined_scalars = {
-        tp.name for tp in by_kind[schema.Scalar]} - scalars_.keys()
-    if undefined_scalars:
-        # TODO: special exception class
-        raise Exception('Undefined scalars: {}'.format(list(
-            undefined_scalars)))
-
-    interfaces = _namedict(map(interface_as_type, by_kind[schema.Interface]))
-    enums = _namedict(map(enum_as_type, by_kind[schema.Enum]))
-    objs = _namedict(map(
-        partial(object_as_type, interfaces=interfaces),
-        by_kind[schema.Object],
-    ))
-    unions = _namedict(map(
-        partial(union_as_type, objs=objs),
-        by_kind[schema.Union]
-    ))
-    input_objects = _namedict(map(
-        inputobject_as_type,
-        by_kind[schema.InputObject]
-    ))
-
-    classes = ChainMap(
-        scalars_, interfaces, enums, objs, unions, input_objects
-    )
-
-    # we can only add fields after all classes have been created.
-    for obj in chain(objs.values(), interfaces.values()):
-        _add_fields(obj, classes)
-
-    return classes
-
-
 def query(selection_set, cls: type) -> Operation:
     """Create a query operation
 
@@ -510,5 +379,5 @@ def executor(url: str, **kwargs) -> t.Callable[[Operation], 'JSON']:
 
 introspection_query = Operation(
     OperationType.QUERY,
-    Raw(schema.INTROSPECTION_QUERY)
+    Raw(schema.raw.INTROSPECTION_QUERY)
 )
