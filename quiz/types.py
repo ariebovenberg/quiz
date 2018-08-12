@@ -1,5 +1,4 @@
 """main module for constructing graphQL queries"""
-# TODO: __slots__
 import abc
 import enum
 import json
@@ -27,15 +26,20 @@ FieldName = str
 
 
 @singledispatch
-def argument_as_gql(obj):
+def argument_as_gql(obj: object) -> str:
     raise TypeError("cannot serialize to GraphQL: {}".format(type(obj)))
 
 
+# TODO: IMPORTANT! string escape
 argument_as_gql.register(str, '"{}"'.format)
-# TODO: string escape
+
+# TODO: limit to 32 bit integers!
 argument_as_gql.register(int, str)
+argument_as_gql.register(NoneType, 'null'.format)
+argument_as_gql.register(bool, {True: 'true', False: 'false'}.__getitem__)
 
 # TODO: float, with exponent form
+# TODO: long (when py2 support is needed)
 
 
 @argument_as_gql.register(enum.Enum)

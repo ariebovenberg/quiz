@@ -510,3 +510,25 @@ class TestSelectionSet:
                 Field('qux'),
             ))
         )
+
+
+class TestArgumentAsGql:
+
+    def test_string(self):
+        assert quiz.argument_as_gql("foo") == '"foo"'
+
+    def test_invalid(self):
+        class MyClass:
+            pass
+        with pytest.raises(TypeError, match='MyClass'):
+            quiz.argument_as_gql(MyClass())
+
+    def test_int(self):
+        assert quiz.argument_as_gql(4) == '4'
+
+    def test_none(self):
+        assert quiz.argument_as_gql(None) == 'null'
+
+    def test_bool(self):
+        assert quiz.argument_as_gql(True) == 'true'
+        assert quiz.argument_as_gql(False) == 'false'
