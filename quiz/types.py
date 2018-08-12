@@ -5,7 +5,7 @@ import json
 import typing as t
 from dataclasses import dataclass, replace
 from functools import partial, singledispatch
-from operator import attrgetter, methodcaller
+from operator import methodcaller
 from textwrap import indent
 
 import snug
@@ -56,6 +56,7 @@ class FieldSchema(t.NamedTuple):
 
 
 # TODO: nicer handling of list, union, optional
+# TODO: tests
 def type_repr(type_):
     if _is_optional(type_):
         return 'Optional[{}]'.format(type_repr(
@@ -75,12 +76,11 @@ Selection = t.Union['Field', 'InlineFragment']
 class SelectionSet(t.Iterable[Selection], t.Sized):
     """A "magic" selection set builder"""
     # the attribute needs to have a dunder name to prevent
-    # comflicts with GraphQL field names
+    # conflicts with GraphQL field names
     __selections__: t.Tuple[Selection]
-    # according to the GQL spec: this is ordered
 
-    # why can't this subclass tuple?
-    # Then we would have unwanted methods like index()
+    # Q: why can't this subclass tuple?
+    # A: Then we would have unwanted methods like index()
 
     def __init__(self, *selections):
         self.__dict__['__selections__'] = selections

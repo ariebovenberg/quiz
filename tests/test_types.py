@@ -1,3 +1,5 @@
+import typing as t
+import datetime
 from textwrap import dedent
 
 import pytest
@@ -160,6 +162,16 @@ class TestOperation:
           }
         }
         ''').strip()
+
+
+class TestFieldSchema:
+
+    def test_repr(self):
+        schema = types.FieldSchema(
+            'foo', 'my description', type=t.List[str],
+            args=fdict.EMPTY,
+            is_deprecated=False, deprecation_reason=None)
+        assert types.type_repr(t.List[str]) in repr(schema)
 
 
 class TestField:
