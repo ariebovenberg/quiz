@@ -123,6 +123,14 @@ class SelectionSet(t.Iterable[Selection], t.Sized):
 
 
 @dataclass(frozen=True)
+class Raw:
+    gql: str
+
+    def __gql__(self):
+        return self.gql
+
+
+@dataclass(frozen=True)
 class Field:
     name: FieldName
     kwargs: FrozenDict = FrozenDict.EMPTY
@@ -477,9 +485,9 @@ def query(selection_set, cls: type) -> Operation:
     return Operation(OperationType.QUERY, selection_set)
 
 
-def _request(operation: Operation, url: str) -> snug.Query['JSON']:
+def _as_http(operation: Operation, url: str) -> snug.Query['JSON']:
     response = yield snug.Request('POST', url, json.dumps({
-        'query': operation.graphql(),
+        'query': gql(operation),
     }).encode('ascii'), headers={'Content-Type': 'application/json'})
     content = json.loads(response.content)
     if 'errors' in content:
@@ -489,8 +497,14 @@ def _request(operation: Operation, url: str) -> snug.Query['JSON']:
 
 
 def execute(operation: Operation, url: str, **kwargs) -> 'JSON':
-    return snug.execute(_request(operation, url), **kwargs)
+    return snug.execute(_as_http(operation, url), **kwargs)
 
 
 def executor(url: str, **kwargs) -> t.Callable[[Operation], 'JSON']:
     return partial(execute, url=url, **kwargs)
+
+
+introspection_query = Operation(
+    OperationType.QUERY,
+    Raw(schema.INTROSPECTION_QUERY)
+)

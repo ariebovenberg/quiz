@@ -295,10 +295,3 @@ def _cast_type(typ: Type) -> Typelike:
 
 def load(raw_schema: RawSchema) -> t.Iterator[Typelike]:
     return map(compose(_cast_type, _deserialize_type), raw_schema["types"])
-
-
-def get(url: str) -> snug.Query[RawSchema]:
-    response = yield snug.Request('POST', url, json.dumps({
-        'query': INTROSPECTION_QUERY
-    }), headers={'Content-Type': 'application/json'})
-    return json.loads(response.content)['data']['__schema']
