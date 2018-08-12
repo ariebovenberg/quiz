@@ -1,10 +1,7 @@
 """Functionality relating to the raw GraphQL schema"""
-import json
 import enum
 import typing as t
-from dataclasses import dataclass
 
-import snug
 from toolz import compose
 
 RawSchema = t.List[dict]
@@ -101,23 +98,20 @@ class Kind(enum.Enum):
     UNION = "UNION"
 
 
-@dataclass
-class TypeRef:
+class TypeRef(t.NamedTuple):
     name: t.Optional[str]
     kind: Kind
     of_type: t.Optional["TypeRef"]
 
 
-@dataclass
-class InputValue:
+class InputValue(t.NamedTuple):
     name: str
     desc: str
     type: TypeRef
     default: object
 
 
-@dataclass
-class Field:
+class Field(t.NamedTuple):
     name: str
     type: TypeRef
     args: t.List[InputValue]
@@ -126,8 +120,7 @@ class Field:
     deprecation_reason: t.Optional[str]
 
 
-@dataclass
-class Type:
+class Type(t.NamedTuple):
     name: t.Optional[str]
     kind: Kind
     desc: str
@@ -138,8 +131,7 @@ class Type:
     enum_values: t.Optional[t.List]
 
 
-@dataclass
-class EnumValue:
+class EnumValue(t.NamedTuple):
     name: str
     desc: str
     is_deprecated: bool
@@ -200,15 +192,13 @@ def _deserialize_type(conf) -> Type:
     )
 
 
-@dataclass
-class Interface:
+class Interface(t.NamedTuple):
     name: str
     desc: str
     fields: t.List[Field]
 
 
-@dataclass
-class Object:
+class Object(t.NamedTuple):
     name: str
     desc: str
     interfaces: t.List[TypeRef]
@@ -216,37 +206,33 @@ class Object:
     fields: t.List[Field]
 
 
-@dataclass
-class Scalar:
+class Scalar(t.NamedTuple):
     name: str
     desc: str
 
 
-@dataclass
-class Enum:
+class Enum(t.NamedTuple):
     name: str
     desc: str
     values: t.List[EnumValue]
 
 
-@dataclass
-class Union:
+class Union(t.NamedTuple):
     name: str
     desc: str
     types: t.List[TypeRef]
 
 
-@dataclass
-class InputObject:
+class InputObject(t.NamedTuple):
     name: str
     desc: str
     input_fields: t.List[InputValue]
 
 
-Typelike = t.Union[Interface, Object, Scalar, Enum, Union, InputObject]
+TypeSchema = t.Union[Interface, Object, Scalar, Enum, Union, InputObject]
 
 
-def _cast_type(typ: Type) -> Typelike:
+def _cast_type(typ: Type) -> TypeSchema:
     if typ.kind is Kind.SCALAR:
         assert typ.interfaces is None
         assert typ.input_fields is None
@@ -293,5 +279,5 @@ def _cast_type(typ: Type) -> Typelike:
         raise NotImplementedError(type.kind)
 
 
-def load(raw_schema: RawSchema) -> t.Iterator[Typelike]:
+def load(raw_schema: RawSchema) -> t.Iterator[TypeSchema]:
     return map(compose(_cast_type, _deserialize_type), raw_schema["types"])

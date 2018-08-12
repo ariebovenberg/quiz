@@ -10,7 +10,7 @@ test-examples:
 	pytest examples/
 
 coverage:
-	pytest --live --cov=quiz --cov-report html --cov-report term --cov-branch --cov-fail-under 100
+	pytest --cov=quiz --cov-report html --cov-report term --cov-branch --cov-fail-under 100
 
 publish: clean
 	rm -rf build dist .egg quiz.egg-info

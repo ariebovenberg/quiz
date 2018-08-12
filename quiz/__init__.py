@@ -1,3 +1,3 @@
-from . import schema, types
-
-from .types import *
+from . import schema, types  # noqa
+from .types import *  # noqa
+from .__about__ import *  # noqa

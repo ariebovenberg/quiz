@@ -431,7 +431,7 @@ def _resolve_typeref_required(ref, classes) -> type:
 
 
 # TODO: set __module__
-def build_schema(types: t.Iterable[schema.Typelike],
+def build_schema(types: t.Iterable[schema.TypeSchema],
                  scalars: ClassDict) -> ClassDict:
 
     by_kind = defaultdict(list)
