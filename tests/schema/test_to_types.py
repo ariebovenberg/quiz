@@ -1,7 +1,10 @@
+import datetime
 import enum
 import typing as t
 
-from quiz import types
+import pytest
+
+import quiz
 from quiz.schema import raw, to_types
 
 
@@ -28,12 +31,13 @@ class TestEnumAsType:
                 None
             )
         ])
-        created = to_types.enum_as_type(enum_schema)
-        assert issubclass(created, types.Enum)
+        created = to_types.enum_as_type(enum_schema, module_name='foo')
+        assert issubclass(created, quiz.Enum)
         assert issubclass(created, enum.Enum)
 
         assert created.__name__ == 'MyValues'
         assert created.__doc__ == 'my enum!'
+        assert created.__module__ == 'foo'
 
         assert len(created.__members__) == 3
 
@@ -45,8 +49,9 @@ class TestEnumAsType:
             assert member.__doc__ == member_schema.desc
 
     def test_empty(self):
-        created = to_types.enum_as_type(raw.Enum('MyValues', '', values=[]))
-        assert issubclass(created, types.Enum)
+        created = to_types.enum_as_type(raw.Enum('MyValues', '', values=[]),
+                                        module_name='foo')
+        assert issubclass(created, quiz.Enum)
         assert issubclass(created, enum.Enum)
         assert len(created.__members__) == 0
 
@@ -92,11 +97,13 @@ class TestInterfaceAsType:
                 deprecation_reason=None,
             ),
         ])
-        created = to_types.interface_as_type(interface_schema)
+        created = to_types.interface_as_type(interface_schema,
+                                             module_name='mymodule')
 
-        assert issubclass(created, types.Interface)
+        assert issubclass(created, quiz.Interface)
         assert created.__name__ == 'Foo'
         assert created.__doc__ == 'my interface!'
+        assert created.__module__ == 'mymodule'
 
 
 class TestObjectAsType:
@@ -122,14 +129,16 @@ class TestObjectAsType:
             ]
         )
         interfaces = {
-            'Interface1': type('Interface1', (types.Interface, ), {}),
-            'BlaInterface': type('BlaInterface', (types.Interface, ), {}),
-            'Qux': type('Qux', (types.Interface, ), {}),
+            'Interface1': type('Interface1', (quiz.Interface, ), {}),
+            'BlaInterface': type('BlaInterface', (quiz.Interface, ), {}),
+            'Qux': type('Qux', (quiz.Interface, ), {}),
         }
-        created = to_types.object_as_type(obj_schema, interfaces)
-        assert issubclass(created, types.Object)
+        created = to_types.object_as_type(obj_schema, interfaces,
+                                          module_name='foo')
+        assert issubclass(created, quiz.Object)
         assert created.__name__ == 'Foo'
         assert created.__doc__ == 'the foo description!'
+        assert created.__module__ == 'foo'
         assert issubclass(created, interfaces['Interface1'])
         assert issubclass(created, interfaces['BlaInterface'])
 
@@ -141,7 +150,7 @@ class TestResolveTypeRef:
     def test_default(self):
         ref = raw.TypeRef('Foo', raw.Kind.ENUM, None)
 
-        classes = {'Foo': types.Enum('Foo', {})}
+        classes = {'Foo': quiz.Enum('Foo', {})}
         resolved = to_types.resolve_typeref(ref, classes)
         assert resolved == t.Optional[classes['Foo']]
 
@@ -172,3 +181,23 @@ class TestResolveTypeRef:
         classes = {'Foo': type('Foo', (), {})}
         resolved = to_types.resolve_typeref(ref, classes)
         assert resolved == t.List[classes['Foo']]
+
+
+class TestBuild:
+
+    def test_missing_scalars(self, type_schemas):
+        with pytest.raises(Exception, match='DateTime'):
+            quiz.schema.build(type_schemas, scalars={}, module_name='foo')
+
+    def test_valid(self, type_schemas):
+        classes = quiz.schema.build(type_schemas, scalars={
+            'URI':             str,
+            'DateTime':        datetime.datetime,
+            'HTML':            str,
+            'GitObjectID':     str,
+            'GitTimestamp':    str,
+            'Date':            datetime.date,
+            'X509Certificate': str,
+            'GitSSHRemote':    str,
+        }, module_name='mymodule')
+        assert issubclass(classes['Query'], quiz.Object)
