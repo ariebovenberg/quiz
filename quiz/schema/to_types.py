@@ -97,11 +97,11 @@ def _resolve_typeref_required(ref, classes) -> type:
 
 
 # TODO: set __module__
-def build_schema(types: t.Iterable[raw.TypeSchema],
-                 scalars: ClassDict) -> ClassDict:
+def build(type_schemas: t.Iterable[raw.TypeSchema],
+          scalars: ClassDict) -> ClassDict:
 
     by_kind = defaultdict(list)
-    for tp in types:
+    for tp in type_schemas:
         by_kind[tp.__class__].append(tp)
 
     scalars_ = ChainMap(scalars, types.BUILTIN_SCALARS)

@@ -43,6 +43,29 @@ def _enum_to_gql(obj):
     return obj.value
 
 
+class FieldSchema(t.NamedTuple):
+    name: str
+    desc: str
+    type: type
+    args: FrozenDict  # TODO: use type parameters
+    is_deprecated: bool
+    deprecation_reason: t.Optional[str]
+
+    def __repr__(self):
+        return '<Field> {}'.format(type_repr(self.type))
+
+
+# TODO: nicer handling of list, union, optional
+def type_repr(type_):
+    if _is_optional(type_):
+        return 'Optional[{}]'.format(type_repr(
+            t.Union[tuple(a for a in type_.__args__ if a is not NoneType)]))
+    try:
+        return type_.__name__
+    except AttributeError:
+        return repr(type_)
+
+
 # TODO: add fragmentspread
 Selection = t.Union['Field', 'InlineFragment']
 
@@ -169,14 +192,14 @@ class NoSuchField(Error):
 @dataclass(frozen=True)
 class NoSuchArgument(Error):
     on: type
-    field: 'FieldSchema'
+    field: FieldSchema
     name: str
 
 
 @dataclass(frozen=True)
 class InvalidArgumentType(Error):
     on: type
-    field: 'FieldSchema'
+    field: FieldSchema
     name: str
     value: object
 
@@ -184,14 +207,14 @@ class InvalidArgumentType(Error):
 @dataclass(frozen=True)
 class MissingArgument(Error):
     on: type
-    field: 'FieldSchema'
+    field: FieldSchema
     name: str
 
 
 @dataclass(frozen=True)
 class InvalidSelection(Error):
     on: type
-    field: 'FieldSchema'
+    field: FieldSchema
 
 
 @dataclass(frozen=True)
@@ -322,16 +345,6 @@ class InputValue(t.NamedTuple):
     name: str
     desc: str
     type: type
-
-
-# TODO: nice repr for help() display
-class FieldSchema(t.NamedTuple):
-    name: str
-    desc: str
-    type: type
-    args: FrozenDict  # TODO: use type parameters
-    is_deprecated: bool
-    deprecation_reason: t.Optional[str]
 
 
 def query(selection_set, cls: type) -> Operation:
