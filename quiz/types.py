@@ -110,17 +110,6 @@ class SelectionSet(t.Iterable[Selection], t.Sized):
             )
         ) if self.__selections__ else ''
 
-    __hash__ = property(attrgetter('__selections__.__hash__'))
-
-    def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return other.__selections__ == self.__selections__
-        return NotImplemented
-
-    def __ne__(self, other):
-        equality = self.__eq__(other)
-        return NotImplemented if equality is NotImplemented else not equality
-
 
 @dataclass(frozen=True)
 class Raw:

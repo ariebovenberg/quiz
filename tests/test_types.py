@@ -351,3 +351,10 @@ class TestArgumentAsGql:
     def test_bool(self):
         assert quiz.argument_as_gql(True) == 'true'
         assert quiz.argument_as_gql(False) == 'false'
+
+
+class TestRaw:
+
+    def test_gql(self):
+        raw = quiz.Raw('my raw graphql')
+        assert gql(raw) == 'my raw graphql'

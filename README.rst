@@ -40,6 +40,7 @@ Todo
 * docs
 * warnings on using deprecated objects
 * pickling
-* handling markdown (CommonMark) in descriptions
 * schema to .rst
 * schema to .py
+* escape python keywords present in GraphQL
+* handling markdown (CommonMark) in descriptions
