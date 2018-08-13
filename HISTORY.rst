@@ -1,7 +1,12 @@
 Release history
 ---------------
 
-development
-+++++++++++
+0.0.2
++++++
 
-- planning
+- first useful release
+
+0.0.1
++++++
+
+- initial version

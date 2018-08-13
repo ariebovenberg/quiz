@@ -65,7 +65,9 @@ master_doc = 'index'
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = 'manni'
+# pygments_style = 'sphinx'
+pygments_style = 'default'
 
 # -- Options for HTML output ----------------------------------------------
 
@@ -91,11 +93,12 @@ html_theme_options = {
     'fixed_sidebar': True,
     'code_font_size': '0.8em',
     'travis_button': True,
-    'pre_bg': '#FFF6E5',
+
     'note_bg': '#DAF2ED',
     'note_border': '#DAF2ED',
     'warn_bg': '#FFE8E8',
     'warn_border': '#FFE8E8',
+    'pre_bg': '#E8EDDF',
 }
 
 html_sidebars = {

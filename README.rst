@@ -1,12 +1,12 @@
 Quiz 🎱
 =======
 
-(Under construction) A GraphQL client. Currently in experimental state.
+(Under construction) A capable GraphQL client. Currently in experimental state.
 
-Aims:
+Features:
 
-* Create typed, documented interfaces to GraphQL APIs
-* Write GraphQL queries in python-syntax
+* Typed, documented interfaces to GraphQL APIs
+* Use python to write and validate GraphQL queries
 * sync/async compatibility
 
 Features
@@ -16,15 +16,44 @@ Write GraphQL queries in python-syntax
 
 .. code-block:: python
 
-   from quiz import query, field_chain as _, execute
+   >>> from quiz import execute, selector as _, query
 
-   my_query = query [_
-     .repository(owner='octocat', name='Hello-World') [_
-       .createdAt
-     ]
-   ]
+   >>> q = query(
+   ...     _
+   ...     .repository(owner='octocat', name='Hello-World')[
+   ...         _
+   ...         .createdAt
+   ...         .description
+   ...     ]
+   ...     .organization(login='github')[
+   ...         _
+   ...         .location
+   ...         .email
+   ...         .project(number=1)[
+   ...             _
+   ...             .name
+   ...             .state
+   ...         ]
+   ...     ]
+   ... )
 
-   response = execute(my_query)
+   >>> str(q)
+   query {
+     repository(owner: "octocat", name: "Hello-World") {
+       createdAt
+       description
+     }
+     organization(login: "github") {
+       location
+       email
+       project(number: 1) {
+         name
+         state
+       }
+     }
+   }
+   >>> result = execute(q)
+
 
 Todo
 ----

@@ -1,0 +1,4 @@
+API reference
+=============
+
+.. automodule:: quiz
