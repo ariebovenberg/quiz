@@ -83,7 +83,7 @@ highlight_language = 'python3'
 # documentation.
 #
 html_theme_options = {
-    "description": quiz.__description__,
+    "description": quiz.__doc__,
     'description_font_style': 'italic',
     "github_user": 'ariebovenberg',
     "github_repo": 'quiz',
@@ -109,4 +109,5 @@ html_sidebars = {
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
+    'snug': ('https://snug.readthedocs.org/en/latest/', None),
 }

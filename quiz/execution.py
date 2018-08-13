@@ -5,7 +5,7 @@ from functools import partial
 
 import snug
 
-from .types import Document, Operation, SelectionSet, gql
+from .types import Document, ErrorResponse, Operation, SelectionSet, gql
 
 Executable = t.Union[str, Document, Operation, SelectionSet]
 
@@ -24,11 +24,33 @@ def as_http(doc: str, url: str) -> snug.Query[t.Dict[str, t.Any]]:
     content = json.loads(response.content)
     if 'errors' in content:
         # TODO: special exception class
-        raise Exception(content['errors'])
+        raise ErrorResponse(content['errors'])
     return content['data']
 
 
-def execute(obj: Executable, url: str, **kwargs) -> 'JSON':
+def execute(obj, url, **kwargs):
+    """Execute a GraphQL executable
+
+    Parameters
+    ----------
+
+    obj: str or Document or Operation or SelectionSet
+        The object to execute
+    url: str
+        The URL of the target endpoint
+    **kwargs
+         ``auth`` and/or ``client``, passed to :func:`snug.query.execute`.
+
+    Returns
+    -------
+    JSON
+        The response data
+
+    Raises
+    ------
+    ErrorResponse
+        If errors are present in the response
+    """
     return snug.execute(as_http(as_gql(obj), url), **kwargs)
 
 

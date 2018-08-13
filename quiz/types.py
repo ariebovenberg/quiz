@@ -216,6 +216,10 @@ class InvalidSelection(Error):
     field: FieldSchema
 
 
+class ErrorResponse(Error):
+    errors: 'JSON'
+
+
 @dataclass(frozen=True)
 class InlineFragment:
     on: type
