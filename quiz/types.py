@@ -1,14 +1,11 @@
 """main module for constructing graphQL queries"""
 import abc
 import enum
-import json
 import typing as t
 from dataclasses import dataclass, replace
-from functools import partial, singledispatch
+from functools import singledispatch
 from operator import methodcaller
 from textwrap import indent
-
-import snug
 
 from . import schema
 from .utils import Error, FrozenDict
@@ -20,6 +17,8 @@ gql = methodcaller("__gql__")
 
 FieldName = str
 """a valid GraphQL fieldname"""
+
+JsonObject = t.Dict[str, t.Any]
 
 
 @singledispatch
@@ -341,6 +340,11 @@ class Interface:
     pass
 
 
+class Document(t.NamedTuple):
+    operations: t.List[Operation]
+    # TODO: fragments
+
+
 class InputValue(t.NamedTuple):
     name: str
     desc: str
@@ -358,25 +362,6 @@ def query(selection_set, cls: type) -> Operation:
     for field in selection_set:
         _check_field(cls, field)
     return Operation(OperationType.QUERY, selection_set)
-
-
-def _as_http(operation: Operation, url: str) -> snug.Query['JSON']:
-    response = yield snug.Request('POST', url, json.dumps({
-        'query': gql(operation),
-    }).encode('ascii'), headers={'Content-Type': 'application/json'})
-    content = json.loads(response.content)
-    if 'errors' in content:
-        # TODO: special exception class
-        raise Exception(content['errors'])
-    return content['data']
-
-
-def execute(operation: Operation, url: str, **kwargs) -> 'JSON':
-    return snug.execute(_as_http(operation, url), **kwargs)
-
-
-def executor(url: str, **kwargs) -> t.Callable[[Operation], 'JSON']:
-    return partial(execute, url=url, **kwargs)
 
 
 introspection_query = Operation(
