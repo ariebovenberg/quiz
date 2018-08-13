@@ -57,7 +57,7 @@ class FieldSchema(t.NamedTuple):
 
 # TODO: nicer handling of list, union, optional
 # TODO: tests
-def type_repr(type_):
+def type_repr(type_):  # pragma: no cover
     if _is_optional(type_):
         return 'Optional[{}]'.format(type_repr(
             t.Union[tuple(a for a in type_.__args__ if a is not NoneType)]))
