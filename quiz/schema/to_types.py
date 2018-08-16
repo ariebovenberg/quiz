@@ -67,7 +67,7 @@ def _add_fields(obj, classes) -> None:
             f.name,
             types.FieldSchema(
                 name=f.name,
-                desc=f.name,
+                desc=f.desc,
                 args=FrozenDict({
                     i.name: types.InputValue(
                         name=i.name,
