@@ -6,6 +6,8 @@ import snug
 
 import quiz
 
+_ = quiz.selector
+
 py3 = pytest.mark.skipif(sys.version_info < (3, ), reason='python 3+ only')
 
 
@@ -41,6 +43,17 @@ class TestExecute:
         assert request.headers == {'Authorization': 'token foo',
                                    'Content-Type': 'application/json'}
 
+    def test_selection_set(self):
+        client = MockClient(snug.Response(200, b'{"data": {"foo": 4}}'))
+        result = quiz.execute(_.foo, url='https://my.url/api', client=client)
+        assert result == {'foo': 4}
+
+        request = client.request
+        assert request.url == 'https://my.url/api'
+        assert request.method == 'POST'
+        assert json.loads(request.content) == {'query': quiz.gql(_.foo)}
+        assert request.headers == {'Content-Type': 'application/json'}
+
     def test_errors(self):
         client = MockClient(snug.Response(200, json.dumps({
             'data': {'foo': 4},
@@ -51,7 +64,6 @@ class TestExecute:
                          client=client, auth=token_auth('foo'))
         assert exc.value == quiz.ErrorResponse({'foo': 4},
                                                [{'message': 'foo'}])
-
 
 def test_executor():
     executor = quiz.executor(url='https://my.url/graphql')
