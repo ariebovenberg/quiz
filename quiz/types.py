@@ -4,7 +4,7 @@ import enum
 import typing as t
 from dataclasses import dataclass, replace
 from functools import singledispatch
-from operator import methodcaller
+from operator import attrgetter, methodcaller
 from textwrap import indent
 
 from . import schema
@@ -82,7 +82,6 @@ Selection = t.Union['Field', 'InlineFragment']
 
 
 # TODO: ** operator for specifying fragments
-@dataclass(repr=False, frozen=True, init=False)
 class SelectionSet(t.Iterable[Selection], t.Sized):
     """A "magic" selection set builder"""
     # the attribute needs to have a dunder name to prevent
@@ -142,6 +141,17 @@ class SelectionSet(t.Iterable[Selection], t.Sized):
                 indent(gql(f), INDENT) for f in self.__selections__
             )
         ) if self.__selections__ else ''
+
+    def __eq__(self, other):
+        if isinstance(other, type(self)):
+            return other.__selections__ == self.__selections__
+        return NotImplemented
+
+    def __ne__(self, other):
+        equality = self.__eq__(other)
+        return NotImplemented if equality is NotImplemented else not equality
+
+    __hash__ = property(attrgetter('__selections__.__hash__'))
 
 
 @dataclass(frozen=True)

@@ -37,6 +37,6 @@ setup(
         'toolz~=0.9',
     ],
     keywords=['graphql', 'http', 'async'],
-    python_requires='>=3.7',
+    python_requires='>=3.6',
     packages=find_packages(exclude=('tests', 'docs')),
 )

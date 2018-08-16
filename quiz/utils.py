@@ -1,4 +1,6 @@
 import typing as t
+from collections import namedtuple
+from itertools import starmap
 from operator import attrgetter
 
 
@@ -23,3 +25,74 @@ class FrozenDict(t.Mapping):
 
 
 FrozenDict.EMPTY = FrozenDict({})
+
+
+def replace(self, **kwargs):
+    new = type(self).__new__(type(self))
+    new._data = self._data._replace(**kwargs)
+    return new
+
+
+def __init__(self, *args, **kwargs):
+    self._data = self.__namedtuple_cls__(*args, **kwargs)
+
+
+def __eq__(self, other):
+    if isinstance(other, type(self)):
+        return self._data == other._data
+    return NotImplemented
+
+
+def __ne__(self, other):
+    equality = self.__eq__(other)
+    return NotImplemented if equality is NotImplemented else not equality
+
+
+def __repr__(self):
+    # TODO: make py2-safe
+    return '{}({})'.format(
+        self.__class__.__qualname__,
+        ', '.join(starmap('{}={!r}'.format,
+                          zip(self._data._fields, self._data)))
+    )
+
+
+def valueclass(cls):
+    """Decorate a class to make it a namedtuple-like class.
+
+    Decorated classes get:
+    * a ``replace()`` method
+    * ``__repr__``, ``__eq__``, ``__ne__``, ``__init__``
+
+    Example
+    -------
+
+    >>> @utils.valueclass
+    ... class Foo(...):
+    ...     __slots__ = '_data'
+    ...     __fields__ = [
+    ...         ('foo', int),
+    ...         ('bla', str),
+    ...     ]
+    ...
+    >>> f = Foo(4, bla='foo')
+    >>> f
+    Foo(foo=4, bla='foo')
+
+    """
+    fieldnames = [n for n, _ in cls.__fields__]
+    assert cls.__slots__ == '_data'
+    assert 'replace' not in fieldnames
+    cls.__namedtuple_cls__ = namedtuple(
+        '_' + cls.__name__,
+        [n for n, _ in cls.__fields__],
+    )
+    cls.__init__ = __init__
+    cls.__eq__ = __eq__
+    cls.__ne__ = __ne__
+    cls.__repr__ = __repr__
+    cls.replace = replace
+    for name, _ in cls.__fields__:
+        setattr(cls, name, property(attrgetter('_data.' + name)))
+
+    return cls
