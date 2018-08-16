@@ -29,17 +29,17 @@ FrozenDict.EMPTY = FrozenDict({})
 
 def replace(self, **kwargs):
     new = type(self).__new__(type(self))
-    new._data = self._data._replace(**kwargs)
+    new._values = self._values._replace(**kwargs)
     return new
 
 
 def __init__(self, *args, **kwargs):
-    self._data = self.__namedtuple_cls__(*args, **kwargs)
+    self._values = self.__namedtuple_cls__(*args, **kwargs)
 
 
 def __eq__(self, other):
     if isinstance(other, type(self)):
-        return self._data == other._data
+        return self._values == other._values
     return NotImplemented
 
 
@@ -53,7 +53,7 @@ def __repr__(self):
     return '{}({})'.format(
         self.__class__.__qualname__,
         ', '.join(starmap('{}={!r}'.format,
-                          zip(self._data._fields, self._data)))
+                          zip(self._values._fields, self._values)))
     )
 
 
@@ -62,14 +62,14 @@ def valueclass(cls):
 
     Decorated classes get:
     * a ``replace()`` method
-    * ``__repr__``, ``__eq__``, ``__ne__``, ``__init__``
+    * ``__repr__``, ``__eq__``, ``__ne__``, ``__init__``, ``__hash__``
 
     Example
     -------
 
     >>> @utils.valueclass
     ... class Foo(...):
-    ...     __slots__ = '_data'
+    ...     __slots__ = '_values'  # optional
     ...     __fields__ = [
     ...         ('foo', int),
     ...         ('bla', str),
@@ -81,18 +81,20 @@ def valueclass(cls):
 
     """
     fieldnames = [n for n, _ in cls.__fields__]
-    assert cls.__slots__ == '_data'
     assert 'replace' not in fieldnames
     cls.__namedtuple_cls__ = namedtuple(
         '_' + cls.__name__,
         [n for n, _ in cls.__fields__],
     )
+    cls.__namedtuple_cls__.__new__.__defaults__ = getattr(
+        cls, '__defaults__', ())
     cls.__init__ = __init__
     cls.__eq__ = __eq__
     cls.__ne__ = __ne__
     cls.__repr__ = __repr__
+    cls.__hash__ = property(attrgetter('_values.__hash__'))
     cls.replace = replace
     for name, _ in cls.__fields__:
-        setattr(cls, name, property(attrgetter('_data.' + name)))
+        setattr(cls, name, property(attrgetter('_values.' + name)))
 
     return cls

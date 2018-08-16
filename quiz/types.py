@@ -2,13 +2,12 @@
 import abc
 import enum
 import typing as t
-from dataclasses import dataclass, replace
 from functools import singledispatch
 from operator import attrgetter, methodcaller
 from textwrap import indent
 
 from . import schema
-from .utils import Error, FrozenDict
+from .utils import Error, FrozenDict, valueclass
 
 NoneType = type(None)
 INDENT = "  "
@@ -115,7 +114,7 @@ class SelectionSet(t.Iterable[Selection], t.Sized):
 
         return SelectionSet._make(
             tuple(rest)
-            + (replace(target, selection_set=selection_set), ))
+            + (target.replace(selection_set=selection_set), ))
 
     def __repr__(self):
         return "<SelectionSet> {}".format(gql(self))
@@ -127,7 +126,7 @@ class SelectionSet(t.Iterable[Selection], t.Sized):
         except ValueError:
             raise Error('cannot call empty field list')
         return SelectionSet._make(
-            tuple(rest) + (replace(target, kwargs=FrozenDict(kwargs)), ))
+            tuple(rest) + (target.replace(kwargs=FrozenDict(kwargs)), ))
 
     def __iter__(self):
         return iter(self.__selections__)
@@ -154,22 +153,29 @@ class SelectionSet(t.Iterable[Selection], t.Sized):
     __hash__ = property(attrgetter('__selections__.__hash__'))
 
 
-@dataclass(frozen=True)
+@valueclass
 class Raw:
-    gql: str
+    __slots__ = '_values'
+    __fields__ = [
+        ('content', str)
+    ]
 
     def __gql__(self):
-        return self.gql
+        return self.content
 
 
-@dataclass(frozen=True)
+@valueclass
 class Field:
-    name: FieldName
-    kwargs: FrozenDict = FrozenDict.EMPTY
-    selection_set: SelectionSet = SelectionSet()
-    # TODO:
-    # - alias
-    # - directives
+    __slots__ = '_values'
+    __fields__ = [
+        ('name', FieldName),
+        ('kwargs', FrozenDict),
+        ('selection_set', SelectionSet),
+        # TODO:
+        # - alias
+        # - directives
+    ]
+    __defaults__ = (FrozenDict.EMPTY, SelectionSet())
 
     def __gql__(self):
         arguments = '({})'.format(
@@ -203,51 +209,65 @@ BUILTIN_SCALARS = {
 }
 
 
-@dataclass(frozen=True)
+@valueclass
 class NoSuchField(Error):
-    on: type
-    name: str
+    __fields__ = [
+        ('on', str),
+        ('name', str),
+    ]
 
 
-@dataclass(frozen=True)
+@valueclass
 class NoSuchArgument(Error):
-    on: type
-    field: FieldSchema
-    name: str
+    __fields__ = [
+        ('on', type),
+        ('field', FieldSchema),
+        ('name', str),
+    ]
 
 
-@dataclass(frozen=True)
+@valueclass
 class InvalidArgumentType(Error):
-    on: type
-    field: FieldSchema
-    name: str
-    value: object
+    __fields__ = [
+        ('on', type),
+        ('field', FieldSchema),
+        ('name', str),
+        ('value', object),
+    ]
 
 
-@dataclass(frozen=True)
+@valueclass
 class MissingArgument(Error):
-    on: type
-    field: FieldSchema
-    name: str
+    __fields__ = [
+        ('on', type),
+        ('field', FieldSchema),
+        ('name', str),
+    ]
 
 
-@dataclass(frozen=True)
+@valueclass
 class InvalidSelection(Error):
-    on: type
-    field: FieldSchema
+    __fields__ = [
+        ('on', type),
+        ('field', FieldSchema),
+    ]
 
 
-@dataclass(frozen=True)
+@valueclass
 class ErrorResponse(Error):
-    data:   t.Dict[str, JSON]
-    errors: t.List[t.Dict[str, JSON]]
+    __fields__ = [
+        ('data', t.Dict[str, JSON]),
+        ('errors', t.List[t.Dict[str, JSON]]),
+    ]
 
 
-@dataclass(frozen=True)
+@valueclass
 class InlineFragment:
-    on: type
-    selection_set: SelectionSet
-    # TODO: add directives
+    __fields__ = [
+        ('on', type),
+        ('selection_set', SelectionSet),
+    ]
+    # TODO: directives
 
     def __gql__(self):
         return '... on {} {}'.format(
@@ -262,10 +282,14 @@ class OperationType(enum.Enum):
     SUBSCRIPTION = 'subscription'
 
 
-@dataclass(frozen=True)
+@valueclass
 class Operation:
-    type: OperationType
-    selection_set: SelectionSet = SelectionSet()
+    __slots__ = '_values'
+    __fields__ = [
+        ('type', OperationType),
+        ('selection_set', SelectionSet)
+    ]
+    __defaults__ = (SelectionSet(), )
     # TODO:
     # - name (optional)
     # - variable_defs (optional)
