@@ -1,67 +1,98 @@
 Quiz 🎱
 =======
 
-Capable GraphQL client. Currently in experimental state.
+Capable GraphQL client. **Work in progress**.
 
 Features:
 
-* Typed, documented interfaces to GraphQL APIs
-* Use python to write and validate GraphQL queries
-* sync/async compatibility
+* Sync/async compatible, pluggable HTTP clients.
+* Auto-generate typed and documented python APIs
+* ORM-like syntax to write GraphQL.
 
 Quickstart
 ----------
 
-Making a simple query:
+A quick 'n dirty request to GitHub's new V4 API:
 
 .. code-block:: python
 
    >>> import quiz
    >>> query = '''
    ...   {
-   ...     repository(owner: "octocat", name: "Hello-World") {
+   ...     my_repo: repository(owner: "octocat", name: "Hello-World") {
    ...       createdAt
    ...       description
    ...     }
    ...     organization(login: "github") {
    ...       location
    ...       email
+   ...       avatarUrl(size: 50)
+   ...       project(number: 1) {
+   ...         name
+   ...         state
+   ...       }
    ...     }
    ...   }
    ... '''
-   >>> quiz.execute(query, url='http://api.github.com/graphl',
+   >>> quiz.execute(query, url='https://api.github.com/graphl',
    ...              auth=('me', 'password'))
-   {"repository": {"createdAt": ..., ...}, "organization": ...}
+   {"my_repo": ..., "organization": ...}
 
 
 Features
 --------
 
-1. **Flexibility**. Built on top of `snug <http://snug.readthedocs.io/>`_,
-   quiz supports different HTTP clients...
+1. **Adaptability**. Built on top of `snug <http://snug.readthedocs.io/>`_,
+   quiz supports different HTTP clients
 
    .. code-block:: python
 
       import requests
-      result = quiz.execute(query, client=requests.Session(), ...)
+      s = requests.Session()
+      result = quiz.execute(query, client=s, ...)
 
-   ...as well as async:
+   as well as async execution
+   (optionally with `aiohttp <http:aiohttp.readthedocs.io/>`_):
 
    .. code-block:: python3
 
       result = await quiz.execute_async(query, ...)
 
+2. **Typing**.
+   Convert a GraphQL schema into documented python classes:
 
-2. **Build GraphQL in python**.
+   .. code-block:: python3
 
-   
-   .. code-block:: python
-   
-      >>> from quiz import execute, selector as _, query
-   
-      >>> q = query(
+      >>> ghub = quiz.make_module(url='https://api.github.com/graphql',
+      ...                         auth=('me', 'password'))
+      >>> help(ghub.Repository)
+      class Repository(Node, ProjectOwner, Subscribable, Starrable,
+       UniformResourceLocatable, RepositoryInfo, quiz.types.Object)
+       |  A repository contains the content for a project.
+       |
+       |  Method resolution order:
+       |      ...
+       |
+       |  Data descriptors defined here:
+       |
+       |  assignableUsers
+       |      : UserConnection
+       |      A list of users that can be assigned to issues in this repo
+       |
+       |  codeOfConduct
+       |      : Optional[CodeOfConduct]
+       |      Returns the code of conduct for this repository
+       ...
+
+
+3. **GraphQL ORM**. Write queries as you would with an ORM:
+
+   .. code-block:: python3
+
+      >>> _ = quiz.SELECTOR
+      >>> q = ghub.query(
       ...     _
-      ...     .repository(owner='octocat', name='Hello-World')[
+      ...     ('my_repo').repository(owner='octocat', name='Hello-World')[
       ...         _
       ...         .createdAt
       ...         .description
@@ -70,6 +101,7 @@ Features
       ...         _
       ...         .location
       ...         .email
+      ...         .avatarUrl(size=50)
       ...         .project(number=1)[
       ...             _
       ...             .name
@@ -77,23 +109,51 @@ Features
       ...         ]
       ...     ]
       ... )
+      >>> str(ghub)
+
+   Catch errors:
+
+   .. code-block:: python3
+
+      >>> ghub.query(
+      ...     _
+      ...     .repository(owner='octocat', name='Hello-World')[
+      ...         _
+      ...         .createdAt
+      ...         .foo
+      ...         .description
+      ...     ]
+      ... )
+      quiz.NoSuchField: "Repository" has no field "foo"
 
 
-Todos
------
+Tentative roadmap
 
-* better custom primitives handling
-* deserialization
-* mutations
-* type inference for enum values
-* improved introspection
-* python2.7, 3.4, 3.5, 3.6 support
-* more examples
-* proper CI
-* docs
-* warnings on using deprecated objects
-* pickling
-* schema to .rst
-* schema to .py
-* escape python keywords present in GraphQL
-* handling markdown (CommonMark) in descriptions
+================================================================== ===========
+Feature                                                            status
+================================================================== ===========
+Adaptable Execution                                                done
+Class autogeneration                                               done
+Inline fragments                                                   planned
+Text escaping                                                      planned
+Non-ascii characters                                               planned
+Module autogeneration                                              planned
+Aliases                                                            planned
+Input objects                                                      planned
+Fragments and fragment spreads                                     planned
+Custom primitives                                                  planned
+Deserialization                                                    planned
+Mutations                                                          planned
+Python 2.7-3.7 support                                             planned
+CI                                                                 planned
+Variables
+Directives
+Parsing raw GraphQL
+Type inference (e.g. enum values)
+Pickling
+Autogenerate module .rst
+Autogenerate module .py
+Escaping python keywords
+Handling markdown in descriptions
+Warnings when using deprecated fields
+================================================================== ===========

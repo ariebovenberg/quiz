@@ -21,7 +21,7 @@ import quiz  # noqa
 
 # -- Project information -----------------------------------------------------
 
-project = 'Quiz'
+project = quiz.__name__.title()
 copyright = quiz.__copyright__
 author = quiz.__author__
 
