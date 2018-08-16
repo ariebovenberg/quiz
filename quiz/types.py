@@ -18,7 +18,8 @@ gql = methodcaller("__gql__")
 FieldName = str
 """a valid GraphQL fieldname"""
 
-JsonObject = t.Dict[str, t.Any]
+JSON = t.Any
+JsonObject = t.Dict[str, JSON]
 
 
 @singledispatch
@@ -230,8 +231,8 @@ class InvalidSelection(Error):
 
 @dataclass(frozen=True)
 class ErrorResponse(Error):
-    data:   t.Dict[str, 'JSON']
-    errors: t.List[t.Dict[str, 'JSON']]
+    data:   t.Dict[str, JSON]
+    errors: t.List[t.Dict[str, JSON]]
 
 
 @dataclass(frozen=True)

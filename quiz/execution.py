@@ -9,6 +9,7 @@ from .types import Document, ErrorResponse, Operation, SelectionSet, gql
 
 __all__ = [
     'execute',
+    'executor',
 ]
 
 Executable = t.Union[str, Document, Operation, SelectionSet]
@@ -58,8 +59,34 @@ def execute(obj, url, **kwargs):
     return snug.execute(as_http(as_gql(obj), url), **kwargs)
 
 
-def executor(url: str, **kwargs) -> t.Callable[[Operation], 'JSON']:
-    return partial(execute, url=url, **kwargs)
+def executor(**kwargs):
+    """Create a version of :func:`execute` with bound arguments.
+    Equivalent to ``partial(execute, **kwargs)``.
+
+    Parameters
+    ----------
+    **kwargs
+       ``url``, ``auth``, and/or ``client``, passed to :func:`execute`
+
+    Returns
+    -------
+    ~typing.Callable[[str or Document or Operation or SelectionSet], JSON]
+        A callable to execute GraphQL executables
+
+    Example
+    -------
+
+    >>> execute = executor(url='https://api.github.com/graphql',
+    ...                    auth=('me', 'password'))
+    >>> result = execute('''
+    ...   {
+    ...     repository(owner: "octocat" name: "Hello-World") {
+    ...       description
+    ...     }
+    ...   }
+    ... ''')
+    """
+    return partial(execute, **kwargs)
 
 
 # TODO: async counterparts
