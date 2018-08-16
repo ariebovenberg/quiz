@@ -1,5 +1,4 @@
 import typing as t
-import datetime
 from textwrap import dedent
 
 import pytest

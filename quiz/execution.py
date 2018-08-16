@@ -7,6 +7,10 @@ import snug
 
 from .types import Document, ErrorResponse, Operation, SelectionSet, gql
 
+__all__ = [
+    'execute',
+]
+
 Executable = t.Union[str, Document, Operation, SelectionSet]
 
 
@@ -23,8 +27,7 @@ def as_http(doc: str, url: str) -> snug.Query[t.Dict[str, t.Any]]:
     }).encode('ascii'), headers={'Content-Type': 'application/json'})
     content = json.loads(response.content)
     if 'errors' in content:
-        # TODO: special exception class
-        raise ErrorResponse(content['errors'])
+        raise ErrorResponse(**content)
     return content['data']
 
 
@@ -33,9 +36,10 @@ def execute(obj, url, **kwargs):
 
     Parameters
     ----------
-
     obj: str or Document or Operation or SelectionSet
-        The object to execute
+        The object to execute.
+        This may be raw GraphQL, a document, single operation,
+        or a query shorthand
     url: str
         The URL of the target endpoint
     **kwargs

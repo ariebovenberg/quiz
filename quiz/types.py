@@ -216,8 +216,10 @@ class InvalidSelection(Error):
     field: FieldSchema
 
 
+@dataclass(frozen=True)
 class ErrorResponse(Error):
-    errors: 'JSON'
+    data:   t.Dict[str, 'JSON']
+    errors: t.List[t.Dict[str, 'JSON']]
 
 
 @dataclass(frozen=True)
