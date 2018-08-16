@@ -396,10 +396,8 @@ class Interface:
 
 class _UnionMeta(type):
 
-    def __new__(self, name, bases, dct):
-        return super(_UnionMeta, self).__new__(self, name, bases, dct)
-
-    # TODO: __instancecheck__
+    def __instancecheck__(self, instance):
+        return isinstance(instance, self.__args__)
 
 
 # Q: why not typing.Union?
@@ -407,7 +405,7 @@ class _UnionMeta(type):
 #    and doesn't support __doc__, __name__, or isinstance()
 @six.add_metaclass(_UnionMeta)
 class Union(object):
-    pass
+    __args__ = ()
 
 
 class Document(t.NamedTuple):
