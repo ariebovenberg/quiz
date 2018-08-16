@@ -77,7 +77,7 @@ class TestUnionAsType:
         created = to_types.union_as_type(union_schema, objs)
         assert created.__name__ == 'Foo'
         assert created.__doc__ == 'my union!'
-        assert created.__origin__ == t.Union
+        assert issubclass(created, quiz.Union)
 
         assert created.__args__ == (
             objs['BlaType'],

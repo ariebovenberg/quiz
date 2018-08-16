@@ -6,6 +6,8 @@ from functools import singledispatch
 from operator import attrgetter, methodcaller
 from textwrap import indent
 
+import six
+
 from . import schema
 from .utils import Error, FrozenDict, valueclass
 
@@ -389,6 +391,22 @@ class Enum(enum.Enum):
 
 # TODO: this should be a metaclass
 class Interface:
+    pass
+
+
+class _UnionMeta(type):
+
+    def __new__(self, name, bases, dct):
+        return super(_UnionMeta, self).__new__(self, name, bases, dct)
+
+    # TODO: __instancecheck__
+
+
+# Q: why not typing.Union?
+# A: it isn't consistent across python versions,
+#    and doesn't support __doc__, __name__, or isinstance()
+@six.add_metaclass(_UnionMeta)
+class Union(object):
     pass
 
 

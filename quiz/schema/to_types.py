@@ -47,13 +47,15 @@ def enum_as_type(typ: raw.Enum, module_name: str) -> t.Type[enum.Enum]:
 # TODO: better error handling:
 # - empty list of types
 # - types not found
-# python flattens unions, this is OK because GQL does not allow nested unions
-# TODO: make our own Union class?
 def union_as_type(typ: raw.Union, objs: ClassDict):
-    union = t.Union[tuple(objs[o.name] for o in typ.types)]
-    union.__name__ = typ.name
-    union.__doc__ = typ.desc
-    return union
+    return type(
+        typ.name,
+        (types.Union, ),
+        {
+            '__doc__': typ.desc,
+            '__args__': tuple(objs[o.name] for o in typ.types)
+        }
+    )
 
 
 def inputobject_as_type(typ: raw.InputObject):
