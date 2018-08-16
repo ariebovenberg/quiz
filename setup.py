@@ -15,7 +15,7 @@ exec(read('quiz/__about__.py'), metadata)
 setup(
     name='quiz',
     version=metadata['__version__'],
-    description=metadata['__description__'],
+    description=metadata['__doc__'],
     license='MIT',
     long_description=read('README.rst') + '\n\n' + read('HISTORY.rst'),
     url='https://github.com/ariebovenberg/quiz',
