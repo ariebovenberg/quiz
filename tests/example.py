@@ -66,6 +66,6 @@ class Query(types.Object):
     dog = mkfield('dog', type=Dog)
 
 
-HumanOrAlien = t.Union[Human, Alien]
+Person = t.Union[Human, Alien]
 
-Human.best_friend = mkfield('best_friend', type=t.Optional[HumanOrAlien])
+Human.best_friend = mkfield('best_friend', type=t.Optional[Person])

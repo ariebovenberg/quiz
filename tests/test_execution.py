@@ -65,6 +65,7 @@ class TestExecute:
         assert exc.value == quiz.ErrorResponse({'foo': 4},
                                                [{'message': 'foo'}])
 
+
 def test_executor():
     executor = quiz.executor(url='https://my.url/graphql')
     assert executor.keywords['url'] == 'https://my.url/graphql'

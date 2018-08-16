@@ -18,7 +18,7 @@ Executable = t.Union[str, Document, Operation, SelectionSet]
 def as_gql(obj: Executable) -> str:
     if isinstance(obj, str):
         return obj
-    # TODO: typecheck?
+    assert isinstance(obj, (Document, Operation, SelectionSet))
     return gql(obj)
 
 

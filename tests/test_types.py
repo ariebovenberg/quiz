@@ -67,6 +67,13 @@ class TestObjectGetItem:
         assert exc.value == types.InvalidArgumentType(
             Dog, Dog.knows_command, 'command', 'foobar')  # noqa
 
+    def test_invalid_argument_type_optional(self):
+        selection_set = _.is_housetrained(at_other_homes='foo')
+        with pytest.raises(types.InvalidArgumentType) as exc:
+            Dog[selection_set]
+        assert exc.value == types.InvalidArgumentType(
+            Dog, Dog.is_housetrained, 'at_other_homes', 'foo')  # noqa
+
     def test_invalid_nested(self):
         with pytest.raises(types.NoSuchField) as exc:
             Dog[_.owner[_.hobbies[_.foo]]]
@@ -78,9 +85,9 @@ class TestObjectGetItem:
             Dog[_.name[_.foo]]
         assert exc.value == types.NoSuchField(str, 'foo')
 
-    # TODO: check union
+    # TODO: check object types always have selection sets
 
-    # TODO: check objects always have selection sets
+    # TODO: list input type
 
 
 class TestInlineFragment:
@@ -165,12 +172,12 @@ class TestOperation:
 
 class TestFieldSchema:
 
-    def test_repr(self):
+    def test_doc(self):
         schema = types.FieldSchema(
             'foo', 'my description', type=t.List[str],
             args=fdict.EMPTY,
             is_deprecated=False, deprecation_reason=None)
-        assert types.type_repr(t.List[str]) in repr(schema)
+        assert types.type_repr(t.List[str]) in schema.__doc__
 
 
 class TestField:

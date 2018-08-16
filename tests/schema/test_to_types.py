@@ -7,6 +7,8 @@ import pytest
 import quiz
 from quiz.schema import raw, to_types
 
+# TODO: test help() output with pydoc.render_doc()
+
 
 class TestEnumAsType:
 

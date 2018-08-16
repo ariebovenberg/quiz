@@ -51,17 +51,15 @@ class FieldSchema(t.NamedTuple):
     is_deprecated: bool
     deprecation_reason: t.Optional[str]
 
-    def __repr__(self):
-        return '<Field> {}'.format(type_repr(self.type))
-
     # TODO: actual descriptor implementation
-    def __get__(self, obj, objtype=None):
+    def __get__(self, obj, objtype=None):  # pragma: no cover
         return self
 
     # TODO: actual descriptor implementation
     def __set__(self, obj, value):
-        pass
+        raise NotImplementedError
 
+    # __doc__ allows descriptor to be displayed nicely in help()
     @property
     def __doc__(self):
         return '{}\n    {}'.format(type_repr(self.type), self.desc)
@@ -287,9 +285,9 @@ def _unwrap_type(type_: type) -> type:
 
 
 def _unwrap_union(type_: type) -> t.Union[type, t.Tuple[type, ...]]:
+    # TODO: handle lists
     try:
-        if type_.__origin__ is t.Union:
-            return type_.__args__
+        return type_.__args__
     except AttributeError:
         pass
     return type_
@@ -329,6 +327,7 @@ def _check_field(parent, field) -> t.NoReturn:
 # inherit from ABCMeta to allow mixing with other ABCs
 class ObjectMeta(abc.ABCMeta):
 
+    # TODO: also interfaces, unions can be made into fragments
     def __getitem__(self, selection_set: SelectionSet) -> InlineFragment:
         for field in selection_set:
             _check_field(self, field)
