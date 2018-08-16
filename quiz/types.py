@@ -53,6 +53,18 @@ class FieldSchema(t.NamedTuple):
     def __repr__(self):
         return '<Field> {}'.format(type_repr(self.type))
 
+    # TODO: actual descriptor implementation
+    def __get__(self, obj, objtype=None):
+        return self
+
+    # TODO: actual descriptor implementation
+    def __set__(self, obj, value):
+        pass
+
+    @property
+    def __doc__(self):
+        return '{}\n    {}'.format(type_repr(self.type), self.desc)
+
 
 # TODO: nicer handling of list, union, optional
 # TODO: tests
