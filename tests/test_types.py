@@ -1,4 +1,3 @@
-import typing as t
 from textwrap import dedent
 
 import pytest
@@ -22,6 +21,32 @@ class TestUnion:
         assert isinstance('foo', MyUnion)
         assert isinstance(5, MyUnion)
         assert not isinstance(1.3, MyUnion)
+
+
+class TestOptional:
+
+    def test_instancecheck(self):
+
+        class MyOptional(quiz.Nullable):
+            __arg__ = int
+
+        assert isinstance(5, MyOptional)
+        assert isinstance(None, MyOptional)
+        assert not isinstance(5.4, MyOptional)
+
+
+class TestList:
+
+    def test_isinstancecheck(self):
+
+        class MyList(quiz.List):
+            __arg__ = int
+
+        assert isinstance([1, 2], MyList)
+        assert isinstance([], MyList)
+        assert not isinstance(['foo'], MyList)
+        assert not isinstance([3, 'bla'], MyList)
+        assert not isinstance((1, 2), MyList)
 
 
 class TestObjectGetItem:
@@ -186,10 +211,10 @@ class TestFieldSchema:
 
     def test_doc(self):
         schema = quiz.FieldSchema(
-            'foo', 'my description', type=t.List[str],
+            'foo', 'my description', type=quiz.List[str],
             args=fdict.EMPTY,
             is_deprecated=False, deprecation_reason=None)
-        assert quiz.type_repr(t.List[str]) in schema.__doc__
+        assert 'List[str]' in schema.__doc__
 
 
 class TestField:

@@ -154,7 +154,8 @@ class TestResolveTypeRef:
 
         classes = {'Foo': quiz.Enum('Foo', {})}
         resolved = to_types.resolve_typeref(ref, classes)
-        assert resolved == t.Optional[classes['Foo']]
+        assert issubclass(resolved, quiz.Nullable)
+        assert resolved.__arg__ is classes['Foo']
 
     def test_non_null(self):
         ref = raw.TypeRef(None, raw.Kind.NON_NULL,
@@ -169,7 +170,10 @@ class TestResolveTypeRef:
                           raw.TypeRef('Foo', raw.Kind.OBJECT, None))
         classes = {'Foo': type('Foo', (), {})}
         resolved = to_types.resolve_typeref(ref, classes)
-        assert resolved == t.Optional[t.List[t.Optional[classes['Foo']]]]
+        assert issubclass(resolved, quiz.Nullable)
+        assert issubclass(resolved.__arg__, quiz.List)
+        assert issubclass(resolved.__arg__.__arg__, quiz.Nullable)
+        assert resolved.__arg__.__arg__.__arg__ == classes['Foo']
 
     def test_list_non_null(self):
         ref = raw.TypeRef(
@@ -182,7 +186,8 @@ class TestResolveTypeRef:
                 )))
         classes = {'Foo': type('Foo', (), {})}
         resolved = to_types.resolve_typeref(ref, classes)
-        assert resolved == t.List[classes['Foo']]
+        assert issubclass(resolved, quiz.List)
+        assert resolved.__arg__ == classes['Foo']
 
 
 class TestBuild:

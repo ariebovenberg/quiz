@@ -91,14 +91,18 @@ def resolve_typeref(ref: raw.TypeRef, classes: ClassDict) -> type:
     if ref.kind is raw.Kind.NON_NULL:
         return _resolve_typeref_required(ref.of_type, classes)
     else:
-        return t.Optional[_resolve_typeref_required(ref, classes)]
+        return type('Nullable', (types.Nullable, ), {
+            '__arg__': _resolve_typeref_required(ref, classes)
+        })
 
 
 # TODO: exception handling?
 def _resolve_typeref_required(ref, classes) -> type:
     assert ref.kind is not raw.Kind.NON_NULL
     if ref.kind is raw.Kind.LIST:
-        return t.List[resolve_typeref(ref.of_type, classes)]
+        return type('List', (types.List, ), {
+            '__arg__': resolve_typeref(ref.of_type, classes)
+        })
     return classes[ref.name]
 
 

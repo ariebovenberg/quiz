@@ -63,19 +63,7 @@ class FieldSchema(t.NamedTuple):
     # __doc__ allows descriptor to be displayed nicely in help()
     @property
     def __doc__(self):
-        return '{}\n    {}'.format(type_repr(self.type), self.desc)
-
-
-# TODO: nicer handling of list, union, optional
-# TODO: tests
-def type_repr(type_):  # pragma: no cover
-    if _is_optional(type_):
-        return 'Optional[{}]'.format(type_repr(
-            t.Union[tuple(a for a in type_.__args__ if a is not NoneType)]))
-    try:
-        return type_.__name__
-    except AttributeError:
-        return repr(type_)
+        return '{.__name__}\n    {}'.format(self.type, self.desc)
 
 
 # TODO: add fragmentspread
@@ -302,30 +290,9 @@ class Operation:
                               gql(self.selection_set))
 
 
-def _is_optional(typ: type) -> bool:
-    """check whether a type is a typing.Optional"""
-    try:
-        return typ.__origin__ is t.Union and NoneType in typ.__args__
-    except AttributeError:
-        return False
-
-
-def _unwrap_type(type_: type) -> type:
-    if _is_optional(type_):
-        return _unwrap_type(
-            t.Union[tuple(c for c in type_.__args__
-                          if c is not NoneType)])
-    elif getattr(type_, '__origin__', None) is list:
-        return _unwrap_type(type_.__args__[0])
-    return type_
-
-
-def _unwrap_union(type_: type) -> t.Union[type, t.Tuple[type, ...]]:
-    # TODO: handle lists
-    try:
-        return type_.__args__
-    except AttributeError:
-        pass
+def _unwrap_list_or_nullable(type_: type) -> type:
+    if issubclass(type_, (Nullable, List)):
+        return _unwrap_list_or_nullable(type_.__arg__)
     return type_
 
 
@@ -338,10 +305,10 @@ def _check_args(cls, field, kwargs) -> t.NoReturn:
         try:
             value = kwargs[param.name]
         except KeyError:
-            if not _is_optional(param.type):
+            if not issubclass(param.type, Nullable):
                 raise MissingArgument(cls, field, param.name)
         else:
-            if not isinstance(value, _unwrap_union(param.type)):
+            if not isinstance(value, param.type):
                 raise InvalidArgumentType(
                     cls, field, param.name, value
                 )
@@ -357,7 +324,7 @@ def _check_field(parent, field) -> t.NoReturn:
     _check_args(parent, schema, field.kwargs)
 
     for f in field.selection_set:
-        _check_field(_unwrap_type(schema.type), f)
+        _check_field(_unwrap_list_or_nullable(schema.type), f)
 
 
 # inherit from ABCMeta to allow mixing with other ABCs
@@ -394,7 +361,40 @@ class Interface:
     pass
 
 
-class _UnionMeta(type):
+class ListMeta(type):
+
+    def __getitem__(self, arg):
+        return type('List[{.__name__}]'.format(arg), (List, ), {
+            '__arg__': arg
+        })
+
+    def __instancecheck__(self, instance):
+        return (isinstance(instance, list)
+                and all(isinstance(i, self.__arg__) for i in instance))
+
+
+@six.add_metaclass(ListMeta)
+class List(object):
+    __arg__ = object
+
+
+class NullableMeta(type):
+
+    def __getitem__(self, arg):
+        return type('Nullable[{.__name__}]'.format(arg), (Nullable, ), {
+            '__arg__': arg
+        })
+
+    def __instancecheck__(self, instance):
+        return instance is None or isinstance(instance, self.__arg__)
+
+
+@six.add_metaclass(NullableMeta)
+class Nullable(object):
+    __arg__ = object
+
+
+class UnionMeta(type):
 
     def __instancecheck__(self, instance):
         return isinstance(instance, self.__args__)
@@ -403,7 +403,7 @@ class _UnionMeta(type):
 # Q: why not typing.Union?
 # A: it isn't consistent across python versions,
 #    and doesn't support __doc__, __name__, or isinstance()
-@six.add_metaclass(_UnionMeta)
+@six.add_metaclass(UnionMeta)
 class Union(object):
     __args__ = ()
 
