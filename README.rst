@@ -48,8 +48,7 @@ Features
    .. code-block:: python
 
       import requests
-      s = requests.Session()
-      result = quiz.execute(query, client=s, ...)
+      result = quiz.execute(query, ..., client=requests.Session())
 
    as well as async execution
    (optionally with `aiohttp <http:aiohttp.readthedocs.io/>`_):
@@ -63,9 +62,9 @@ Features
 
    .. code-block:: python3
 
-      >>> ghub = quiz.make_module(url='https://api.github.com/graphql',
-      ...                         auth=('me', 'password'))
-      >>> help(ghub.Repository)
+      >>> schema = quiz.schema.get(url='https://api.github.com/graphql',
+      ...                          auth=('me', 'password'))
+      >>> help(schema.Repository)
       class Repository(Node, ProjectOwner, Subscribable, Starrable,
        UniformResourceLocatable, RepositoryInfo, quiz.types.Object)
        |  A repository contains the content for a project.
@@ -80,7 +79,7 @@ Features
        |      A list of users that can be assigned to issues in this repo
        |
        |  codeOfConduct
-       |      : Optional[CodeOfConduct]
+       |      : CodeOfConduct or None
        |      Returns the code of conduct for this repository
        ...
 
