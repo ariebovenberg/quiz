@@ -4,6 +4,7 @@ import typing as t
 from functools import partial
 
 import snug
+from gentools import py2_compatible, return_
 
 from .types import Document, ErrorResponse, Operation, SelectionSet, gql
 
@@ -15,21 +16,24 @@ __all__ = [
 Executable = t.Union[str, Document, Operation, SelectionSet]
 
 
-def as_gql(obj: Executable) -> str:
+def as_gql(obj):
+    # type: Executable -> str
     if isinstance(obj, str):
         return obj
     assert isinstance(obj, (Document, Operation, SelectionSet))
     return gql(obj)
 
 
-def as_http(doc: str, url: str) -> snug.Query[t.Dict[str, t.Any]]:
+@py2_compatible
+def as_http(doc, url):
+    # type: (str, str) -> snug.Query[t.Dict[str, JSON]]
     response = yield snug.Request('POST', url, json.dumps({
         'query': doc,
     }).encode('ascii'), headers={'Content-Type': 'application/json'})
     content = json.loads(response.content.decode())
     if 'errors' in content:
         raise ErrorResponse(**content)
-    return content['data']
+    return_(content['data'])
 
 
 def execute(obj, url, **kwargs):

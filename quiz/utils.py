@@ -1,7 +1,9 @@
 import typing as t
 from collections import namedtuple
-from itertools import starmap
+from itertools import chain, starmap
 from operator import attrgetter
+
+from .compat import PY2
 
 
 class Error(Exception):
@@ -23,8 +25,19 @@ class FrozenDict(t.Mapping):
     def __hash__(self):
         return hash(frozenset(self._inner.items()))
 
+    if PY2:
+        viewkeys = property(attrgetter('_inner.viewkeys'))
+
 
 FrozenDict.EMPTY = FrozenDict({})
+
+
+def merge(*dicts):
+    """merge two mappings"""
+    if dicts:
+        return type(dicts[0])(chain.from_iterable(o.items() for o in dicts))
+    else:
+        return {}
 
 
 def replace(self, **kwargs):

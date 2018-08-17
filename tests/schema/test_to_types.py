@@ -1,6 +1,5 @@
 import datetime
 import enum
-import typing as t
 
 import pytest
 

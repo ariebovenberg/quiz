@@ -1,4 +1,3 @@
-import typing as t
 from functools import partial
 
 import quiz as q

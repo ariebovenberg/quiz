@@ -392,7 +392,7 @@ class TestArgumentAsGql:
         assert quiz.argument_as_gql("foo") == '"foo"'
 
     def test_invalid(self):
-        class MyClass:
+        class MyClass(object):
             pass
         with pytest.raises(TypeError, match='MyClass'):
             quiz.argument_as_gql(MyClass())

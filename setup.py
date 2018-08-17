@@ -36,10 +36,12 @@ setup(
     install_requires=[
         'typing>=3.6.2; python_version<"3.5"',
         'snug~=1.3',
+        'gentools~=1.1.0',
         'toolz~=0.9',
         'six~=1.11.0',
+        'enum34~=1.1.6; python_version<"3.4"',
     ],
     keywords=['graphql', 'http', 'async'],
-    python_requires='>=3.4',
+    python_requires='>=2.7',
     packages=find_packages(exclude=('tests', 'docs')),
 )

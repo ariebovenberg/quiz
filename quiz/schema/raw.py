@@ -174,7 +174,8 @@ def make_enumval(conf):
     )
 
 
-def _deserialize_type(conf) -> Type:
+def _deserialize_type(conf):
+    # type: Dict[str, JSON] -> Type
     return Type(
         name=conf["name"],
         kind=Kind(conf["kind"]),
@@ -225,7 +226,8 @@ InputObject = t.NamedTuple('InputObject', [
 TypeSchema = t.Union[Interface, Object, Scalar, Enum, Union, InputObject]
 
 
-def _cast_type(typ: Type) -> TypeSchema:
+def _cast_type(typ):
+    # type: Type -> TypeSchema
     if typ.kind is Kind.SCALAR:
         assert typ.interfaces is None
         assert typ.input_fields is None
@@ -272,5 +274,7 @@ def _cast_type(typ: Type) -> TypeSchema:
         raise NotImplementedError(type.kind)
 
 
-def load(raw_schema: RawSchema) -> t.Iterator[TypeSchema]:
+def load(raw_schema):
+    # type RawSchema -> Iterable[TypeSchema]
+    # TODO: py2: imap
     return map(compose(_cast_type, _deserialize_type), raw_schema["types"])

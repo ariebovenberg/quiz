@@ -2,12 +2,11 @@
 import abc
 import enum
 import typing as t
-from functools import singledispatch
 from operator import attrgetter, methodcaller
-from textwrap import indent
 
 import six
 
+from .compat import indent, singledispatch
 from .utils import Error, FrozenDict, valueclass
 
 NoneType = type(None)
@@ -23,7 +22,8 @@ JsonObject = t.Dict[str, JSON]
 
 
 @singledispatch
-def argument_as_gql(obj: object) -> str:
+def argument_as_gql(obj):
+    # type: object -> str
     raise TypeError("cannot serialize to GraphQL: {}".format(type(obj)))
 
 
@@ -83,7 +83,7 @@ class SelectionSet(t.Iterable[Selection], t.Sized):
     # Q: why can't this subclass tuple?
     # A: Then we would have unwanted methods like index()
 
-    def __init__(self, *selections: Selection):
+    def __init__(self, *selections):
         self.__selections__ = selections
 
     # TODO: optimize
@@ -97,10 +97,11 @@ class SelectionSet(t.Iterable[Selection], t.Sized):
     # TODO: support raw graphql strings
     def __getitem__(self, selection_set):
         # TODO: check duplicate fieldnames
-        try:
-            *rest, target = self.__selections__
-        except ValueError:
+        if not self.__selections__:
             raise Error('cannot select fields from empty field list')
+
+        # TODO: optimize
+        rest, target = self.__selections__[:-1], self.__selections__[-1]
 
         assert isinstance(selection_set, SelectionSet)
         assert len(selection_set.__selections__) >= 1
@@ -114,10 +115,12 @@ class SelectionSet(t.Iterable[Selection], t.Sized):
 
     # TODO: prevent `self` from conflicting with kwargs
     def __call__(self, **kwargs):
-        try:
-            *rest, target = self.__selections__
-        except ValueError:
+        if not self.__selections__:
             raise Error('cannot call empty field list')
+
+        # TODO: optimize
+        rest, target = self.__selections__[:-1], self.__selections__[-1]
+
         return SelectionSet._make(
             tuple(rest) + (target.replace(kwargs=FrozenDict(kwargs)), ))
 
@@ -127,7 +130,7 @@ class SelectionSet(t.Iterable[Selection], t.Sized):
     def __len__(self):
         return len(self.__selections__)
 
-    def __gql__(self) -> str:
+    def __gql__(self):
         return '{{\n{}\n}}'.format(
             '\n'.join(
                 indent(gql(f), INDENT) for f in self.__selections__
@@ -147,7 +150,7 @@ class SelectionSet(t.Iterable[Selection], t.Sized):
 
 
 @valueclass
-class Raw:
+class Raw(object):
     __slots__ = '_values'
     __fields__ = [
         ('content', str)
@@ -158,7 +161,7 @@ class Raw:
 
 
 @valueclass
-class Field:
+class Field(object):
     __slots__ = '_values'
     __fields__ = [
         ('name', FieldName),
@@ -190,7 +193,7 @@ class ID(str):
     """represents a unique identifier, often used to refetch an object
     or as the key for a cache. The ID type is serialized in the same way
     as a String; however, defining it as an ID signifies that it is not
-    intended to be human‐readable"""
+    intended to be human-readable"""
 
 
 BUILTIN_SCALARS = {
@@ -255,7 +258,7 @@ class ErrorResponse(Error):
 
 
 @valueclass
-class InlineFragment:
+class InlineFragment(object):
     __fields__ = [
         ('on', type),
         ('selection_set', SelectionSet),
@@ -276,7 +279,7 @@ class OperationType(enum.Enum):
 
 
 @valueclass
-class Operation:
+class Operation(object):
     __slots__ = '_values'
     __fields__ = [
         ('type', OperationType),
@@ -293,14 +296,15 @@ class Operation:
                               gql(self.selection_set))
 
 
-def _unwrap_list_or_nullable(type_: type) -> type:
+def _unwrap_list_or_nullable(type_):
+    # type: type -> type
     if issubclass(type_, (Nullable, List)):
         return _unwrap_list_or_nullable(type_.__arg__)
     return type_
 
 
-def _check_args(cls, field, kwargs) -> None:
-    invalid_args = kwargs.keys() - field.args.keys()
+def _check_args(cls, field, kwargs):
+    invalid_args = six.viewkeys(kwargs) - six.viewkeys(field.args)
     if invalid_args:
         raise NoSuchArgument(cls, field, invalid_args.pop())
 
@@ -317,7 +321,7 @@ def _check_args(cls, field, kwargs) -> None:
                 )
 
 
-def _check_field(parent, field) -> None:
+def _check_field(parent, field):
     assert isinstance(field, Field)
     try:
         schema = getattr(parent, field.name)
@@ -334,7 +338,8 @@ def _check_field(parent, field) -> None:
 class ObjectMeta(abc.ABCMeta):
 
     # TODO: also interfaces, unions can be made into fragments
-    def __getitem__(self, selection_set: SelectionSet) -> InlineFragment:
+    def __getitem__(self, selection_set):
+        # type: SelectionSet -> InlineFragment
         for field in selection_set:
             _check_field(self, field)
         return InlineFragment(self, selection_set)
@@ -342,13 +347,14 @@ class ObjectMeta(abc.ABCMeta):
     # TODO: prevent direct instantiation
 
 
-class Object(metaclass=ObjectMeta):
+@six.add_metaclass(ObjectMeta)
+class Object(object):
     """a graphQL object"""
 
 
 # - InputObject: calling instantiates an instance,
 #   results must be instances of the class
-class InputObject:
+class InputObject(object):
     pass
 
 
@@ -360,7 +366,7 @@ class Enum(enum.Enum):
 
 
 # TODO: this should be a metaclass
-class Interface:
+class Interface(object):
     pass
 
 
@@ -412,7 +418,7 @@ class Union(object):
 
 
 @valueclass
-class Document():
+class Document(object):
     __slots__ = '_values'
     __fields__ = [
         ('operations', t.List[Operation])
@@ -427,13 +433,20 @@ InputValue = t.NamedTuple('InputValue', [
 ])
 
 
-def query(selection_set, cls: type) -> Operation:
+def query(selection_set, cls):
     """Create a query operation
 
-    selection_set
+    Parameters
+    ----------
+    selection_set: selectionSet
         The selection set
-    cls
+    cls: type
         The query type
+
+    Returns
+    -------
+    Operation
+        The query operation
     """
     for field in selection_set:
         _check_field(cls, field)

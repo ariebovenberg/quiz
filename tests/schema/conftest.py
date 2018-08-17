@@ -1,5 +1,5 @@
 import json
-from pathlib import Path
+from os.path import dirname, join
 
 import pytest
 
@@ -8,7 +8,7 @@ import quiz
 
 @pytest.fixture(scope='session')
 def raw_schema():
-    with (Path(__file__).parent / 'example_schema.json').open() as rfile:
+    with open(join(dirname(__file__), 'example_schema.json')) as rfile:
         return json.load(rfile)
 
 

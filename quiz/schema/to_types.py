@@ -1,12 +1,13 @@
-import enum
 import typing as t
-from collections import ChainMap, defaultdict
+from collections import defaultdict
 from functools import partial
 from itertools import chain
 
+import six
+
 from . import raw
 from .. import types
-from ..utils import FrozenDict
+from ..utils import FrozenDict, merge
 
 ClassDict = t.Dict[str, type]
 
@@ -15,11 +16,10 @@ def _namedict(classes):
     return {c.__name__: c for c in classes}
 
 
-def object_as_type(typ: raw.Object,
-                   interfaces: t.Mapping[str, type(types.Interface)],
-                   module_name: str) -> type:
+def object_as_type(typ, interfaces, module_name):
+    # type: (raw.Object, Mapping[str, Type[types.Interface]], str) -> type
     return type(
-        typ.name,
+        str(typ.name),
         tuple(interfaces[i.name] for i in typ.interfaces) + (types.Object, ),
         {"__doc__": typ.desc, "__raw__": typ, '__module__': module_name},
     )
@@ -28,13 +28,15 @@ def object_as_type(typ: raw.Object,
 # NOTE: fields are not added yet. These must be added later with _add_fields
 # why is this? Circular references may exist, which can only be added
 # after all classes have been defined
-def interface_as_type(typ: raw.Interface, module_name: str):
-    return type(typ.name, (types.Interface, ),
+def interface_as_type(typ, module_name):
+    # type: (raw.Interface, str) -> type
+    return type(str(typ.name), (types.Interface, ),
                 {"__doc__": typ.desc, '__raw__': typ,
                  '__module__': module_name})
 
 
-def enum_as_type(typ: raw.Enum, module_name: str) -> t.Type[enum.Enum]:
+def enum_as_type(typ, module_name):
+    # type: (raw.Enum, str) -> Type[types.Enum]
     # TODO: convert camelcase to snake-case?
     assert len(typ.values) > 0
     cls = types.Enum(typ.name, [(v.name, v.name) for v in typ.values],
@@ -48,9 +50,10 @@ def enum_as_type(typ: raw.Enum, module_name: str) -> t.Type[enum.Enum]:
 # TODO: better error handling:
 # - empty list of types
 # - types not found
-def union_as_type(typ: raw.Union, objs: ClassDict):
+def union_as_type(typ, objs):
+    # type (raw.Union, ClassDict) -> type
     return type(
-        typ.name,
+        str(typ.name),
         (types.Union, ),
         {
             '__doc__': typ.desc,
@@ -59,11 +62,12 @@ def union_as_type(typ: raw.Union, objs: ClassDict):
     )
 
 
-def inputobject_as_type(typ: raw.InputObject):
-    return type(typ.name, (), {"__doc__": typ.desc})
+def inputobject_as_type(typ):
+    # type raw.InputObject -> type
+    return type(str(typ.name), (types.InputObject, ), {"__doc__": typ.desc})
 
 
-def _add_fields(obj, classes) -> None:
+def _add_fields(obj, classes):
     for f in obj.__raw__.fields:
         setattr(
             obj,
@@ -88,7 +92,8 @@ def _add_fields(obj, classes) -> None:
     return obj
 
 
-def resolve_typeref(ref: raw.TypeRef, classes: ClassDict) -> type:
+def resolve_typeref(ref, classes):
+    # type: (raw.TypeRef, ClassDict) -> type
     if ref.kind is raw.Kind.NON_NULL:
         return _resolve_typeref_required(ref.of_type, classes)
     else:
@@ -98,7 +103,7 @@ def resolve_typeref(ref: raw.TypeRef, classes: ClassDict) -> type:
 
 
 # TODO: exception handling?
-def _resolve_typeref_required(ref, classes) -> type:
+def _resolve_typeref_required(ref, classes):
     assert ref.kind is not raw.Kind.NON_NULL
     if ref.kind is raw.Kind.LIST:
         return type('List', (types.List, ), {
@@ -107,17 +112,16 @@ def _resolve_typeref_required(ref, classes) -> type:
     return classes[ref.name]
 
 
-def build(type_schemas: t.Iterable[raw.TypeSchema],
-          module_name: str,
-          scalars: ClassDict=FrozenDict.EMPTY) -> ClassDict:
+def build(type_schemas, module_name, scalars=FrozenDict.EMPTY):
+    # type: (Iterable[raw.TypeSchema], str, ClassDict) -> ClassDict
 
     by_kind = defaultdict(list)
     for tp in type_schemas:
         by_kind[tp.__class__].append(tp)
 
-    scalars_ = ChainMap(scalars, types.BUILTIN_SCALARS)
+    scalars_ = merge(scalars, types.BUILTIN_SCALARS)
     undefined_scalars = {
-        tp.name for tp in by_kind[raw.Scalar]} - scalars_.keys()
+        tp.name for tp in by_kind[raw.Scalar]} - six.viewkeys(scalars_)
     if undefined_scalars:
         # TODO: special exception class
         raise Exception('Undefined scalars: {}'.format(', '.join(
@@ -145,7 +149,7 @@ def build(type_schemas: t.Iterable[raw.TypeSchema],
         by_kind[raw.InputObject]
     ))
 
-    classes = ChainMap(
+    classes = merge(
         scalars_, interfaces, enums, objs, unions, input_objects
     )
 
