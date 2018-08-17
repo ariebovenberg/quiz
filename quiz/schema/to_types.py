@@ -36,7 +36,8 @@ def interface_as_type(typ: raw.Interface, module_name: str):
 
 def enum_as_type(typ: raw.Enum, module_name: str) -> t.Type[enum.Enum]:
     # TODO: convert camelcase to snake-case?
-    cls = types.Enum(typ.name, {v.name: v.name for v in typ.values},
+    assert len(typ.values) > 0
+    cls = types.Enum(typ.name, [(v.name, v.name) for v in typ.values],
                      module=module_name)
     cls.__doc__ = typ.desc
     for member, conf in zip(cls.__members__.values(), typ.values):

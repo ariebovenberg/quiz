@@ -50,13 +50,6 @@ class TestEnumAsType:
             assert member.value == name
             assert member.__doc__ == member_schema.desc
 
-    def test_empty(self):
-        created = to_types.enum_as_type(raw.Enum('MyValues', '', values=[]),
-                                        module_name='foo')
-        assert issubclass(created, quiz.Enum)
-        assert issubclass(created, enum.Enum)
-        assert len(created.__members__) == 0
-
 
 class TestUnionAsType:
 

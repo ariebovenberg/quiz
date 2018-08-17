@@ -26,7 +26,7 @@ def as_http(doc: str, url: str) -> snug.Query[t.Dict[str, t.Any]]:
     response = yield snug.Request('POST', url, json.dumps({
         'query': doc,
     }).encode('ascii'), headers={'Content-Type': 'application/json'})
-    content = json.loads(response.content)
+    content = json.loads(response.content.decode())
     if 'errors' in content:
         raise ErrorResponse(**content)
     return content['data']

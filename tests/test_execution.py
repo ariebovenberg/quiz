@@ -39,7 +39,7 @@ class TestExecute:
         request = client.request
         assert request.url == 'https://my.url/api'
         assert request.method == 'POST'
-        assert json.loads(request.content) == {'query': 'my query'}
+        assert json.loads(request.content.decode()) == {'query': 'my query'}
         assert request.headers == {'Authorization': 'token foo',
                                    'Content-Type': 'application/json'}
 
@@ -51,14 +51,15 @@ class TestExecute:
         request = client.request
         assert request.url == 'https://my.url/api'
         assert request.method == 'POST'
-        assert json.loads(request.content) == {'query': quiz.gql(_.foo)}
+        assert json.loads(request.content.decode()) == {
+            'query': quiz.gql(_.foo)}
         assert request.headers == {'Content-Type': 'application/json'}
 
     def test_errors(self):
         client = MockClient(snug.Response(200, json.dumps({
             'data': {'foo': 4},
             'errors': [{'message': 'foo'}]
-        })))
+        }).encode()))
         with pytest.raises(quiz.ErrorResponse) as exc:
             quiz.execute('my query', url='https://my.url/api',
                          client=client, auth=token_auth('foo'))
