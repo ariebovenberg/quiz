@@ -300,7 +300,7 @@ def _unwrap_list_or_nullable(type_: type) -> type:
     return type_
 
 
-def _check_args(cls, field, kwargs) -> t.NoReturn:
+def _check_args(cls, field, kwargs) -> None:
     invalid_args = kwargs.keys() - field.args.keys()
     if invalid_args:
         raise NoSuchArgument(cls, field, invalid_args.pop())
@@ -318,7 +318,7 @@ def _check_args(cls, field, kwargs) -> t.NoReturn:
                 )
 
 
-def _check_field(parent, field) -> t.NoReturn:
+def _check_field(parent, field) -> None:
     assert isinstance(field, Field)
     try:
         schema = getattr(parent, field.name)
