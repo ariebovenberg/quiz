@@ -9,6 +9,7 @@ python:
   - "3.6"
   # 3.7 added manually to test matrix,
   # awaiting travis fix
+  # see https://github.com/travis-ci/travis-ci/issues/9815
   # - "3.7"
   - "3.8-dev"
 install: 
