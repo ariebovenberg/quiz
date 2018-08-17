@@ -8,7 +8,6 @@ from textwrap import indent
 
 import six
 
-from . import schema
 from .utils import Error, FrozenDict, valueclass
 
 NoneType = type(None)
@@ -441,7 +440,7 @@ def query(selection_set, cls: type) -> Operation:
     return Operation(OperationType.QUERY, selection_set)
 
 
-introspection_query = Operation(
-    OperationType.QUERY,
-    Raw(schema.raw.INTROSPECTION_QUERY)
-)
+# introspection_query = Operation(
+#     OperationType.QUERY,
+#     Raw(schema.raw.INTROSPECTION_QUERY)
+# )
