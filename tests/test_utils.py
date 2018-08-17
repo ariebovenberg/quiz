@@ -1,6 +1,7 @@
 import pytest
 
 from quiz import utils
+from quiz.compat import PY3
 
 from .helpers import AlwaysEquals, NeverEquals
 
@@ -9,7 +10,7 @@ class TestNamedtupleData:
 
     def test_simple(self):
 
-        @utils.valueclass
+        @utils.value_object
         class Foo(object):
             __slots__ = '_values'
             __fields__ = [
@@ -17,8 +18,8 @@ class TestNamedtupleData:
                 ('bla', str),
             ]
 
-        # TODO: dont set qualname on py2
-        Foo.__qualname__ = 'my_module.Foo'
+        if PY3:
+            Foo.__qualname__ = 'my_module.Foo'
 
         instance = Foo(4, bla='foo')
 
@@ -44,11 +45,14 @@ class TestNamedtupleData:
         with pytest.raises(AttributeError, match="can't set"):
             instance.foo = 6
 
-        assert repr(instance) == 'my_module.Foo(foo=4, bla=\'foo\')'
+        if PY3:
+            assert repr(instance) == 'my_module.Foo(foo=4, bla=\'foo\')'
+        else:
+            assert repr(instance) == 'Foo(foo=4, bla=\'foo\')'
 
     def test_defaults(self):
 
-        @utils.valueclass
+        @utils.value_object
         class Foo(object):
             __fields__ = [
                 ('foo', int),

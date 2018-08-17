@@ -7,7 +7,7 @@ from operator import attrgetter, methodcaller
 import six
 
 from .compat import indent, singledispatch
-from .utils import Error, FrozenDict, valueclass
+from .utils import Error, FrozenDict, value_object
 
 NoneType = type(None)
 INDENT = "  "
@@ -43,7 +43,7 @@ def _enum_to_gql(obj):
     return obj.value
 
 
-@valueclass
+@value_object
 class FieldSchema(object):
     __slots__ = '_values'
     __fields__ = [
@@ -149,7 +149,7 @@ class SelectionSet(t.Iterable[Selection], t.Sized):
     __hash__ = property(attrgetter('__selections__.__hash__'))
 
 
-@valueclass
+@value_object
 class Raw(object):
     __slots__ = '_values'
     __fields__ = [
@@ -160,7 +160,7 @@ class Raw(object):
         return self.content
 
 
-@valueclass
+@value_object
 class Field(object):
     __slots__ = '_values'
     __fields__ = [
@@ -205,7 +205,7 @@ BUILTIN_SCALARS = {
 }
 
 
-@valueclass
+@value_object
 class NoSuchField(Error):
     __fields__ = [
         ('on', str),
@@ -213,7 +213,7 @@ class NoSuchField(Error):
     ]
 
 
-@valueclass
+@value_object
 class NoSuchArgument(Error):
     __fields__ = [
         ('on', type),
@@ -222,7 +222,7 @@ class NoSuchArgument(Error):
     ]
 
 
-@valueclass
+@value_object
 class InvalidArgumentType(Error):
     __fields__ = [
         ('on', type),
@@ -232,7 +232,7 @@ class InvalidArgumentType(Error):
     ]
 
 
-@valueclass
+@value_object
 class MissingArgument(Error):
     __fields__ = [
         ('on', type),
@@ -241,7 +241,7 @@ class MissingArgument(Error):
     ]
 
 
-@valueclass
+@value_object
 class InvalidSelection(Error):
     __fields__ = [
         ('on', type),
@@ -249,7 +249,7 @@ class InvalidSelection(Error):
     ]
 
 
-@valueclass
+@value_object
 class ErrorResponse(Error):
     __fields__ = [
         ('data', t.Dict[str, JSON]),
@@ -257,7 +257,7 @@ class ErrorResponse(Error):
     ]
 
 
-@valueclass
+@value_object
 class InlineFragment(object):
     __fields__ = [
         ('on', type),
@@ -278,7 +278,7 @@ class OperationType(enum.Enum):
     SUBSCRIPTION = 'subscription'
 
 
-@valueclass
+@value_object
 class Operation(object):
     __slots__ = '_values'
     __fields__ = [
@@ -417,7 +417,7 @@ class Union(object):
     __args__ = ()
 
 
-@valueclass
+@value_object
 class Document(object):
     __slots__ = '_values'
     __fields__ = [

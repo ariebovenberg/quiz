@@ -64,13 +64,13 @@ def __ne__(self, other):
 def __repr__(self):
     # TODO: make py2-safe
     return '{}({})'.format(
-        self.__class__.__qualname__,
+        self.__class__.__name__ if PY2 else self.__class__.__qualname__,
         ', '.join(starmap('{}={!r}'.format,
                           zip(self._values._fields, self._values)))
     )
 
 
-def valueclass(cls):
+def value_object(cls):
     """Decorate a class to make it a namedtuple-like class.
 
     Decorated classes get:
@@ -80,7 +80,7 @@ def valueclass(cls):
     Example
     -------
 
-    >>> @utils.valueclass
+    >>> @utils.value_object
     ... class Foo(...):
     ...     __slots__ = '_values'  # optional
     ...     __fields__ = [
