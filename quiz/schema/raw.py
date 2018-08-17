@@ -4,6 +4,8 @@ import typing as t
 
 from toolz import compose
 
+# TODO: are descriptions optional?
+
 RawSchema = t.List[dict]
 
 INTROSPECTION_QUERY = """
@@ -98,44 +100,41 @@ class Kind(enum.Enum):
     UNION = "UNION"
 
 
-class TypeRef(t.NamedTuple):
-    name: t.Optional[str]
-    kind: Kind
-    of_type: t.Optional["TypeRef"]
-
-
-class InputValue(t.NamedTuple):
-    name: str
-    desc: str
-    type: TypeRef
-    default: object
-
-
-class Field(t.NamedTuple):
-    name: str
-    type: TypeRef
-    args: t.List[InputValue]
-    desc: str
-    is_deprecated: bool
-    deprecation_reason: t.Optional[str]
-
-
-class Type(t.NamedTuple):
-    name: t.Optional[str]
-    kind: Kind
-    desc: str
-    fields: t.Optional[t.List[Field]]
-    input_fields: t.Optional[t.List["InputValue"]]
-    interfaces: t.Optional[t.List[TypeRef]]
-    possible_types: t.Optional[t.List[TypeRef]]
-    enum_values: t.Optional[t.List]
-
-
-class EnumValue(t.NamedTuple):
-    name: str
-    desc: str
-    is_deprecated: bool
-    deprecation_reason: t.Optional[str]
+TypeRef = t.NamedTuple('TypeRef', [
+    ('name', t.Optional[str]),
+    ('kind', Kind),
+    ('of_type', t.Optional['TypeRef']),
+])
+InputValue = t.NamedTuple('InputValue', [
+    ('name', str),
+    ('desc', str),
+    ('type', TypeRef),
+    ('default', object),
+])
+Field = t.NamedTuple('Field', [
+    ('name', str),
+    ('type', TypeRef),
+    ('args', t.List[InputValue]),
+    ('desc', str),
+    ('is_deprecated', bool),
+    ('deprecation_reason', t.Optional[str]),
+])
+Type = t.NamedTuple('Type', [
+    ('name', t.Optional[str]),
+    ('kind', Kind),
+    ('desc', str),
+    ('fields', t.Optional[t.List[Field]]),
+    ('input_fields', t.Optional[t.List["InputValue"]]),
+    ('interfaces', t.Optional[t.List[TypeRef]]),
+    ('possible_types', t.Optional[t.List[TypeRef]]),
+    ('enum_values', t.Optional[t.List]),
+])
+EnumValue = t.NamedTuple('EnumValue', [
+    ('name', str),
+    ('desc', str),
+    ('is_deprecated', bool),
+    ('deprecation_reason', t.Optional[str]),
+])
 
 
 def make_inputvalue(conf):
@@ -192,43 +191,37 @@ def _deserialize_type(conf) -> Type:
     )
 
 
-class Interface(t.NamedTuple):
-    name: str
-    desc: str
-    fields: t.List[Field]
-
-
-class Object(t.NamedTuple):
-    name: str
-    desc: str
-    interfaces: t.List[TypeRef]
-    input_fields: t.Optional[t.List[InputValue]]
-    fields: t.List[Field]
-
-
-class Scalar(t.NamedTuple):
-    name: str
-    desc: str
-
-
-class Enum(t.NamedTuple):
-    name: str
-    desc: str
-    values: t.List[EnumValue]
-
-
-class Union(t.NamedTuple):
-    name: str
-    desc: str
-    types: t.List[TypeRef]
-
-
-class InputObject(t.NamedTuple):
-    name: str
-    desc: str
-    input_fields: t.List[InputValue]
-
-
+Interface = t.NamedTuple('Interface', [
+    ('name', str),
+    ('desc', str),
+    ('fields', t.List[Field]),
+])
+Object = t.NamedTuple('Object', [
+    ('name', str),
+    ('desc', str),
+    ('interfaces', t.List[TypeRef]),
+    ('input_fields', t.Optional[t.List[InputValue]]),
+    ('fields', t.List[Field]),
+])
+Scalar = t.NamedTuple('Scalar', [
+    ('name', str),
+    ('desc', str),
+])
+Enum = t.NamedTuple('Enum', [
+    ('name', str),
+    ('desc', str),
+    ('values', t.List[EnumValue]),
+])
+Union = t.NamedTuple('Union', [
+    ('name', str),
+    ('desc', str),
+    ('types', t.List[TypeRef]),
+])
+InputObject = t.NamedTuple('InputObject', [
+    ('name', str),
+    ('desc', str),
+    ('input_fields', t.List[InputValue]),
+])
 TypeSchema = t.Union[Interface, Object, Scalar, Enum, Union, InputObject]
 
 

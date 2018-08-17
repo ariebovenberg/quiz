@@ -44,13 +44,17 @@ def _enum_to_gql(obj):
     return obj.value
 
 
-class FieldSchema(t.NamedTuple):
-    name: str
-    desc: str
-    type: type
-    args: FrozenDict  # TODO: use type parameters
-    is_deprecated: bool
-    deprecation_reason: t.Optional[str]
+@valueclass
+class FieldSchema(object):
+    __slots__ = '_values'
+    __fields__ = [
+        ('name', str),
+        ('desc', str),
+        ('type', type),
+        ('args', FrozenDict),  # TODO: FrozenDict[str, InputValue]
+        ('is_deprecated', bool),
+        ('deprecation_reason', t.Optional[str]),
+    ]
 
     # TODO: actual descriptor implementation
     def __get__(self, obj, objtype=None):  # pragma: no cover
@@ -75,13 +79,13 @@ class SelectionSet(t.Iterable[Selection], t.Sized):
     """A "magic" selection set builder"""
     # the attribute needs to have a dunder name to prevent
     # conflicts with GraphQL field names
-    __selections__: t.Tuple[Selection]
+    __slots__ = '__selections__'
 
     # Q: why can't this subclass tuple?
     # A: Then we would have unwanted methods like index()
 
-    def __init__(self, *selections):
-        self.__dict__['__selections__'] = selections
+    def __init__(self, *selections: Selection):
+        self.__selections__ = selections
 
     # TODO: optimize
     @classmethod
@@ -408,15 +412,20 @@ class Union(object):
     __args__ = ()
 
 
-class Document(t.NamedTuple):
-    operations: t.List[Operation]
-    # TODO: fragments
+@valueclass
+class Document():
+    __slots__ = '_values'
+    __fields__ = [
+        ('operations', t.List[Operation])
+        # TODO: fragments
+    ]
 
 
-class InputValue(t.NamedTuple):
-    name: str
-    desc: str
-    type: type
+InputValue = t.NamedTuple('InputValue', [
+    ('name', str),
+    ('desc', str),
+    ('type', type),
+])
 
 
 def query(selection_set, cls: type) -> Operation:

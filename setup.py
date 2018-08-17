@@ -29,6 +29,8 @@ setup(
         'License :: OSI Approved :: MIT License',
 
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ],
     install_requires=[
@@ -38,6 +40,6 @@ setup(
         'six~=1.11.0',
     ],
     keywords=['graphql', 'http', 'async'],
-    python_requires='>=3.6',
+    python_requires='>=3.5',
     packages=find_packages(exclude=('tests', 'docs')),
 )
