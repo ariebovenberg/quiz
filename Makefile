@@ -22,4 +22,5 @@ clean:
 	python setup.py clean --all
 
 docs:
+	@touch docs/api.rst
 	make -C docs/ html

@@ -134,8 +134,8 @@ def async_executor(**kwargs):
 
     Returns
     -------
-    ~typing.Callable[[str or Document or Operation or SelectionSet],
-        ~typing.Awaitable[JSON]]
+    ~typing.Callable[[str or Document or Operation or SelectionSet], \
+            ~typing.Awaitable[JSON]]
         A callable to asynchronously execute GraphQL executables
 
     Example
