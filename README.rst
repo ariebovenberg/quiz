@@ -150,6 +150,7 @@ Directives
 Parsing raw GraphQL
 Type inference (e.g. enum values)
 Pickling
+converting variables from camelcase to snake-case
 Autogenerate module .rst
 Autogenerate module .py
 Escaping python keywords

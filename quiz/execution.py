@@ -10,6 +10,7 @@ from .types import Document, ErrorResponse, Operation, SelectionSet, gql
 
 __all__ = [
     'execute',
+    'execute_async',
     'executor',
 ]
 
@@ -88,9 +89,37 @@ def executor(**kwargs):
     ...       description
     ...     }
     ...   }
-    ... ''')
+    ... ''', client=requests.Session())
     """
     return partial(execute, **kwargs)
+
+
+def execute_async(obj, url, **kwargs):
+    """Execute a GraphQL executable asynchronously
+
+    Parameters
+    ----------
+    obj: str or Document or Operation or SelectionSet
+        The object to execute.
+        This may be raw GraphQL, a document, single operation,
+        or a query shorthand
+    url: str
+        The URL of the target endpoint
+    **kwargs
+         ``auth`` and/or ``client``,
+         passed to :func:`snug.query.execute_async`.
+
+    Returns
+    -------
+    JSON
+        The response data
+
+    Raises
+    ------
+    ErrorResponse
+        If errors are present in the response
+    """
+    return snug.execute_async(as_http(as_gql(obj), url), **kwargs)
 
 
 # TODO: async counterparts
