@@ -4,8 +4,6 @@ import typing as t
 
 from toolz import compose
 
-# TODO: are descriptions optional?
-
 RawSchema = t.List[dict]
 
 INTROSPECTION_QUERY = """
