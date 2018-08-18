@@ -74,6 +74,7 @@ class TestExecute:
 
 def test_executor():
     executor = quiz.executor(url='https://my.url/graphql')
+    assert executor.func is quiz.execute
     assert executor.keywords['url'] == 'https://my.url/graphql'
 
 
@@ -119,3 +120,10 @@ class TestExecuteAsync:
 
         assert exc.value == quiz.ErrorResponse({'foo': 4},
                                                [{'message': 'foo'}])
+
+
+@py3
+def test_async_executor():
+    executor = quiz.async_executor(url='https://my.url/graphql')
+    assert executor.func is quiz.execute_async
+    assert executor.keywords['url'] == 'https://my.url/graphql'

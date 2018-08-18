@@ -12,6 +12,7 @@ __all__ = [
     'execute',
     'execute_async',
     'executor',
+    'async_executor',
 ]
 
 Executable = t.Union[str, Document, Operation, SelectionSet]
@@ -122,4 +123,32 @@ def execute_async(obj, url, **kwargs):
     return snug.execute_async(as_http(as_gql(obj), url), **kwargs)
 
 
-# TODO: async counterparts
+def async_executor(**kwargs):
+    """Create a version of :func:`execute_async` with bound arguments.
+    Equivalent to ``partial(execute_async, **kwargs)``.
+
+    Parameters
+    ----------
+    **kwargs
+       ``url``, ``auth``, and/or ``client``, passed to :func:`execute_async`
+
+    Returns
+    -------
+    ~typing.Callable[[str or Document or Operation or SelectionSet],
+        ~typing.Awaitable[JSON]]
+        A callable to asynchronously execute GraphQL executables
+
+    Example
+    -------
+
+    >>> execute = async_executor(url='https://api.github.com/graphql',
+    ...                          auth=('me', 'password'))
+    >>> result = execute('''
+    ...   {
+    ...     repository(owner: "octocat" name: "Hello-World") {
+    ...       description
+    ...     }
+    ...   }
+    ... ''', client=aiohttp.ClientSession())
+    """
+    return partial(execute_async, **kwargs)
