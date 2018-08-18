@@ -8,6 +8,7 @@ from quiz.types import Error, Field, InlineFragment, SelectionSet
 from quiz.types import selector as _
 from quiz.utils import FrozenDict as fdict
 
+from .helpers import AlwaysEquals, NeverEquals
 from .example import Command, Dog, Hobby, Query
 
 
@@ -293,6 +294,24 @@ class TestSelectionSet:
         assert hash(SelectionSet()) == hash(SelectionSet())
         assert hash(_.foo.bar) == hash(_.foo.bar)
         assert hash(_.bar.foo) != hash(_.foo.bar)
+
+    def test_equality(self):
+        instance = _.foo.bar
+        assert instance == _.foo.bar
+        assert not instance == _.bar.foo
+        assert instance == AlwaysEquals()
+        assert not instance == NeverEquals()
+
+        assert instance != _.bar.foo
+        assert not instance != _.foo.bar
+        assert instance != NeverEquals()
+        assert not instance != AlwaysEquals()
+
+    def test_repr(self):
+        instance = _.foo.bar(bla=3)
+        rep = repr(instance)
+        assert 'SelectionSet' in rep
+        assert gql(instance) in rep
 
     def test_getattr(self):
         assert _.foo_field.bla == SelectionSet(

@@ -28,7 +28,7 @@ def as_gql(obj):
 
 @py2_compatible
 def as_http(doc, url):
-    # type: (str, str) -> snug.Query[t.Dict[str, JSON]]
+    # type: (str, str) -> snug.Query[Dict[str, JSON]]
     response = yield snug.Request('POST', url, json.dumps({
         'query': doc,
     }).encode('ascii'), headers={'Content-Type': 'application/json'})
