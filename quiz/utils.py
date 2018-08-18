@@ -26,7 +26,7 @@ class FrozenDict(t.Mapping):
     def __hash__(self):
         return hash(frozenset(self._inner.items()))
 
-    if PY2:
+    if PY2:  # pragma: no cover
         viewkeys = property(attrgetter('_inner.viewkeys'))
 
 

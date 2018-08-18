@@ -7,7 +7,7 @@ PY2 = not PY3
 if PY3:
     from functools import singledispatch
     from textwrap import indent
-else:
+else:  # pragma: no cover
     from singledispatch import singledispatch  # noqa
 
     def indent(text, pad):
