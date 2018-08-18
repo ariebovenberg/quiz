@@ -3,6 +3,8 @@ from collections import namedtuple
 from itertools import chain, starmap
 from operator import attrgetter
 
+import six
+
 from .compat import PY2
 
 
@@ -14,8 +16,7 @@ class FrozenDict(t.Mapping):
     __slots__ = '_inner'
 
     def __init__(self, inner):
-        assert isinstance(inner, dict)
-        self._inner = inner
+        self._inner = inner if isinstance(inner, dict) else dict(inner)
 
     __len__ = property(attrgetter('_inner.__len__'))
     __iter__ = property(attrgetter('_inner.__iter__'))
@@ -33,9 +34,10 @@ FrozenDict.EMPTY = FrozenDict({})
 
 
 def merge(*dicts):
-    """merge two mappings"""
+    """merge several mappings"""
     if dicts:
-        return type(dicts[0])(chain.from_iterable(o.items() for o in dicts))
+        return type(dicts[0])(
+            chain.from_iterable(map(six.iteritems, dicts)))
     else:
         return {}
 

@@ -36,6 +36,9 @@ class TestNamedtupleData:
         assert instance.replace(foo=5) == Foo(5, bla='foo')
         assert instance.replace() == instance
 
+        assert hash(instance) == hash(instance.replace())
+        assert hash(instance) != hash(instance.replace(foo=5))
+
         assert instance.foo == 4
         assert instance.bla == 'foo'
 
@@ -63,3 +66,23 @@ class TestNamedtupleData:
 
         assert Foo(4) == Foo(4, '', 1.0)
         assert Foo(4, 'bla', 1.1) == Foo(4, 'bla', 1.1)
+
+
+class TestMergeMappings:
+
+    def test_empty(self):
+        assert utils.merge() == {}
+
+    def test_single(self):
+        assert utils.merge({'foo': 4}) == {'foo': 4}
+
+    def test_multiple(self):
+        result = utils.merge(
+            utils.FrozenDict({'foo': 5}),
+            {'foo': 9, 'bla': 2},
+            {'blabla': 1}
+        )
+        assert isinstance(result, utils.FrozenDict)
+        assert result == {
+            'foo': 9, 'bla': 2, 'blabla': 1
+        }
