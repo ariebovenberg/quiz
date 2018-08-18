@@ -374,6 +374,10 @@ class TestSelectionSet:
         def test_empty(self):
             assert _.foo() == SelectionSet(Field('foo'),)
 
+        def test_argument_named_self(self):
+            assert _.foo(self=4, bla=3) == SelectionSet(
+                Field('foo', fdict({'self': 4, 'bla': 3})))
+
         def test_invalid(self):
             with pytest.raises(Error):
                 _()

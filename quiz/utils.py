@@ -42,6 +42,25 @@ def merge(*dicts):
         return {}
 
 
+class Empty(Exception):
+    """indicates a given list is unexpectedly empty"""
+
+
+def init_last(items):
+    # type: List[T] -> (List[T], T)
+    """Return the first items and last item from a list
+
+    Raises
+    ------
+    Empty
+        if the given list is empty
+    """
+    try:
+        return items[:-1], items[-1]
+    except IndexError:
+        raise Empty
+
+
 def replace(self, **kwargs):
     new = type(self).__new__(type(self))
     new._values = self._values._replace(**kwargs)

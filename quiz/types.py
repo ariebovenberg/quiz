@@ -7,7 +7,7 @@ from operator import attrgetter, methodcaller
 import six
 
 from .compat import indent, singledispatch
-from .utils import Error, FrozenDict, value_object
+from .utils import Error, FrozenDict, value_object, init_last
 
 NoneType = type(None)
 INDENT = "  "
@@ -100,8 +100,7 @@ class SelectionSet(t.Iterable[Selection], t.Sized):
         if not self.__selections__:
             raise Error('cannot select fields from empty field list')
 
-        # TODO: optimize
-        rest, target = self.__selections__[:-1], self.__selections__[-1]
+        rest, target = init_last(self.__selections__)
 
         assert isinstance(selection_set, SelectionSet)
         assert len(selection_set.__selections__) >= 1
@@ -113,13 +112,12 @@ class SelectionSet(t.Iterable[Selection], t.Sized):
     def __repr__(self):
         return "<SelectionSet> {}".format(gql(self))
 
-    # TODO: prevent `self` from conflicting with kwargs
-    def __call__(self, **kwargs):
-        if not self.__selections__:
+    # `__self` allows `self` as an argument name
+    def __call__(__self, **kwargs):
+        if not __self.__selections__:
             raise Error('cannot call empty field list')
 
-        # TODO: optimize
-        rest, target = self.__selections__[:-1], self.__selections__[-1]
+        rest, target = init_last(__self.__selections__)
 
         return SelectionSet._make(
             tuple(rest) + (target.replace(kwargs=FrozenDict(kwargs)), ))
@@ -167,7 +165,7 @@ class Field(object):
         ('name', FieldName),
         ('kwargs', FrozenDict),
         ('selection_set', SelectionSet),
-        # TODO:
+        # in the future:
         # - alias
         # - directives
     ]
@@ -263,7 +261,7 @@ class InlineFragment(object):
         ('on', type),
         ('selection_set', SelectionSet),
     ]
-    # TODO: directives
+    # in the future: directives
 
     def __gql__(self):
         return '... on {} {}'.format(
@@ -286,7 +284,7 @@ class Operation(object):
         ('selection_set', SelectionSet)
     ]
     __defaults__ = (SelectionSet(), )
-    # TODO:
+    # in the future:
     # - name (optional)
     # - variable_defs (optional)
     # - directives (optional)

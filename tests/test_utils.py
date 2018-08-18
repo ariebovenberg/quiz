@@ -86,3 +86,13 @@ class TestMergeMappings:
         assert result == {
             'foo': 9, 'bla': 2, 'blabla': 1
         }
+
+
+class TestInitList:
+
+    def test_simple(self):
+        assert utils.init_last([1, 2, 3, 4, 5]) == ([1, 2, 3, 4], 5)
+
+    def test_empty(self):
+        with pytest.raises(utils.Empty):
+            utils.init_last([])
