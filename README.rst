@@ -14,7 +14,7 @@ Quickstart
 
 A quick 'n dirty request to GitHub's new V4 API:
 
-.. code-block:: python
+.. code-block:: python3
 
    >>> import quiz
    >>> query = '''
@@ -45,7 +45,7 @@ Features
 1. **Adaptability**. Built on top of `snug <http://snug.readthedocs.io/>`_,
    quiz supports different HTTP clients
 
-   .. code-block:: python
+   .. code-block:: python3
 
       import requests
       result = quiz.execute(query, ..., client=requests.Session())
@@ -89,7 +89,7 @@ Features
    .. code-block:: python3
 
       >>> _ = quiz.SELECTOR
-      >>> q = ghub.query(
+      >>> q = schema.query(
       ...     _
       ...     ('my_repo').repository(owner='octocat', name='Hello-World')[
       ...         _
@@ -108,13 +108,28 @@ Features
       ...         ]
       ...     ]
       ... )
-      >>> str(ghub)
+      >>> print(q)
+      query {
+        my_repo: repository(owner: "octocat", name: "Hello-World") {
+          createdAt
+          description
+        }
+        organization(login: "github") {
+          location
+          email
+          avatarUrl(size: 50)
+          project(number: 1) {
+            name
+            state
+          }
+        }
+      }
 
    Catch errors:
 
    .. code-block:: python3
 
-      >>> ghub.query(
+      >>> schema.query(
       ...     _
       ...     .repository(owner='octocat', name='Hello-World')[
       ...         _
@@ -133,6 +148,7 @@ Feature                                                            status
 ================================================================== ===========
 Adaptable Execution                                                done
 Class autogeneration                                               done
+Python 2.7-3.7 support                                             done
 Inline fragments                                                   planned
 Text escaping                                                      planned
 Non-ascii characters                                               planned
@@ -143,7 +159,6 @@ Fragments and fragment spreads                                     planned
 Custom primitives                                                  planned
 Deserialization                                                    planned
 Mutations                                                          planned
-Python 2.7-3.7 support                                             planned
 CI                                                                 planned
 Variables
 Directives
@@ -156,4 +171,5 @@ Autogenerate module .py
 Escaping python keywords
 Handling markdown in descriptions
 Warnings when using deprecated fields
+Handle optional types descriptions in schema
 ================================================================== ===========
