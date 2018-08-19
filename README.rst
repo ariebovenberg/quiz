@@ -1,6 +1,24 @@
 Quiz 🎱
 =======
 
+.. image:: https://img.shields.io/pypi/v/quiz.svg?style=flat-square
+    :target: https://pypi.python.org/pypi/quiz
+
+.. image:: https://img.shields.io/pypi/l/quiz.svg?style=flat-square
+    :target: https://pypi.python.org/pypi/quiz
+
+.. image:: https://img.shields.io/pypi/pyversions/quiz.svg?style=flat-square
+    :target: https://pypi.python.org/pypi/quiz
+
+.. image:: https://img.shields.io/travis/ariebovenberg/quiz.svg?style=flat-square
+    :target: https://travis-ci.org/ariebovenberg/quiz
+
+.. image:: https://img.shields.io/codecov/c/github/ariebovenberg/quiz.svg?style=flat-square
+    :target: https://codecov.io/gh/ariebovenberg/quiz
+
+.. image:: https://img.shields.io/readthedocs/quiz.svg?style=flat-square
+    :target: http://quiz.readthedocs.io/
+
 Capable GraphQL client. **Work in progress**.
 
 Features:
