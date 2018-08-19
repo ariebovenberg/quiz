@@ -3,13 +3,12 @@ from textwrap import dedent
 import pytest
 
 import quiz
-from quiz import gql
-from quiz import Error, Field, InlineFragment, SelectionSet
+from quiz import Error, Field, InlineFragment, SelectionSet, gql
 from quiz import selector as _
 from quiz.utils import FrozenDict as fdict
 
+from .example import Command, Dog, Hobby, Human, Query
 from .helpers import AlwaysEquals, NeverEquals
-from .example import Command, Dog, Hobby, Query, Human
 
 
 class TestUnion:

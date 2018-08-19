@@ -53,6 +53,10 @@ class TestNamedtupleData:
         else:
             assert repr(instance) == 'Foo(foo=4, bla=\'foo\')'
 
+        # repr should never fail, even if everything is wrong
+        del instance._values
+        repr(instance)
+
     def test_defaults(self):
 
         @utils.value_object

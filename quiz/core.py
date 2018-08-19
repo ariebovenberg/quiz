@@ -6,7 +6,7 @@ from operator import attrgetter, methodcaller
 import six
 
 from .compat import indent, singledispatch
-from .utils import Error, FrozenDict, init_last, value_object
+from .utils import Empty, FrozenDict, init_last, value_object
 
 NoneType = type(None)
 INDENT = "  "
@@ -105,10 +105,10 @@ class SelectionSet(t.Iterable[Selection], t.Sized):
         return SelectionSet._make(self.__selections__ + (Field(name), ))
 
     def __getitem__(self, selection_set):
-        if not self.__selections__:
+        try:
+            rest, target = init_last(self.__selections__)
+        except Empty:
             raise Error('cannot select fields from empty field list')
-
-        rest, target = init_last(self.__selections__)
 
         assert isinstance(selection_set, SelectionSet)
         assert len(selection_set.__selections__) >= 1
@@ -122,10 +122,10 @@ class SelectionSet(t.Iterable[Selection], t.Sized):
 
     # `__self` allows `self` as an argument name
     def __call__(__self, **kwargs):
-        if not __self.__selections__:
+        try:
+            rest, target = init_last(__self.__selections__)
+        except Empty:
             raise Error('cannot call empty field list')
-
-        rest, target = init_last(__self.__selections__)
 
         return SelectionSet._make(
             tuple(rest) + (target.replace(kwargs=FrozenDict(kwargs)), ))
@@ -193,6 +193,10 @@ class Field(object):
             ' ' + gql(self.selection_set)
             if self.selection_set else '')
         return self.name + arguments + selection_set
+
+
+class Error(Exception):
+    """Base error class"""
 
 
 @value_object

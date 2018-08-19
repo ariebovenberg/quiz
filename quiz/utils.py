@@ -1,3 +1,4 @@
+import sys
 import typing as t
 from collections import namedtuple
 from itertools import chain, starmap
@@ -11,12 +12,10 @@ T1 = t.TypeVar('T1')
 T2 = t.TypeVar('T2')
 
 
-class Error(Exception):
-    """Base error class"""
-
-
 class FrozenDict(t.Mapping[T1, T2]):
-    __slots__ = '_inner'
+    # see https://stackoverflow.com/questions/45864273
+    if not (3, 7) > sys.version_info > (3, 4):  # pragma: no cover
+        __slots__ = '_inner'
 
     def __init__(self, inner):
         self._inner = inner if isinstance(inner, dict) else dict(inner)
@@ -86,11 +85,14 @@ def __ne__(self, other):
 
 
 def __repr__(self):
-    return '{}({})'.format(
-        self.__class__.__name__ if PY2 else self.__class__.__qualname__,
-        ', '.join(starmap('{}={!r}'.format,
-                          zip(self._values._fields, self._values)))
-    )
+    try:
+        return '{}({})'.format(
+            self.__class__.__name__ if PY2 else self.__class__.__qualname__,
+            ', '.join(starmap('{}={!r}'.format,
+                              zip(self._values._fields, self._values)))
+        )
+    except Exception:
+        return object.__repr__(self)
 
 
 def value_object(cls):
