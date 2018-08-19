@@ -70,18 +70,13 @@ class FieldSchema(object):
         ('deprecation_reason', t.Optional[str]),
     ]
 
-    # TODO: actual descriptor implementation
     def __get__(self, obj, objtype=None):  # pragma: no cover
         if obj is None:  # accessing on class
             return self
-        try:
-            return obj.__dict__[self.name]
-        except KeyError:
-            raise AttributeError
+        raise NotImplementedError()
 
-    # TODO: actual descriptor implementation
     def __set__(self, obj, value):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     # __doc__ allows descriptor to be displayed nicely in help()
     @property
@@ -216,19 +211,19 @@ class SelectionError(Error):
 
 
 @value_object
-class InvalidField(Error):
+class NoSuchField(Error):
     __fields__ = []
 
 
 @value_object
-class InvalidArgument(Error):
+class NoSuchArgument(Error):
     __fields__ = [
         ('name', str),
     ]
 
 
 @value_object
-class ArgumentTypeError(Error):
+class InvalidArgumentType(Error):
     __fields__ = [
         ('name', str),
         ('value', object),
@@ -236,7 +231,7 @@ class ArgumentTypeError(Error):
 
 
 @value_object
-class RequiredArgument(Error):
+class MissingArgument(Error):
     __fields__ = [
         ('name', str),
     ]
@@ -307,7 +302,7 @@ def _validate_args(schema, actual):
     # -> Mapping[str, object]
     invalid_args = six.viewkeys(actual) - six.viewkeys(schema)
     if invalid_args:
-        raise InvalidArgument(invalid_args.pop())
+        raise NoSuchArgument(invalid_args.pop())
 
     for input_value in schema.values():
         try:
@@ -316,10 +311,10 @@ def _validate_args(schema, actual):
             if issubclass(input_value.type, Nullable):
                 continue  # arguments of nullable type may be omitted
             else:
-                raise RequiredArgument(input_value.name)
+                raise MissingArgument(input_value.name)
 
         if not isinstance(value, input_value.type):
-            raise ArgumentTypeError(input_value.name, value)
+            raise InvalidArgumentType(input_value.name, value)
 
     return actual
 
@@ -327,13 +322,13 @@ def _validate_args(schema, actual):
 def _validate_field(schema, actual):
     # type (Optional[FieldSchema], Field) -> Field
     # raises:
-    # - InvalidField
+    # - NoSuchField
     # - SelectionsNotSupported
-    # - InvalidArgument
+    # - NoSuchArgument
     # - RequredArgument
-    # - ArgumentTypeError
+    # - InvalidArgumentType
     if schema is None:
-        raise InvalidField()
+        raise NoSuchField()
     _validate_args(schema.args, actual.kwargs)
     if actual.selection_set:
         type_ = _unwrap_list_or_nullable(schema.type)

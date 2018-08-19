@@ -85,7 +85,7 @@ class TestValidate:
         with pytest.raises(quiz.SelectionError) as exc:
             quiz.validate(Dog, _.name.foo.knows_command(command=Command.SIT))
         assert exc.value == quiz.SelectionError(
-            Dog, 'foo', quiz.InvalidField())
+            Dog, 'foo', quiz.NoSuchField())
 
     def test_invalid_argument(self):
         with pytest.raises(quiz.SelectionError) as exc:
@@ -94,7 +94,7 @@ class TestValidate:
         assert exc.value == quiz.SelectionError(
             Dog,
             'knows_command',
-            quiz.InvalidArgument('foo'))
+            quiz.NoSuchArgument('foo'))
 
     def test_missing_arguments(self):
         selection_set = _.knows_command
@@ -104,7 +104,7 @@ class TestValidate:
         assert exc.value == quiz.SelectionError(
             Dog,
             'knows_command',
-            quiz.RequiredArgument('command')
+            quiz.MissingArgument('command')
         )
 
     def test_invalid_argument_type(self):
@@ -115,7 +115,7 @@ class TestValidate:
         assert exc.value == quiz.SelectionError(
             Dog,
             'knows_command',
-            quiz.ArgumentTypeError('command', 'foobar')
+            quiz.InvalidArgumentType('command', 'foobar')
         )
 
     def test_invalid_argument_type_optional(self):
@@ -125,7 +125,7 @@ class TestValidate:
         assert exc.value == quiz.SelectionError(
             Dog,
             'is_housetrained',
-            quiz.ArgumentTypeError('at_other_homes', 'foo')
+            quiz.InvalidArgumentType('at_other_homes', 'foo')
         )
 
     def test_nested_selection_error(self):
@@ -140,7 +140,7 @@ class TestValidate:
                 quiz.SelectionError(
                     Hobby,
                     'foo',
-                    quiz.InvalidField()
+                    quiz.NoSuchField()
                 )
             )
         )
