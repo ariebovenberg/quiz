@@ -1,7 +1,6 @@
 """main module for constructing graphQL queries"""
 import enum
 import typing as t
-from functools import partial
 from operator import attrgetter, methodcaller
 
 import six
@@ -19,6 +18,22 @@ FieldName = str
 
 JSON = t.Any
 JsonObject = t.Dict[str, JSON]
+
+
+class ID(str):
+    """represents a unique identifier, often used to refetch an object
+    or as the key for a cache. The ID type is serialized in the same way
+    as a String; however, defining it as an ID signifies that it is not
+    intended to be human-readable"""
+
+
+BUILTIN_SCALARS = {
+    "Boolean": bool,
+    "String":  str,
+    "ID":      ID,
+    "Float":   float,
+    "Int":     int,
+}
 
 
 @singledispatch
@@ -57,7 +72,12 @@ class FieldSchema(object):
 
     # TODO: actual descriptor implementation
     def __get__(self, obj, objtype=None):  # pragma: no cover
-        return self
+        if obj is None:  # accessing on class
+            return self
+        try:
+            return obj.__dict__[self.name]
+        except KeyError:
+            raise AttributeError
 
     # TODO: actual descriptor implementation
     def __set__(self, obj, value):
@@ -73,7 +93,6 @@ class FieldSchema(object):
 Selection = t.Union['Field', 'InlineFragment']
 
 
-# TODO: ** operator for specifying fragments
 class SelectionSet(t.Iterable[Selection], t.Sized):
     """A "magic" selection set builder"""
     # the attribute needs to have a dunder name to prevent
@@ -96,7 +115,7 @@ class SelectionSet(t.Iterable[Selection], t.Sized):
 
     # TODO: support raw graphql strings
     def __getitem__(self, selection_set):
-        # TODO: check duplicate fieldnames
+        # TODO: check for duplicate fieldnames
         if not self.__selections__:
             raise Error('cannot select fields from empty field list')
 
@@ -147,6 +166,9 @@ class SelectionSet(t.Iterable[Selection], t.Sized):
     __hash__ = property(attrgetter('__selections__.__hash__'))
 
 
+selector = SelectionSet()
+
+
 @value_object
 class Raw(object):
     __slots__ = '_values'
@@ -184,37 +206,11 @@ class Field(object):
         return self.name + arguments + selection_set
 
 
-selector = SelectionSet()
-
-
-class ID(str):
-    """represents a unique identifier, often used to refetch an object
-    or as the key for a cache. The ID type is serialized in the same way
-    as a String; however, defining it as an ID signifies that it is not
-    intended to be human-readable"""
-
-
-BUILTIN_SCALARS = {
-    "Boolean": bool,
-    "String":  str,
-    "ID":      ID,
-    "Float":   float,
-    "Int":     int,
-}
-
-
-@value_object
-class ErrorSet(Error):
-    __fields__ = [
-        ('errors', t.FrozenSet[Error])
-    ]
-
-
 @value_object
 class SelectionError(Error):
     __fields__ = [
         ('on', type),
-        ('path', t.Tuple[str, ...]),
+        ('path', str),
         ('error', Error),
     ]
 
@@ -225,71 +221,30 @@ class InvalidField(Error):
 
 
 @value_object
-class InvalidArguments(Error):
+class InvalidArgument(Error):
     __fields__ = [
-        ('names', t.Tuple[str, ...]),
-    ]
-
-
-@value_object
-class RequiredArgument(Error):
-    __fields__ = [
-        ('field_name', str),
         ('name', str),
     ]
 
 
 @value_object
-class NoSuchField(Error):
+class ArgumentTypeError(Error):
     __fields__ = [
-        ('on', str),
-        ('name', str),
-        ('path', t.Tuple[str, ...]),
-    ]
-    __defaults__ = ((), )
-
-
-@value_object
-class NoSuchArgument(Error):
-    __fields__ = [
-        ('on', type),
-        ('field', FieldSchema),
-        ('name', str),
-    ]
-
-
-@value_object
-class InvalidArgumentType(Error):
-    __fields__ = [
-        ('on', type),
-        ('field', FieldSchema),
         ('name', str),
         ('value', object),
     ]
 
 
 @value_object
-class MissingArguments(Error):
+class RequiredArgument(Error):
     __fields__ = [
-        ('names', t.Tuple[str, ...]),
-    ]
-
-
-@value_object
-class MissingArgument(Error):
-    __fields__ = [
-        ('on', type),
-        ('field', FieldSchema),
         ('name', str),
     ]
 
 
 @value_object
-class InvalidSelection(Error):
-    __fields__ = [
-        ('on', type),
-        ('field', FieldSchema),
-    ]
+class SelectionsNotSupported(Error):
+    __fields__ = []
 
 
 @value_object
@@ -340,62 +295,40 @@ class Operation(object):
 
 
 def _unwrap_list_or_nullable(type_):
-    # type: type -> type
+    # type: Type[Nullable, List, Scalar, Enum, InputObject]
+    # -> Type[Scalar | Enum | InputObject]
     if issubclass(type_, (Nullable, List)):
         return _unwrap_list_or_nullable(type_.__arg__)
     return type_
 
 
-def _check_args(cls, field, kwargs):
-    invalid_args = six.viewkeys(kwargs) - six.viewkeys(field.args)
-    if invalid_args:
-        raise NoSuchArgument(cls, field, invalid_args.pop())
-
-    for param in field.args.values():
-        try:
-            value = kwargs[param.name]
-        except KeyError:
-            if not issubclass(param.type, Nullable):
-                raise MissingArgument(cls, field, param.name)
-        else:
-            if not isinstance(value, param.type):
-                raise InvalidArgumentType(
-                    cls, field, param.name, value
-                )
-
-
-def _check_field(parent, field):
-    assert isinstance(field, Field)
-    try:
-        schema = getattr(parent, field.name)
-    except AttributeError:
-        raise NoSuchField(parent, field.name)
-
-    _check_args(parent, schema, field.kwargs)
-
-    for f in field.selection_set:
-        _check_field(_unwrap_list_or_nullable(schema.type), f)
-
-
 def _validate_args(schema, actual):
-    # type: (Mapping[str, InputValue], Mapping[str, Any]) -> Mapping[str, Any]
+    # type: (Mapping[str, InputValue], Mapping[str, object])
+    # -> Mapping[str, object]
     invalid_args = six.viewkeys(actual) - six.viewkeys(schema)
     if invalid_args:
-        raise InvalidArguments(tuple(invalid_args))
+        raise InvalidArgument(invalid_args.pop())
 
-    missing_args = {
-        name for name, field in schema.items()
-        if not issubclass(field.type, Nullable)
-    } - six.viewkeys(actual)
-    if missing_args:
-        raise MissingArguments(tuple(missing_args))
+    for input_value in schema.values():
+        try:
+            value = actual[input_value.name]
+        except KeyError:
+            if issubclass(input_value.type, Nullable):
+                continue  # arguments of nullable type may be omitted
+            else:
+                raise RequiredArgument(input_value.name)
+
+        if not isinstance(value, input_value.type):
+            raise ArgumentTypeError(input_value.name, value)
 
     return actual
 
 
 def _validate_field(schema, actual):
     # type (FieldSchema, Field) -> FieldCheck
-    validated_kwargs = _validate_args(schema.args, actual.kwargs)
+    _validate_args(schema.args, actual.kwargs)
+    if actual.selection_set:
+        validate(_unwrap_list_or_nullable(schema.type), actual.selection_set)
     return actual
 
 
@@ -418,19 +351,21 @@ def validate(cls, selection_set):
     ------
     SelectionError
         If the selection set is not valid
+    SelectionsNotSupported
+        A selection cannot be made on the target ``cls``
     """
+    if not issubclass(cls, (Object, Interface)):
+        raise SelectionsNotSupported()
     for field in selection_set:
         try:
-            schema = getattr(cls, field.name)
+            schema = getattr(cls, field.name)  # type: FieldSchema
         except AttributeError:
-            raise SelectionError(cls, (field.name, ), InvalidField())
-
-        assert isinstance(schema, FieldSchema)
+            raise SelectionError(cls, field.name, InvalidField())
 
         try:
             _validate_field(schema, field)
         except Error as e:
-            raise SelectionError(cls, (field.name, ), e)
+            raise SelectionError(cls, field.name, e)
 
     return selection_set
 
@@ -440,9 +375,7 @@ class CanMakeFragmentMeta(type):
     # TODO: also interfaces, unions can be made into fragments
     def __getitem__(self, selection_set):
         # type: SelectionSet -> InlineFragment
-        for field in selection_set:
-            _check_field(self, field)
-        return InlineFragment(self, selection_set)
+        return InlineFragment(self, validate(self, selection_set))
 
 
 # TODO: prevent instantiation?
@@ -450,6 +383,9 @@ class CanMakeFragmentMeta(type):
 @six.add_metaclass(CanMakeFragmentMeta)
 class Object(object):
     """a graphQL object"""
+
+    def __init__(self):
+        raise NotImplementedError()
 
 
 # - InputObject: calling instantiates an instance,
@@ -548,9 +484,7 @@ def query(selection_set, cls):
     Operation
         The query operation
     """
-    for field in selection_set:
-        _check_field(cls, field)
-    return Operation(OperationType.QUERY, selection_set)
+    return Operation(OperationType.QUERY, validate(cls, selection_set))
 
 
 # introspection_query = Operation(
