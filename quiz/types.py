@@ -337,8 +337,8 @@ def validate(cls, selection_set):
 
     Parameters
     ----------
-    cls: type
-        The class to validate against
+    cls: Type[Object, Interface]
+        The class to validate against, an ``Object`` or ``Interface``
     selection_set: SelectionSet
         The selection set to validate
 

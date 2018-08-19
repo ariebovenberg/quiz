@@ -174,7 +174,7 @@ class TestObject:
             assert fragment == quiz.InlineFragment(Dog, selection_set)
 
         def test_validates(self):
-            with pytest.raises(quiz.SelectionError, match='foo'):
+            with pytest.raises(quiz.SelectionError):
                 Dog[_.name.foo.knows_command(command=Command.SIT)]
 
 
@@ -222,7 +222,7 @@ class TestQuery:
         assert len(query.selection_set) == 1
 
     def test_validates(self):
-        with pytest.raises(quiz.SelectionError, match='foobar'):
+        with pytest.raises(quiz.SelectionError):
             quiz.query(
                 _
                 .dog[
