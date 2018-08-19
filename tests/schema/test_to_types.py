@@ -6,8 +6,6 @@ import pytest
 import quiz
 from quiz.schema import raw, to_types
 
-# TODO: test help() output with pydoc.render_doc()
-
 
 class TestEnumAsType:
 
@@ -123,9 +121,12 @@ class TestObjectAsType:
             ]
         )
         interfaces = {
-            'Interface1': type('Interface1', (quiz.Interface, ), {}),
-            'BlaInterface': type('BlaInterface', (quiz.Interface, ), {}),
-            'Qux': type('Qux', (quiz.Interface, ), {}),
+            'Interface1': type('Interface1', (quiz.Interface, ), {
+                '__module__': 'foo'}),
+            'BlaInterface': type('BlaInterface', (quiz.Interface, ), {
+                '__module__': 'foo'}),
+            'Qux': type('Qux', (quiz.Interface, ), {
+                '__module__': 'foo'}),
         }
         created = to_types.object_as_type(obj_schema, interfaces,
                                           module_name='foo')
@@ -135,8 +136,6 @@ class TestObjectAsType:
         assert created.__module__ == 'foo'
         assert issubclass(created, interfaces['Interface1'])
         assert issubclass(created, interfaces['BlaInterface'])
-
-    # TODO: test without interfaces
 
 
 class TestResolveTypeRef:

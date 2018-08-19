@@ -168,19 +168,25 @@ Adaptable Execution                                                done
 Class autogeneration                                               done
 Python 2.7-3.7 support                                             done
 CI                                                                 done
+Up-to-date documentation                                           v0.0.2
+Test for help()                                                    v0.0.2
+Test for help()                                                    v0.0.2
 Text escaping                                                      v0.0.2
 Non-ascii characters                                               v0.0.2
+Integer 32-bit limit                                               v0.0.2
+Floats                                                             v0.0.2
 Input objects                                                      v0.0.2
 Mutations                                                          v0.0.2
 Inline fragments                                                   v0.0.3
 Aliases                                                            v0.0.3
 Fragments and fragment spreads                                     v0.0.4
 Custom primitives                                                  v0.0.4
+Mixing in raw GraphQL                                              planned
 Deserialization                                                    planned
 Module autogeneration                                              planned
 Type inference (e.g. enum values)                                  planned
-Variables
-Directives
+Variables                                                          planned
+Directives                                                         planned
 Parsing raw GraphQL
 Pickling
 converting variables from camelcase to snake-case

@@ -1,4 +1,5 @@
 """main module for constructing graphQL queries"""
+# TODO: types-> core
 import enum
 import typing as t
 from operator import attrgetter, methodcaller
@@ -42,15 +43,12 @@ def argument_as_gql(obj):
     raise TypeError("cannot serialize to GraphQL: {}".format(type(obj)))
 
 
-# TODO: IMPORTANT! implement string escape
 argument_as_gql.register(str, '"{}"'.format)
 
-# TODO: limit to 32 bit integers!
 argument_as_gql.register(int, str)
 argument_as_gql.register(NoneType, 'null'.format)
 argument_as_gql.register(bool, {True: 'true', False: 'false'}.__getitem__)
 
-# TODO: float, with exponent form
 
 
 @argument_as_gql.register(enum.Enum)
@@ -84,7 +82,6 @@ class FieldSchema(object):
         return '{.__name__}\n    {}'.format(self.type, self.desc)
 
 
-# TODO: add fragmentspread
 Selection = t.Union['Field', 'InlineFragment']
 
 
@@ -108,7 +105,6 @@ class SelectionSet(t.Iterable[Selection], t.Sized):
     def __getattr__(self, name):
         return SelectionSet._make(self.__selections__ + (Field(name), ))
 
-    # TODO: support raw graphql strings
     def __getitem__(self, selection_set):
         # TODO: check for duplicate fieldnames
         if not self.__selections__:
@@ -368,13 +364,11 @@ def validate(cls, selection_set):
 
 class CanMakeFragmentMeta(type):
 
-    # TODO: also interfaces, unions can be made into fragments
     def __getitem__(self, selection_set):
         # type: SelectionSet -> InlineFragment
         return InlineFragment(self, validate(self, selection_set))
 
 
-# assumption: all items in Object.__dict__ are fields
 @six.add_metaclass(CanMakeFragmentMeta)
 class Object(object):
     """a graphQL object"""
@@ -390,13 +384,10 @@ class InputObject(object):
 
 
 # separate class to distinguish graphql enums from normal Enums
-# TODO: include deprecation attributes in instances?
-# TODO: a __repr__ which includes the description, deprecation, etc?
 class Enum(enum.Enum):
     pass
 
 
-# TODO: this should be a metaclass
 class Interface(object):
     pass
 
@@ -453,7 +444,7 @@ class Document(object):
     __slots__ = '_values'
     __fields__ = [
         ('operations', t.List[Operation])
-        # TODO: fragments
+        # future: fragments
     ]
 
 
