@@ -4,8 +4,8 @@ import pytest
 
 import quiz
 from quiz import gql
-from quiz.types import Error, Field, InlineFragment, SelectionSet
-from quiz.types import selector as _
+from quiz import Error, Field, InlineFragment, SelectionSet
+from quiz import selector as _
 from quiz.utils import FrozenDict as fdict
 
 from .helpers import AlwaysEquals, NeverEquals

@@ -6,7 +6,7 @@ from functools import partial
 import snug
 from gentools import py2_compatible, return_
 
-from .types import Document, ErrorResponse, Operation, SelectionSet, gql
+from .core import Document, ErrorResponse, Operation, SelectionSet, gql
 
 __all__ = [
     'execute',
