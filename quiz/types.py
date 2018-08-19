@@ -325,10 +325,21 @@ def _validate_args(schema, actual):
 
 
 def _validate_field(schema, actual):
-    # type (FieldSchema, Field) -> FieldCheck
+    # type (Optional[FieldSchema], Field) -> Field
+    # raises:
+    # - InvalidField
+    # - SelectionsNotSupported
+    # - InvalidArgument
+    # - RequredArgument
+    # - ArgumentTypeError
+    if schema is None:
+        raise InvalidField()
     _validate_args(schema.args, actual.kwargs)
     if actual.selection_set:
-        validate(_unwrap_list_or_nullable(schema.type), actual.selection_set)
+        type_ = _unwrap_list_or_nullable(schema.type)
+        if not issubclass(type_, (Object, Interface)):
+            raise SelectionsNotSupported()
+        validate(type_, actual.selection_set)
     return actual
 
 
@@ -351,22 +362,12 @@ def validate(cls, selection_set):
     ------
     SelectionError
         If the selection set is not valid
-    SelectionsNotSupported
-        A selection cannot be made on the target ``cls``
     """
-    if not issubclass(cls, (Object, Interface)):
-        raise SelectionsNotSupported()
     for field in selection_set:
         try:
-            schema = getattr(cls, field.name)  # type: FieldSchema
-        except AttributeError:
-            raise SelectionError(cls, field.name, InvalidField())
-
-        try:
-            _validate_field(schema, field)
+            _validate_field(getattr(cls, field.name, None), field)
         except Error as e:
             raise SelectionError(cls, field.name, e)
-
     return selection_set
 
 
@@ -378,7 +379,6 @@ class CanMakeFragmentMeta(type):
         return InlineFragment(self, validate(self, selection_set))
 
 
-# TODO: prevent instantiation?
 # assumption: all items in Object.__dict__ are fields
 @six.add_metaclass(CanMakeFragmentMeta)
 class Object(object):
