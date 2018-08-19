@@ -7,6 +7,7 @@ import six
 
 from . import raw
 from .. import types
+from ..compat import map
 from ..utils import FrozenDict, merge
 
 ClassDict = t.Dict[str, type]
@@ -18,6 +19,7 @@ def _namedict(classes):
 
 def object_as_type(typ, interfaces, module_name):
     # type: (raw.Object, Mapping[str, Type[types.Interface]], str) -> type
+    # we don't add the fields yet -- these types may not exist yet.
     return type(
         str(typ.name),
         tuple(interfaces[i.name] for i in typ.interfaces) + (types.Object, ),
@@ -25,11 +27,9 @@ def object_as_type(typ, interfaces, module_name):
     )
 
 
-# NOTE: fields are not added yet. These must be added later with _add_fields
-# why is this? Circular references may exist, which can only be added
-# after all classes have been defined
 def interface_as_type(typ, module_name):
     # type: (raw.Interface, str) -> type
+    # we don't add the fields yet -- these types may not exist yet.
     return type(str(typ.name), (types.Interface, ),
                 {"__doc__": typ.desc, '__raw__': typ,
                  '__module__': module_name})
@@ -37,7 +37,6 @@ def interface_as_type(typ, module_name):
 
 def enum_as_type(typ, module_name):
     # type: (raw.Enum, str) -> Type[types.Enum]
-    # TODO: convert camelcase to snake-case?
     assert len(typ.values) > 0
     cls = types.Enum(typ.name, [(v.name, v.name) for v in typ.values],
                      module=module_name)
@@ -47,11 +46,9 @@ def enum_as_type(typ, module_name):
     return cls
 
 
-# TODO: better error handling:
-# - empty list of types
-# - types not found
 def union_as_type(typ, objs):
     # type (raw.Union, ClassDict) -> type
+    assert len(typ.types) > 1
     return type(
         str(typ.name),
         (types.Union, ),
@@ -102,7 +99,6 @@ def resolve_typeref(ref, classes):
         })
 
 
-# TODO: exception handling?
 def _resolve_typeref_required(ref, classes):
     assert ref.kind is not raw.Kind.NON_NULL
     if ref.kind is raw.Kind.LIST:
@@ -123,8 +119,7 @@ def build(type_schemas, module_name, scalars=FrozenDict.EMPTY):
     undefined_scalars = {
         tp.name for tp in by_kind[raw.Scalar]} - six.viewkeys(scalars_)
     if undefined_scalars:
-        # TODO: special exception class
-        raise Exception('Undefined scalars: {}'.format(', '.join(
+        raise types.Error('Undefined scalars: {}'.format(', '.join(
             undefined_scalars)))
 
     interfaces = _namedict(map(
