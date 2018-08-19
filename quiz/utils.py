@@ -7,12 +7,15 @@ import six
 
 from .compat import PY2
 
+T1 = t.TypeVar('T1')
+T2 = t.TypeVar('T2')
+
 
 class Error(Exception):
     """Base error class"""
 
 
-class FrozenDict(t.Mapping):
+class FrozenDict(t.Mapping[T1, T2]):
     __slots__ = '_inner'
 
     def __init__(self, inner):

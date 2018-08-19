@@ -1,5 +1,4 @@
 """main module for constructing graphQL queries"""
-# TODO: types-> core
 import enum
 import typing as t
 from operator import attrgetter, methodcaller
@@ -62,7 +61,7 @@ class FieldSchema(object):
         ('name', str),
         ('desc', str),
         ('type', type),
-        ('args', FrozenDict),  # TODO: FrozenDict[str, InputValue]
+        ('args', FrozenDict[str, 'InputValue']),
         ('is_deprecated', bool),
         ('deprecation_reason', t.Optional[str]),
     ]
@@ -96,16 +95,16 @@ class SelectionSet(t.Iterable[Selection], t.Sized):
     def __init__(self, *selections):
         self.__selections__ = selections
 
-    # TODO: optimize
     @classmethod
     def _make(cls, selections):
-        return cls(*selections)
+        instance = cls.__new__(cls)
+        instance.__selections__ = tuple(selections)
+        return instance
 
     def __getattr__(self, name):
         return SelectionSet._make(self.__selections__ + (Field(name), ))
 
     def __getitem__(self, selection_set):
-        # TODO: check for duplicate fieldnames
         if not self.__selections__:
             raise Error('cannot select fields from empty field list')
 
