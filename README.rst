@@ -167,21 +167,21 @@ Feature                                                            status
 Adaptable Execution                                                done
 Class autogeneration                                               done
 Python 2.7-3.7 support                                             done
-Inline fragments                                                   planned
-Text escaping                                                      planned
-Non-ascii characters                                               planned
-Module autogeneration                                              planned
-Aliases                                                            planned
-Input objects                                                      planned
-Fragments and fragment spreads                                     planned
-Custom primitives                                                  planned
+CI                                                                 done
+Text escaping                                                      v0.0.2
+Non-ascii characters                                               v0.0.2
+Input objects                                                      v0.0.2
+Mutations                                                          v0.0.2
+Inline fragments                                                   v0.0.3
+Aliases                                                            v0.0.3
+Fragments and fragment spreads                                     v0.0.4
+Custom primitives                                                  v0.0.4
 Deserialization                                                    planned
-Mutations                                                          planned
-CI                                                                 planned
+Module autogeneration                                              planned
+Type inference (e.g. enum values)                                  planned
 Variables
 Directives
 Parsing raw GraphQL
-Type inference (e.g. enum values)
 Pickling
 converting variables from camelcase to snake-case
 Autogenerate module .rst
@@ -190,4 +190,5 @@ Escaping python keywords
 Handling markdown in descriptions
 Warnings when using deprecated fields
 Handle optional types descriptions in schema
+Returning multiple validation errors at the same time
 ================================================================== ===========
