@@ -50,7 +50,6 @@ argument_as_gql.register(NoneType, 'null'.format)
 argument_as_gql.register(bool, {True: 'true', False: 'false'}.__getitem__)
 
 
-
 @argument_as_gql.register(enum.Enum)
 def _enum_to_gql(obj):
     return obj.value
