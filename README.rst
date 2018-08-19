@@ -170,7 +170,6 @@ Python 2.7-3.7 support                                             done
 CI                                                                 done
 Up-to-date documentation                                           v0.0.2
 Test for help()                                                    v0.0.2
-Test for help()                                                    v0.0.2
 Text escaping                                                      v0.0.2
 Non-ascii characters                                               v0.0.2
 Integer 32-bit limit                                               v0.0.2
