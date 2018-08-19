@@ -83,7 +83,6 @@ def __ne__(self, other):
 
 
 def __repr__(self):
-    # TODO: make py2-safe
     return '{}({})'.format(
         self.__class__.__name__ if PY2 else self.__class__.__qualname__,
         ', '.join(starmap('{}={!r}'.format,

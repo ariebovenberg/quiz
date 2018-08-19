@@ -1,13 +1,13 @@
 """main module for constructing graphQL queries"""
-import abc
 import enum
 import typing as t
+from functools import partial
 from operator import attrgetter, methodcaller
 
 import six
 
 from .compat import indent, singledispatch
-from .utils import Error, FrozenDict, value_object, init_last
+from .utils import Error, FrozenDict, init_last, value_object
 
 NoneType = type(None)
 INDENT = "  "
@@ -204,11 +204,49 @@ BUILTIN_SCALARS = {
 
 
 @value_object
+class ErrorSet(Error):
+    __fields__ = [
+        ('errors', t.FrozenSet[Error])
+    ]
+
+
+@value_object
+class SelectionError(Error):
+    __fields__ = [
+        ('on', type),
+        ('path', t.Tuple[str, ...]),
+        ('error', Error),
+    ]
+
+
+@value_object
+class InvalidField(Error):
+    __fields__ = []
+
+
+@value_object
+class InvalidArguments(Error):
+    __fields__ = [
+        ('names', t.Tuple[str, ...]),
+    ]
+
+
+@value_object
+class RequiredArgument(Error):
+    __fields__ = [
+        ('field_name', str),
+        ('name', str),
+    ]
+
+
+@value_object
 class NoSuchField(Error):
     __fields__ = [
         ('on', str),
         ('name', str),
+        ('path', t.Tuple[str, ...]),
     ]
+    __defaults__ = ((), )
 
 
 @value_object
@@ -227,6 +265,13 @@ class InvalidArgumentType(Error):
         ('field', FieldSchema),
         ('name', str),
         ('value', object),
+    ]
+
+
+@value_object
+class MissingArguments(Error):
+    __fields__ = [
+        ('names', t.Tuple[str, ...]),
     ]
 
 
@@ -332,8 +377,65 @@ def _check_field(parent, field):
         _check_field(_unwrap_list_or_nullable(schema.type), f)
 
 
-# inherit from ABCMeta to allow mixing with other ABCs
-class ObjectMeta(abc.ABCMeta):
+def _validate_args(schema, actual):
+    # type: (Mapping[str, InputValue], Mapping[str, Any]) -> Mapping[str, Any]
+    invalid_args = six.viewkeys(actual) - six.viewkeys(schema)
+    if invalid_args:
+        raise InvalidArguments(tuple(invalid_args))
+
+    missing_args = {
+        name for name, field in schema.items()
+        if not issubclass(field.type, Nullable)
+    } - six.viewkeys(actual)
+    if missing_args:
+        raise MissingArguments(tuple(missing_args))
+
+    return actual
+
+
+def _validate_field(schema, actual):
+    # type (FieldSchema, Field) -> FieldCheck
+    validated_kwargs = _validate_args(schema.args, actual.kwargs)
+    return actual
+
+
+def validate(cls, selection_set):
+    """Validate a selection set against a type
+
+    Parameters
+    ----------
+    cls: type
+        The class to validate against
+    selection_set: SelectionSet
+        The selection set to validate
+
+    Returns
+    -------
+    SelectionSet
+        The validated selection set
+
+    Raises
+    ------
+    SelectionError
+        If the selection set is not valid
+    """
+    for field in selection_set:
+        try:
+            schema = getattr(cls, field.name)
+        except AttributeError:
+            raise SelectionError(cls, (field.name, ), InvalidField())
+
+        assert isinstance(schema, FieldSchema)
+
+        try:
+            _validate_field(schema, field)
+        except Error as e:
+            raise SelectionError(cls, (field.name, ), e)
+
+    return selection_set
+
+
+class CanMakeFragmentMeta(type):
 
     # TODO: also interfaces, unions can be made into fragments
     def __getitem__(self, selection_set):
@@ -342,10 +444,10 @@ class ObjectMeta(abc.ABCMeta):
             _check_field(self, field)
         return InlineFragment(self, selection_set)
 
-    # TODO: prevent direct instantiation
 
-
-@six.add_metaclass(ObjectMeta)
+# TODO: prevent instantiation?
+# assumption: all items in Object.__dict__ are fields
+@six.add_metaclass(CanMakeFragmentMeta)
 class Object(object):
     """a graphQL object"""
 

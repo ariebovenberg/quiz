@@ -50,6 +50,75 @@ class TestList:
         assert not isinstance((1, 2), MyList)
 
 
+class TestValidate:
+
+    def test_empty(self):
+        selection = SelectionSet()
+        assert quiz.validate(Dog, selection) == SelectionSet()
+
+    def test_simple_valid(self):
+        assert quiz.validate(Dog, _.name) == _.name
+
+    def test_complex_valid(self):
+        selection_set = (
+            _
+            .name
+            .knows_command(command=Command.SIT)
+            .is_housetrained
+            .owner[
+                _
+                .name
+                .hobbies[
+                    _
+                    .name
+                    .cool_factor
+                ]
+            ]
+            .best_friend[
+                _
+                .name
+            ]
+        )
+        assert quiz.validate(Dog, selection_set) == selection_set
+
+    def test_no_such_field(self):
+        with pytest.raises(quiz.SelectionError) as exc:
+            quiz.validate(Dog, _.name.foo.knows_command(command=Command.SIT))
+        assert exc.value == quiz.SelectionError(
+            Dog, ('foo', ), quiz.InvalidField())
+
+    def test_invalid_argument(self):
+        with pytest.raises(quiz.SelectionError) as exc:
+            quiz.validate(Dog, _.knows_command(
+                foo=1, command=Command.SIT))
+        assert exc.value == quiz.SelectionError(
+            Dog,
+            ('knows_command', ),
+            quiz.InvalidArguments(('foo', )))
+
+    def test_missing_arguments(self):
+        selection_set = _.knows_command
+        with pytest.raises(quiz.SelectionError) as exc:
+            quiz.validate(Dog, selection_set)
+
+        assert exc.value == quiz.SelectionError(
+            Dog,
+            ('knows_command', ),
+            quiz.MissingArguments(('command', ))
+        )
+
+    # def test_invalid_argument_type(self):
+    #     selection_set = _.knows_command(command='foobar')
+    #     with pytest.raises(quiz.ArgumentTypeError) as exc:
+    #         quiz.validate(Dog, selection_set)
+
+    #     assert exc.value == quiz.SelectionError(
+    #         Dog,
+    #         ('knows_command', ),
+    #         quiz.ArgumentTypeError('command', 'foobar')
+    #     )
+
+
 class TestObjectGetItem:
 
     def test_valid(self):
