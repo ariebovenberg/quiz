@@ -2,7 +2,6 @@
 import enum
 import typing as t
 
-from toolz import compose
 from ..compat import map
 
 RawSchema = t.List[dict]
@@ -275,4 +274,4 @@ def _cast_type(typ):
 
 def load(raw_schema):
     # type RawSchema -> Iterable[TypeSchema]
-    return map(compose(_cast_type, _deserialize_type), raw_schema["types"])
+    return (_cast_type(_deserialize_type(t)) for t in raw_schema['types'])

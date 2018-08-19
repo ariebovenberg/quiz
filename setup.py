@@ -42,7 +42,6 @@ setup(
         'gentools~=1.1.0',
         'six~=1.11.0',
         'snug~=1.3',
-        'toolz~=0.9',
         'typing>=3.6.2; python_version<"3.5"',
     ],
     keywords=['graphql', 'http', 'async'],
