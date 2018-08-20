@@ -94,17 +94,13 @@ def resolve_typeref(ref, classes):
     if ref.kind is raw.Kind.NON_NULL:
         return _resolve_typeref_required(ref.of_type, classes)
     else:
-        return type('Nullable', (core.Nullable, ), {
-            '__arg__': _resolve_typeref_required(ref, classes)
-        })
+        return core.Nullable[_resolve_typeref_required(ref, classes)]
 
 
 def _resolve_typeref_required(ref, classes):
     assert ref.kind is not raw.Kind.NON_NULL
     if ref.kind is raw.Kind.LIST:
-        return type('List', (core.List, ), {
-            '__arg__': resolve_typeref(ref.of_type, classes)
-        })
+        return core.List[resolve_typeref(ref.of_type, classes)]
     return classes[ref.name]
 
 

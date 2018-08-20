@@ -77,7 +77,8 @@ class FieldSchema(object):
     # __doc__ allows descriptor to be displayed nicely in help()
     @property
     def __doc__(self):
-        return '{.__name__}\n    {}'.format(self.type, self.desc)
+        # breakpoint()
+        return ': {.__name__}\n    {}'.format(self.type, self.desc)
 
 
 Selection = t.Union['Field', 'InlineFragment']
@@ -397,7 +398,7 @@ class Interface(object):
 class ListMeta(type):
 
     def __getitem__(self, arg):
-        return type('List[{.__name__}]'.format(arg), (List, ), {
+        return type('[{.__name__}]'.format(arg), (List, ), {
             '__arg__': arg
         })
 
@@ -414,7 +415,7 @@ class List(object):
 class NullableMeta(type):
 
     def __getitem__(self, arg):
-        return type('Nullable[{.__name__}]'.format(arg), (Nullable, ), {
+        return type('{.__name__} or None'.format(arg), (Nullable, ), {
             '__arg__': arg
         })
 

@@ -263,7 +263,7 @@ class TestFieldSchema:
             'foo', 'my description', type=quiz.List[str],
             args=fdict.EMPTY,
             is_deprecated=False, deprecation_reason=None)
-        assert 'List[str]' in schema.__doc__
+        assert '[str]' in schema.__doc__
 
 
 class TestField:
