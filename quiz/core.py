@@ -43,11 +43,6 @@ def argument_as_gql(obj):
     raise TypeError("cannot serialize to GraphQL: {}".format(type(obj)))
 
 
-@argument_as_gql.register(enum.Enum)
-def _enum_to_gql(obj):
-    return obj.value
-
-
 @value_object
 class FieldSchema(object):
     __slots__ = '_values'
@@ -504,6 +499,11 @@ argument_as_gql.register(int, str)
 argument_as_gql.register(NoneType, 'null'.format)
 argument_as_gql.register(bool, {True: 'true', False: 'false'}.__getitem__)
 argument_as_gql.register(float, str)
+
+
+@argument_as_gql.register(Enum)
+def _enum_to_gql(obj):
+    return obj.value
 
 
 # introspection_query = Operation(

@@ -489,6 +489,14 @@ class TestArgumentAsGql:
     def test_float(self, value, expect):
         assert quiz.argument_as_gql(value) == expect
 
+    def test_enum(self):
+
+        class MyEnum(quiz.Enum):
+            FOO = 'FOOVALUE'
+            BLA = 'QUX'
+
+        assert quiz.argument_as_gql(MyEnum.BLA) == 'QUX'
+
 
 class TestRaw:
 
