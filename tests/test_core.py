@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from textwrap import dedent
-import six
-from hypothesis import given, strategies
 
 import pytest
+import six
+from hypothesis import given, strategies
 
 import quiz
 from quiz import Error, Field, InlineFragment, SelectionSet, gql
@@ -480,6 +480,14 @@ class TestArgumentAsGql:
     def test_bool(self):
         assert quiz.argument_as_gql(True) == 'true'
         assert quiz.argument_as_gql(False) == 'false'
+
+    @pytest.mark.parametrize('value, expect', [
+        (1.2, '1.2'),
+        (1., '1.0'),
+        (1.234e53, '1.234e+53'),
+    ])
+    def test_float(self, value, expect):
+        assert quiz.argument_as_gql(value) == expect
 
 
 class TestRaw:

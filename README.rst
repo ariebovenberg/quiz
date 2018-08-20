@@ -172,10 +172,8 @@ Class autogeneration                                               done
 Python 2.7-3.7 support                                             done
 CI                                                                 done
 Test for help()                                                    done
+Text escaping                                                      done
 Up-to-date documentation                                           v0.0.2
-Text escaping                                                      v0.0.2
-Non-ascii characters                                               v0.0.2
-Integer 32-bit limit                                               v0.0.2
 Floats                                                             v0.0.2
 Input objects                                                      v0.0.2
 Mutations                                                          v0.0.2
@@ -189,6 +187,7 @@ Module autogeneration                                              planned
 Type inference (e.g. enum values)                                  planned
 Variables                                                          planned
 Directives                                                         planned
+Integer 32-bit limit                                               planned
 Parsing raw GraphQL
 Pickling
 converting variables from camelcase to snake-case

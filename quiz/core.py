@@ -7,7 +7,7 @@ from operator import attrgetter, methodcaller
 import six
 
 from .compat import indent, singledispatch
-from .utils import Empty, FrozenDict, init_last, value_object, compose
+from .utils import Empty, FrozenDict, compose, init_last, value_object
 
 NoneType = type(None)
 INDENT = "  "
@@ -503,6 +503,7 @@ argument_as_gql.register(str, compose('"{}"'.format, escape))
 argument_as_gql.register(int, str)
 argument_as_gql.register(NoneType, 'null'.format)
 argument_as_gql.register(bool, {True: 'true', False: 'false'}.__getitem__)
+argument_as_gql.register(float, str)
 
 
 # introspection_query = Operation(
