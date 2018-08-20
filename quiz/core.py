@@ -376,9 +376,6 @@ class CanMakeFragmentMeta(type):
 class Object(object):
     """a graphQL object"""
 
-    def __init__(self):
-        raise NotImplementedError()
-
 
 # - InputObject: calling instantiates an instance,
 #   results must be instances of the class

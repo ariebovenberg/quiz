@@ -252,7 +252,7 @@ for a project.
      |      UniformResourceLocatable
      |      quiz.core.Interface
      |      quiz.core.Object
-     |      builtins.object
+     |      {}
      |
      |  Data descriptors defined here:
      |
@@ -424,11 +424,5 @@ the subscribable entity.
      |
      |  __weakref__
      |      list of weak references to the object (if defined)
-     |
-     |  ----------------------------------------------------------------------
-     |  Methods inherited from quiz.core.Object:
-     |
-     |  __init__(self)
-     |      Initialize self.  See help(type(self)) for accurate signature.
-    ''').strip()
+    '''.format('{0.__module__}.{0.__name__}'.format(object))).strip()
     assert render_doc(classes['Issue']).strip() == expect
