@@ -1,6 +1,9 @@
 Quiz 🎱
 =======
 
+.. image:: https://img.shields.io/badge/status-alpha-orange.svg?style=flat-square
+    :target: https://pypi.python.org/pypi/quiz
+
 .. image:: https://img.shields.io/pypi/v/quiz.svg?style=flat-square
     :target: https://pypi.python.org/pypi/quiz
 
@@ -168,8 +171,8 @@ Adaptable Execution                                                done
 Class autogeneration                                               done
 Python 2.7-3.7 support                                             done
 CI                                                                 done
+Test for help()                                                    done
 Up-to-date documentation                                           v0.0.2
-Test for help()                                                    v0.0.2
 Text escaping                                                      v0.0.2
 Non-ascii characters                                               v0.0.2
 Integer 32-bit limit                                               v0.0.2

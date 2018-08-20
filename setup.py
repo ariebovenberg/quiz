@@ -16,7 +16,7 @@ setup(
     name='quiz',
     version=metadata['__version__'],
     description=metadata['__doc__'],
-    license='MIT',
+    license=metadata['__license__'],
     long_description=read('README.rst') + '\n\n' + read('HISTORY.rst'),
     url='https://github.com/ariebovenberg/quiz',
 
@@ -24,7 +24,7 @@ setup(
     author_email='a.c.bovenberg@gmail.com',
 
     classifiers=[
-        'Development Status :: 1 - Planning',
+        'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Apache Software License',
 
