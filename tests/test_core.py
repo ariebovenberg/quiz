@@ -1,4 +1,7 @@
+# -*- coding: utf-8 -*-
 from textwrap import dedent
+import six
+from hypothesis import given, strategies
 
 import pytest
 
@@ -501,8 +504,12 @@ class TestEscape:
 
     @pytest.mark.parametrize('value, expect', [
         ('foo\nbar', 'foo\\nbar'),
-        (' \u2202foo\\', ' \\u2202foo\\\\'),
+        (u' ∂foo\\', r' \u2202foo\\'),
         ('"quoted" --', '\\"quoted\\" --'),
     ])
     def test_escape_needed(self, value, expect):
         assert quiz.escape(value) == expect
+
+    @given(strategies.text())
+    def test_fuzzing(self, value):
+        assert isinstance(quiz.escape(value), six.text_type)

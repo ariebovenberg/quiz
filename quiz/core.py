@@ -1,10 +1,7 @@
 """Main module for constructing graphQL queries"""
 import enum
 import re
-import struct
 import typing as t
-from functools import partial
-from itertools import chain
 from operator import attrgetter, methodcaller
 
 import six
@@ -494,8 +491,21 @@ def _one_xlat(match):
 
 
 def escape(txt):
+    """Escape a string according to GraphQL specification
+
+    Parameters
+    ----------
+    txt: str
+        The string to escape
+
+    Returns
+    -------
+    str
+        the escaped string
+    """
     escaped = _ESCAPE_RE.sub(_one_xlat, txt)
     return escaped.encode('ascii', errors='backslashreplace').decode()
+
 
 # introspection_query = Operation(
 #     OperationType.QUERY,
