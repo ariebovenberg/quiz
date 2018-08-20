@@ -484,3 +484,25 @@ class TestRaw:
     def test_gql(self):
         raw = quiz.Raw('my raw graphql')
         assert gql(raw) == 'my raw graphql'
+
+
+class TestEscape:
+
+    def test_empty(self):
+        assert quiz.escape('') == ''
+
+    @pytest.mark.parametrize('value', [
+        'foo',
+        '   bla   ',
+        ' some words-here ',
+    ])
+    def test_no_escape_needed(self, value):
+        assert quiz.escape(value) == value
+
+    @pytest.mark.parametrize('value, expect', [
+        ('foo\nbar', 'foo\\nbar'),
+        (' \u2202foo\\', ' \\u2202foo\\\\'),
+        ('"quoted" --', '\\"quoted\\" --'),
+    ])
+    def test_escape_needed(self, value, expect):
+        assert quiz.escape(value) == expect

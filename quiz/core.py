@@ -1,6 +1,10 @@
-"""main module for constructing graphQL queries"""
+"""Main module for constructing graphQL queries"""
 import enum
+import re
+import struct
 import typing as t
+from functools import partial
+from itertools import chain
 from operator import attrgetter, methodcaller
 
 import six
@@ -472,6 +476,26 @@ def query(selection_set, cls):
     """
     return Operation(OperationType.QUERY, validate(cls, selection_set))
 
+
+_ESCAPE_PATTERNS = {
+    '\b': r'\b',
+    '\f': r'\f',
+    '\n': r'\n',
+    '\r': r'\r',
+    '\t': r'\t',
+    '\\': r'\\',
+    '"':  r'\"',
+}
+_ESCAPE_RE = re.compile('|'.join(map(re.escape, _ESCAPE_PATTERNS)))
+
+
+def _one_xlat(match):
+    return _ESCAPE_PATTERNS[match.group(0)]
+
+
+def escape(txt):
+    escaped = _ESCAPE_RE.sub(_one_xlat, txt)
+    return escaped.encode('ascii', errors='backslashreplace').decode()
 
 # introspection_query = Operation(
 #     OperationType.QUERY,
