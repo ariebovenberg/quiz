@@ -173,10 +173,10 @@ Python 2.7-3.7 support                                             done
 CI                                                                 done
 Test for help()                                                    done
 Text escaping                                                      done
+Floats                                                             done
 Up-to-date documentation                                           v0.0.2
-Floats                                                             v0.0.2
-Input objects                                                      v0.0.2
-Mutations                                                          v0.0.2
+Mutations                                                          v0.0.3
+Input objects                                                      v0.0.3
 Inline fragments                                                   v0.0.3
 Aliases                                                            v0.0.3
 Fragments and fragment spreads                                     v0.0.4
