@@ -463,7 +463,7 @@ class TestSelectionSet:
 class TestArgumentAsGql:
 
     def test_string(self):
-        assert quiz.argument_as_gql("foo") == '"foo"'
+        assert quiz.argument_as_gql('foo\nb"ar') == '"foo\\nb\\"ar"'
 
     def test_invalid(self):
         class MyClass(object):
@@ -504,8 +504,8 @@ class TestEscape:
 
     @pytest.mark.parametrize('value, expect', [
         ('foo\nbar', 'foo\\nbar'),
-        (u' ∂foo\\', r' \u2202foo\\'),
         ('"quoted" --', '\\"quoted\\" --'),
+        ('foøo', 'foøo'),
     ])
     def test_escape_needed(self, value, expect):
         assert quiz.escape(value) == expect

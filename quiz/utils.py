@@ -12,6 +12,10 @@ T1 = t.TypeVar('T1')
 T2 = t.TypeVar('T2')
 
 
+def identity(obj):
+    return obj
+
+
 class FrozenDict(t.Mapping[T1, T2]):
     # see https://stackoverflow.com/questions/45864273
     if not (3, 7) > sys.version_info > (3, 4):  # pragma: no cover
@@ -136,3 +140,27 @@ def value_object(cls):
         setattr(cls, name, property(attrgetter('_values.' + name)))
 
     return cls
+
+
+class compose(object):
+    """compose a function from a chain of functions
+    Parameters
+    ----------
+    *funcs
+        callables to compose
+    Note
+    ----
+    * if given no functions, acts as an identity function
+    """
+    def __init__(self, *funcs):
+        self.funcs = funcs
+        self.__wrapped__ = funcs[-1] if funcs else identity
+
+    def __call__(self, *args, **kwargs):
+        if not self.funcs:
+            return identity(*args, **kwargs)
+        tail, head = self.funcs[:-1], self.funcs[-1]
+        value = head(*args, **kwargs)
+        for func in reversed(tail):
+            value = func(value)
+        return value

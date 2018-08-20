@@ -7,7 +7,7 @@ from operator import attrgetter, methodcaller
 import six
 
 from .compat import indent, singledispatch
-from .utils import Empty, FrozenDict, init_last, value_object
+from .utils import Empty, FrozenDict, init_last, value_object, compose
 
 NoneType = type(None)
 INDENT = "  "
@@ -41,13 +41,6 @@ BUILTIN_SCALARS = {
 def argument_as_gql(obj):
     # type: object -> str
     raise TypeError("cannot serialize to GraphQL: {}".format(type(obj)))
-
-
-argument_as_gql.register(str, '"{}"'.format)
-
-argument_as_gql.register(int, str)
-argument_as_gql.register(NoneType, 'null'.format)
-argument_as_gql.register(bool, {True: 'true', False: 'false'}.__getitem__)
 
 
 @argument_as_gql.register(enum.Enum)
@@ -486,7 +479,7 @@ _ESCAPE_PATTERNS = {
 _ESCAPE_RE = re.compile('|'.join(map(re.escape, _ESCAPE_PATTERNS)))
 
 
-def _one_xlat(match):
+def _escape_match(match):
     return _ESCAPE_PATTERNS[match.group(0)]
 
 
@@ -503,8 +496,13 @@ def escape(txt):
     str
         the escaped string
     """
-    escaped = _ESCAPE_RE.sub(_one_xlat, txt)
-    return escaped.encode('ascii', errors='backslashreplace').decode()
+    return _ESCAPE_RE.sub(_escape_match, txt)
+
+
+argument_as_gql.register(str, compose('"{}"'.format, escape))
+argument_as_gql.register(int, str)
+argument_as_gql.register(NoneType, 'null'.format)
+argument_as_gql.register(bool, {True: 'true', False: 'false'}.__getitem__)
 
 
 # introspection_query = Operation(
