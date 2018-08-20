@@ -230,8 +230,11 @@ def test_end_to_end(type_schemas):
     expect = dedent('''
     Python Library Documentation: class Issue
 
-    class Issue(Node, Assignable, Closable, Comment, Updatable, UpdatableComment, Labelable, Lockable, Reactable, RepositoryNode, Subscribable, UniformResourceLocatable, quiz.core.Object)
-     |  An Issue is a place to discuss ideas, enhancements, tasks, and bugs for a project.
+    class Issue(Node, Assignable, Closable, Comment, Updatable, \
+UpdatableComment, Labelable, Lockable, Reactable, RepositoryNode, \
+Subscribable, UniformResourceLocatable, quiz.core.Object)
+     |  An Issue is a place to discuss ideas, enhancements, tasks, and bugs \
+for a project.
      |
      |  Method resolution order:
      |      Issue
@@ -283,7 +286,8 @@ def test_end_to_end(type_schemas):
      |
      |  closed
      |      : bool
-     |      `true` if the object is closed (definition of closed may depend on type)
+     |      `true` if the object is closed (definition of closed may depend \
+on type)
      |
      |  closedAt
      |      : datetime or None
@@ -367,7 +371,8 @@ def test_end_to_end(type_schemas):
      |
      |  timeline
      |      : IssueTimelineConnection
-     |      A list of events, comments, commits, etc. associated with the issue.
+     |      A list of events, comments, commits, etc. associated with \
+the issue.
      |
      |  title
      |      : str
@@ -391,7 +396,8 @@ def test_end_to_end(type_schemas):
      |
      |  viewerCanSubscribe
      |      : bool
-     |      Check if the viewer is able to change their subscription status for the repository.
+     |      Check if the viewer is able to change their subscription status \
+for the repository.
      |
      |  viewerCanUpdate
      |      : bool
@@ -407,7 +413,8 @@ def test_end_to_end(type_schemas):
      |
      |  viewerSubscription
      |      : SubscriptionState
-     |      Identifies if the viewer is watching, not watching, or ignoring the subscribable entity.
+     |      Identifies if the viewer is watching, not watching, or ignoring \
+the subscribable entity.
      |
      |  ----------------------------------------------------------------------
      |  Data descriptors inherited from quiz.core.Interface:
