@@ -8,8 +8,8 @@ import six
 from . import raw
 from .. import core
 from ..compat import map
-from ..utils import FrozenDict, merge
 from ..execution import execute
+from ..utils import FrozenDict, merge
 
 ClassDict = t.Dict[str, type]
 
