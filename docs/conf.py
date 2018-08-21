@@ -14,6 +14,7 @@
 #
 import os
 import sys
+from collections import OrderedDict
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 import quiz  # noqa
@@ -97,6 +98,11 @@ html_theme_options = {
     'fixed_sidebar': True,
     'code_font_size': '0.8em',
     'travis_button': True,
+    'extra_nav_links': OrderedDict([
+        ('quiz @ PyPI', 'http://pypi.python.org/pypi/quiz'),
+        ('quiz @ GitHub', 'http://github.com/ariebovenberg/quiz'),
+        ('Issue Tracker', 'http://github.com/ariebovenberg/quiz/issues'),
+    ]),
 
     'note_bg': '#DAF2ED',
     'note_border': '#DAF2ED',

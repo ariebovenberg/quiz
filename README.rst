@@ -1,29 +1,46 @@
-Quiz
-====
-
 .. image:: https://raw.githubusercontent.com/ariebovenberg/quiz/develop/docs/_static/quiz-logo.png
    :align: center
+   :height: 150px
 
-.. image:: https://img.shields.io/badge/status-alpha-orange.svg?style=flat-square
-    :target: https://pypi.python.org/pypi/quiz
+.. raw:: html
 
-.. image:: https://img.shields.io/pypi/v/quiz.svg?style=flat-square
-    :target: https://pypi.python.org/pypi/quiz
+   <p align="center">
 
-.. image:: https://img.shields.io/pypi/l/quiz.svg?style=flat-square
-    :target: https://pypi.python.org/pypi/quiz
+   <a href="https://pypi.python.org/pypi/quiz" class="reference external image-reference">
+         <img src="https://img.shields.io/badge/status-Pre--Alpha-red.svg?style=flat-square" alt="Development status">
+   </a>
 
-.. image:: https://img.shields.io/pypi/pyversions/quiz.svg?style=flat-square
-    :target: https://pypi.python.org/pypi/quiz
+   <a href="https://pypi.python.org/pypi/quiz" class="reference external image-reference">
+         <img src="https://img.shields.io/pypi/v/quiz.svg?style=flat-square" alt="Latest version">
+   </a>
 
-.. image:: https://img.shields.io/travis/ariebovenberg/quiz.svg?style=flat-square
-    :target: https://travis-ci.org/ariebovenberg/quiz
+   <a href="https://pypi.python.org/pypi/quiz" class="reference external image-reference">
+         <img src="https://img.shields.io/pypi/l/quiz.svg?style=flat-square" alt="License">
+   </a>
 
-.. image:: https://img.shields.io/codecov/c/github/ariebovenberg/quiz.svg?style=flat-square
-    :target: https://codecov.io/gh/ariebovenberg/quiz
+   <a href="https://pypi.python.org/pypi/quiz" class="reference external image-reference">
+         <img src="https://img.shields.io/pypi/pyversions/quiz.svg?style=flat-square" alt="Supported python versions">
+   </a>
 
-.. image:: https://img.shields.io/readthedocs/quiz.svg?style=flat-square
-    :target: http://quiz.readthedocs.io/
+   <br/>
+
+   <a href="https://travis-ci.org/ariebovenberg/quiz" class="reference external image-reference">
+         <img src="https://img.shields.io/travis/ariebovenberg/quiz.svg?style=flat-square" alt="Build status">
+   </a>
+
+   <a href="https://codecov.io/gh/ariebovenberg/quiz" class="reference external image-reference">
+         <img src="https://img.shields.io/codecov/c/github/ariebovenberg/quiz.svg?style=flat-square" alt="Test coverage">
+   </a>
+
+   <a href="http://quiz.readthedocs.io/" class="reference external image-reference">
+         <img src="https://img.shields.io/readthedocs/quiz.svg?style=flat-square" alt="Documentation status">
+   </a>
+
+   </p>
+
+
+Quiz
+====
 
 Capable GraphQL client. **Work in progress**.
 
