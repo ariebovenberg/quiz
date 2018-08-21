@@ -143,7 +143,7 @@ def async_executor(**kwargs):
 
     >>> execute = async_executor(url='https://api.github.com/graphql',
     ...                          auth=('me', 'password'))
-    >>> result = execute('''
+    >>> result = await execute('''
     ...   {
     ...     repository(owner: "octocat" name: "Hello-World") {
     ...       description

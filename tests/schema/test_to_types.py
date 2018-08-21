@@ -1,10 +1,12 @@
 import datetime
 import enum
+import json
 import pydoc
 from textwrap import dedent
 
 import pytest
 import six
+import snug
 
 import quiz
 from quiz.schema import raw, to_types
@@ -20,6 +22,18 @@ if six.PY3:
 else:
     def render_doc(obj):
         return trim_whitespace(pydoc.plain(pydoc.render_doc(obj)))
+
+
+EXAMPLE_SCALARS = {
+    'URI':             str,
+    'DateTime':        datetime.datetime,
+    'HTML':            str,
+    'GitObjectID':     str,
+    'GitTimestamp':    str,
+    'Date':            datetime.date,
+    'X509Certificate': str,
+    'GitSSHRemote':    str,
+}
 
 
 class TestEnumAsType:
@@ -426,3 +440,16 @@ the subscribable entity.
      |      list of weak references to the object (if defined)
     '''.format('{0.__module__}.{0.__name__}'.format(object))).strip()
     assert render_doc(classes['Issue']).strip() == expect
+
+
+# TODO: more comprehensive tests
+def test_get_schema(raw_schema):
+    from ..helpers import MockClient
+
+    client = MockClient(
+        snug.Response(200, json.dumps({'data': raw_schema}).encode()))
+    result = quiz.schema.get('https://my.url/graphql', scalars=EXAMPLE_SCALARS,
+                             client=client)
+
+    assert client.request.url == 'https://my.url/graphql'
+    assert result['Query']

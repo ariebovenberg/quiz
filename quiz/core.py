@@ -504,9 +504,3 @@ argument_as_gql.register(float, str)
 @argument_as_gql.register(Enum)
 def _enum_to_gql(obj):
     return obj.value
-
-
-# introspection_query = Operation(
-#     OperationType.QUERY,
-#     Raw(schema.raw.INTROSPECTION_QUERY)
-# )

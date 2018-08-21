@@ -9,6 +9,7 @@ from . import raw
 from .. import core
 from ..compat import map
 from ..utils import FrozenDict, merge
+from ..execution import execute
 
 ClassDict = t.Dict[str, type]
 
@@ -149,3 +150,31 @@ def build(type_schemas, module_name, scalars=FrozenDict.EMPTY):
         _add_fields(obj, classes)
 
     return classes
+
+
+def get(url, scalars=FrozenDict.EMPTY, module='__main__', **kwargs):
+    """Build a GraphQL schema by introspecting an API
+
+    Parameters
+    ----------
+    url: str
+        URL of the target GraphQL API
+    scalars: ~typing.Mapping[str, object]
+        Custom scalars to use
+
+        Warning
+        -------
+
+        Scalars are not yet properly implemented
+    module: str
+        The module name to set on the generated classes
+    **kwargs
+        ``auth`` or ``client``, passed to :func:`~quiz.execution.execute`.
+
+    Returns
+    -------
+    Mapping[str, type]
+        A mapping of names to classes
+    """
+    result = execute(raw.INTROSPECTION_QUERY, url=url, **kwargs)
+    return build(raw.load(result), scalars=scalars, module_name=module)

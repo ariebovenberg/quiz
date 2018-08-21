@@ -43,7 +43,8 @@
 Quiz
 ====
 
-Capable GraphQL client. **Work in progress**.
+Capable GraphQL client.
+**Work in progress: many features are not available/stable/documented**.
 
 Features:
 
@@ -183,7 +184,16 @@ Features
       quiz.NoSuchField: "Repository" has no field "foo"
 
 
-Tentative roadmap
+Installation
+------------
+
+.. code-block:: bash
+
+   pip install quiz
+
+
+Preliminary roadmap
+-------------------
 
 ================================================================== ===========
 Feature                                                            status
@@ -195,14 +205,15 @@ CI                                                                 done
 Test for help()                                                    done
 Text escaping                                                      done
 Floats                                                             done
-Up-to-date documentation                                           v0.0.2
-Improve schema API (consistent with docs)                          v0.0.2
-Mutations                                                          v0.0.3
-Input objects                                                      v0.0.3
-Inline fragments                                                   v0.0.3
+Examples working                                                   v0.0.3
+Up-to-date documentation                                           v0.0.3
+Improve schema API (consistent with docs)                          v0.0.3
 Aliases                                                            v0.0.3
-Fragments and fragment spreads                                     v0.0.4
-Custom primitives                                                  v0.0.4
+Mutations                                                          v0.0.4
+Input objects                                                      v0.0.4
+Inline fragments                                                   v0.0.4
+Fragments and fragment spreads                                     v0.0.5
+Custom primitives                                                  v0.0.5
 Mixing in raw GraphQL                                              planned
 Deserialization                                                    planned
 Module autogeneration                                              planned
@@ -210,14 +221,14 @@ Type inference (e.g. enum values)                                  planned
 Variables                                                          planned
 Directives                                                         planned
 Integer 32-bit limit                                               planned
-Parsing raw GraphQL
-Pickling
-converting variables from camelcase to snake-case
-Autogenerate module .rst
-Autogenerate module .py
-Escaping python keywords
-Handling markdown in descriptions
-Warnings when using deprecated fields
-Handle optional types descriptions in schema
-Returning multiple validation errors at the same time
+Parsing raw GraphQL                                                idea
+Pickling                                                           idea
+converting variables from camelcase to snake-case                  idea
+Autogenerate module .rst from schema                               idea
+Autogenerate module .py from schema                                idea
+Escaping python keywords                                           idea
+Handling markdown in descriptions                                  idea
+Warnings when using deprecated fields                              idea
+Handle optional types descriptions in schema                       idea
+Returning multiple validation errors at the same time              idea
 ================================================================== ===========
