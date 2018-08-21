@@ -1,5 +1,8 @@
-Quiz 🎱
-=======
+Quiz
+====
+
+.. image:: https://raw.githubusercontent.com/ariebovenberg/quiz/develop/docs/_static/quiz-logo.png
+   :align: center
 
 .. image:: https://img.shields.io/badge/status-alpha-orange.svg?style=flat-square
     :target: https://pypi.python.org/pypi/quiz
@@ -175,6 +178,7 @@ Test for help()                                                    done
 Text escaping                                                      done
 Floats                                                             done
 Up-to-date documentation                                           v0.0.2
+Improve schema API (consistent with docs)                          v0.0.2
 Mutations                                                          v0.0.3
 Input objects                                                      v0.0.3
 Inline fragments                                                   v0.0.3

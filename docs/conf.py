@@ -76,6 +76,7 @@ pygments_style = 'default'
 #
 html_theme = 'alabaster'
 
+html_static_path = ['_static']
 highlight_language = 'python3'
 
 # Theme options are theme-specific and customize the look and feel of a theme
@@ -83,6 +84,9 @@ highlight_language = 'python3'
 # documentation.
 #
 html_theme_options = {
+    'logo': 'quiz-logo.png',
+    'logo_name': True,
+    'logo_text_align': 'center',
     "description": quiz.__doc__,
     'description_font_style': 'italic',
     "github_user": 'ariebovenberg',
