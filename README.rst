@@ -1,10 +1,11 @@
-.. image:: https://raw.githubusercontent.com/ariebovenberg/quiz/develop/docs/_static/quiz-logo.png
-   :align: center
-   :height: 150px
 
 .. raw:: html
 
    <p align="center">
+
+   <img src="https://raw.githubusercontent.com/ariebovenberg/quiz/develop/docs/_static/quiz-logo.png" height="150">
+
+   <br/>
 
    <a href="https://pypi.python.org/pypi/quiz" class="reference external image-reference">
          <img src="https://img.shields.io/badge/status-Pre--Alpha-red.svg?style=flat-square" alt="Development status">
