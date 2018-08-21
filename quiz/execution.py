@@ -6,7 +6,7 @@ from functools import partial
 import snug
 from gentools import py2_compatible, return_
 
-from .types import Document, ErrorResponse, Operation, SelectionSet, gql
+from .core import Document, ErrorResponse, Operation, SelectionSet, gql
 
 __all__ = [
     'execute',
@@ -143,7 +143,7 @@ def async_executor(**kwargs):
 
     >>> execute = async_executor(url='https://api.github.com/graphql',
     ...                          auth=('me', 'password'))
-    >>> result = execute('''
+    >>> result = await execute('''
     ...   {
     ...     repository(owner: "octocat" name: "Hello-World") {
     ...       description

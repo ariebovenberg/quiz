@@ -1,7 +1,50 @@
-Quiz 🎱
-=======
 
-Capable GraphQL client. **Work in progress**.
+.. raw:: html
+
+   <p align="center">
+
+   <img src="https://raw.githubusercontent.com/ariebovenberg/quiz/develop/docs/_static/quiz-logo.png" height="150">
+
+   <br/>
+
+   <a href="https://pypi.python.org/pypi/quiz" class="reference external image-reference">
+         <img src="https://img.shields.io/badge/status-Pre--Alpha-red.svg?style=flat-square" alt="Development status">
+   </a>
+
+   <a href="https://pypi.python.org/pypi/quiz" class="reference external image-reference">
+         <img src="https://img.shields.io/pypi/v/quiz.svg?style=flat-square" alt="Latest version">
+   </a>
+
+   <a href="https://pypi.python.org/pypi/quiz" class="reference external image-reference">
+         <img src="https://img.shields.io/pypi/l/quiz.svg?style=flat-square" alt="License">
+   </a>
+
+   <a href="https://pypi.python.org/pypi/quiz" class="reference external image-reference">
+         <img src="https://img.shields.io/pypi/pyversions/quiz.svg?style=flat-square" alt="Supported python versions">
+   </a>
+
+   <br/>
+
+   <a href="https://travis-ci.org/ariebovenberg/quiz" class="reference external image-reference">
+         <img src="https://img.shields.io/travis/ariebovenberg/quiz.svg?style=flat-square" alt="Build status">
+   </a>
+
+   <a href="https://codecov.io/gh/ariebovenberg/quiz" class="reference external image-reference">
+         <img src="https://img.shields.io/codecov/c/github/ariebovenberg/quiz.svg?style=flat-square" alt="Test coverage">
+   </a>
+
+   <a href="http://quiz.readthedocs.io/" class="reference external image-reference">
+         <img src="https://img.shields.io/readthedocs/quiz.svg?style=flat-square" alt="Documentation status">
+   </a>
+
+   </p>
+
+
+Quiz
+====
+
+Capable GraphQL client.
+**Work in progress: many features are not available/stable/documented**.
 
 Features:
 
@@ -141,7 +184,16 @@ Features
       quiz.NoSuchField: "Repository" has no field "foo"
 
 
-Tentative roadmap
+Installation
+------------
+
+.. code-block:: bash
+
+   pip install quiz
+
+
+Preliminary roadmap
+-------------------
 
 ================================================================== ===========
 Feature                                                            status
@@ -149,27 +201,34 @@ Feature                                                            status
 Adaptable Execution                                                done
 Class autogeneration                                               done
 Python 2.7-3.7 support                                             done
-Inline fragments                                                   planned
-Text escaping                                                      planned
-Non-ascii characters                                               planned
-Module autogeneration                                              planned
-Aliases                                                            planned
-Input objects                                                      planned
-Fragments and fragment spreads                                     planned
-Custom primitives                                                  planned
+CI                                                                 done
+Test for help()                                                    done
+Text escaping                                                      done
+Floats                                                             done
+Examples working                                                   v0.0.3
+Up-to-date documentation                                           v0.0.3
+Improve schema API (consistent with docs)                          v0.0.3
+Aliases                                                            v0.0.3
+Mutations                                                          v0.0.4
+Input objects                                                      v0.0.4
+Inline fragments                                                   v0.0.4
+Fragments and fragment spreads                                     v0.0.5
+Custom primitives                                                  v0.0.5
+Mixing in raw GraphQL                                              planned
 Deserialization                                                    planned
-Mutations                                                          planned
-CI                                                                 planned
-Variables
-Directives
-Parsing raw GraphQL
-Type inference (e.g. enum values)
-Pickling
-converting variables from camelcase to snake-case
-Autogenerate module .rst
-Autogenerate module .py
-Escaping python keywords
-Handling markdown in descriptions
-Warnings when using deprecated fields
-Handle optional types descriptions in schema
+Module autogeneration                                              planned
+Type inference (e.g. enum values)                                  planned
+Variables                                                          planned
+Directives                                                         planned
+Integer 32-bit limit                                               planned
+Parsing raw GraphQL                                                idea
+Pickling                                                           idea
+converting variables from camelcase to snake-case                  idea
+Autogenerate module .rst from schema                               idea
+Autogenerate module .py from schema                                idea
+Escaping python keywords                                           idea
+Handling markdown in descriptions                                  idea
+Warnings when using deprecated fields                              idea
+Handle optional types descriptions in schema                       idea
+Returning multiple validation errors at the same time              idea
 ================================================================== ===========

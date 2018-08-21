@@ -14,6 +14,7 @@
 #
 import os
 import sys
+from collections import OrderedDict
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 import quiz  # noqa
@@ -76,6 +77,7 @@ pygments_style = 'default'
 #
 html_theme = 'alabaster'
 
+html_static_path = ['_static']
 highlight_language = 'python3'
 
 # Theme options are theme-specific and customize the look and feel of a theme
@@ -83,6 +85,9 @@ highlight_language = 'python3'
 # documentation.
 #
 html_theme_options = {
+    'logo': 'quiz-logo.png',
+    'logo_name': True,
+    'logo_text_align': 'center',
     "description": quiz.__doc__,
     'description_font_style': 'italic',
     "github_user": 'ariebovenberg',
@@ -93,6 +98,11 @@ html_theme_options = {
     'fixed_sidebar': True,
     'code_font_size': '0.8em',
     'travis_button': True,
+    'extra_nav_links': OrderedDict([
+        ('quiz @ PyPI', 'http://pypi.python.org/pypi/quiz'),
+        ('quiz @ GitHub', 'http://github.com/ariebovenberg/quiz'),
+        ('Issue Tracker', 'http://github.com/ariebovenberg/quiz/issues'),
+    ]),
 
     'note_bg': '#DAF2ED',
     'note_border': '#DAF2ED',

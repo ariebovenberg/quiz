@@ -1,3 +1,19 @@
+import snug
+
+
+class MockClient:
+
+    def __init__(self, response):
+        self.response = response
+
+    def send(self, req):
+        self.request = req
+        return self.response
+
+
+snug.send.register(MockClient, MockClient.send)
+
+
 class AlwaysEquals:
     """useful for testing correct __eq__, __ne__ implementations"""
 

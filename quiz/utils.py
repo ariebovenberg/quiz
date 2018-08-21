@@ -1,3 +1,4 @@
+import sys
 import typing as t
 from collections import namedtuple
 from itertools import chain, starmap
@@ -7,13 +8,18 @@ import six
 
 from .compat import PY2
 
+T1 = t.TypeVar('T1')
+T2 = t.TypeVar('T2')
 
-class Error(Exception):
-    """Base error class"""
+
+def identity(obj):
+    return obj
 
 
-class FrozenDict(t.Mapping):
-    __slots__ = '_inner'
+class FrozenDict(t.Mapping[T1, T2]):
+    # see https://stackoverflow.com/questions/45864273
+    if not (3, 7) > sys.version_info > (3, 4):  # pragma: no cover
+        __slots__ = '_inner'
 
     def __init__(self, inner):
         self._inner = inner if isinstance(inner, dict) else dict(inner)
@@ -42,6 +48,25 @@ def merge(*dicts):
         return {}
 
 
+class Empty(Exception):
+    """indicates a given list is unexpectedly empty"""
+
+
+def init_last(items):
+    # type: List[T] -> (List[T], T)
+    """Return the first items and last item from a list
+
+    Raises
+    ------
+    Empty
+        if the given list is empty
+    """
+    try:
+        return items[:-1], items[-1]
+    except IndexError:
+        raise Empty
+
+
 def replace(self, **kwargs):
     new = type(self).__new__(type(self))
     new._values = self._values._replace(**kwargs)
@@ -64,12 +89,14 @@ def __ne__(self, other):
 
 
 def __repr__(self):
-    # TODO: make py2-safe
-    return '{}({})'.format(
-        self.__class__.__name__ if PY2 else self.__class__.__qualname__,
-        ', '.join(starmap('{}={!r}'.format,
-                          zip(self._values._fields, self._values)))
-    )
+    try:
+        return '{}({})'.format(
+            self.__class__.__name__ if PY2 else self.__class__.__qualname__,
+            ', '.join(starmap('{}={!r}'.format,
+                              zip(self._values._fields, self._values)))
+        )
+    except Exception:
+        return object.__repr__(self)
 
 
 def value_object(cls):
@@ -113,3 +140,27 @@ def value_object(cls):
         setattr(cls, name, property(attrgetter('_values.' + name)))
 
     return cls
+
+
+class compose(object):
+    """compose a function from a chain of functions
+    Parameters
+    ----------
+    *funcs
+        callables to compose
+    Note
+    ----
+    * if given no functions, acts as an identity function
+    """
+    def __init__(self, *funcs):
+        self.funcs = funcs
+        self.__wrapped__ = funcs[-1] if funcs else identity
+
+    def __call__(self, *args, **kwargs):
+        if not self.funcs:
+            return identity(*args, **kwargs)
+        tail, head = self.funcs[:-1], self.funcs[-1]
+        value = head(*args, **kwargs)
+        for func in reversed(tail):
+            value = func(value)
+        return value

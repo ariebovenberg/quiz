@@ -1,15 +1,17 @@
+# -*- coding: utf-8 -*-
 from textwrap import dedent
 
 import pytest
+import six
+from hypothesis import given, strategies
 
 import quiz
-from quiz import gql
-from quiz.types import Error, Field, InlineFragment, SelectionSet
-from quiz.types import selector as _
+from quiz import Error, Field, InlineFragment, SelectionSet, gql
+from quiz import selector as _
 from quiz.utils import FrozenDict as fdict
 
+from .example import Command, Dog, Hobby, Human, Query
 from .helpers import AlwaysEquals, NeverEquals
-from .example import Command, Dog, Hobby, Query
 
 
 class TestUnion:
@@ -50,9 +52,16 @@ class TestList:
         assert not isinstance((1, 2), MyList)
 
 
-class TestObjectGetItem:
+class TestValidate:
 
-    def test_valid(self):
+    def test_empty(self):
+        selection = SelectionSet()
+        assert quiz.validate(Dog, selection) == SelectionSet()
+
+    def test_simple_valid(self):
+        assert quiz.validate(Dog, _.name) == _.name
+
+    def test_complex_valid(self):
         selection_set = (
             _
             .name
@@ -72,60 +81,103 @@ class TestObjectGetItem:
                 .name
             ]
         )
-        fragment = Dog[selection_set]
-        assert fragment == quiz.InlineFragment(Dog, selection_set)
+        assert quiz.validate(Dog, selection_set) == selection_set
 
     def test_no_such_field(self):
-        with pytest.raises(quiz.NoSuchField) as exc:
-            Dog[
-                _
-                .name
-                .foo
-                .knows_command(command=Command.SIT)
-            ]
-        assert exc.value == quiz.NoSuchField(Dog, 'foo')
+        with pytest.raises(quiz.SelectionError) as exc:
+            quiz.validate(Dog, _.name.foo.knows_command(command=Command.SIT))
+        assert exc.value == quiz.SelectionError(
+            Dog, 'foo', quiz.NoSuchField())
 
-    def test_no_such_argument(self):
-        selection_set = _.name(foo=4)
-        with pytest.raises(quiz.NoSuchArgument) as exc:
-            Dog[selection_set]
-        assert exc.value == quiz.NoSuchArgument(Dog, Dog.name, 'foo')
+    def test_invalid_argument(self):
+        with pytest.raises(quiz.SelectionError) as exc:
+            quiz.validate(Dog, _.knows_command(
+                foo=1, command=Command.SIT))
+        assert exc.value == quiz.SelectionError(
+            Dog,
+            'knows_command',
+            quiz.NoSuchArgument('foo'))
 
     def test_missing_arguments(self):
-        selection_set = _.knows_command()
-        with pytest.raises(quiz.MissingArgument) as exc:
-            Dog[selection_set]
-        assert exc.value == quiz.MissingArgument(Dog, Dog.knows_command,
-                                                 'command')
+        selection_set = _.knows_command
+        with pytest.raises(quiz.SelectionError) as exc:
+            quiz.validate(Dog, selection_set)
+
+        assert exc.value == quiz.SelectionError(
+            Dog,
+            'knows_command',
+            quiz.MissingArgument('command')
+        )
 
     def test_invalid_argument_type(self):
         selection_set = _.knows_command(command='foobar')
-        with pytest.raises(quiz.InvalidArgumentType) as exc:
-            Dog[selection_set]
-        assert exc.value == quiz.InvalidArgumentType(
-            Dog, Dog.knows_command, 'command', 'foobar')  # noqa
+        with pytest.raises(quiz.SelectionError) as exc:
+            quiz.validate(Dog, selection_set)
+
+        assert exc.value == quiz.SelectionError(
+            Dog,
+            'knows_command',
+            quiz.InvalidArgumentType('command', 'foobar')
+        )
 
     def test_invalid_argument_type_optional(self):
         selection_set = _.is_housetrained(at_other_homes='foo')
-        with pytest.raises(quiz.InvalidArgumentType) as exc:
-            Dog[selection_set]
-        assert exc.value == quiz.InvalidArgumentType(
-            Dog, Dog.is_housetrained, 'at_other_homes', 'foo')  # noqa
+        with pytest.raises(quiz.SelectionError) as exc:
+            quiz.validate(Dog, selection_set)
+        assert exc.value == quiz.SelectionError(
+            Dog,
+            'is_housetrained',
+            quiz.InvalidArgumentType('at_other_homes', 'foo')
+        )
 
-    def test_invalid_nested(self):
-        with pytest.raises(quiz.NoSuchField) as exc:
-            Dog[_.owner[_.hobbies[_.foo]]]
-        assert exc.value == quiz.NoSuchField(Hobby, 'foo')
+    def test_nested_selection_error(self):
+        with pytest.raises(quiz.SelectionError) as exc:
+            quiz.validate(Dog, _.owner[_.hobbies[_.foo]])
+        assert exc.value == quiz.SelectionError(
+            Dog,
+            'owner',
+            quiz.SelectionError(
+                Human,
+                'hobbies',
+                quiz.SelectionError(
+                    Hobby,
+                    'foo',
+                    quiz.NoSuchField()
+                )
+            )
+        )
 
     def test_selection_set_on_non_object(self):
-        # TODO: maybe a more descriptive error
-        with pytest.raises(quiz.NoSuchField) as exc:
-            Dog[_.name[_.foo]]
-        assert exc.value == quiz.NoSuchField(str, 'foo')
+        with pytest.raises(quiz.SelectionError) as exc:
+            quiz.validate(Dog, _.name[_.foo])
+        assert exc.value == quiz.SelectionError(
+            Dog,
+            'name',
+            quiz.SelectionsNotSupported()
+        )
 
     # TODO: check object types always have selection sets
 
     # TODO: list input type
+
+
+class TestObject:
+
+    class TestGetItem:
+
+        def test_valid(self):
+            selection_set = (
+                _
+                .name
+                .knows_command(command=Command.SIT)
+                .is_housetrained
+            )
+            fragment = Dog[selection_set]
+            assert fragment == quiz.InlineFragment(Dog, selection_set)
+
+        def test_validates(self):
+            with pytest.raises(quiz.SelectionError):
+                Dog[_.name.foo.knows_command(command=Command.SIT)]
 
 
 class TestInlineFragment:
@@ -171,8 +223,8 @@ class TestQuery:
         assert query.type is quiz.OperationType.QUERY  # noqa
         assert len(query.selection_set) == 1
 
-    def test_validation(self):
-        with pytest.raises(quiz.NoSuchField) as exc:
+    def test_validates(self):
+        with pytest.raises(quiz.SelectionError):
             quiz.query(
                 _
                 .dog[
@@ -183,7 +235,6 @@ class TestQuery:
                 ],
                 cls=Query,
             )
-        assert exc.value == quiz.NoSuchField(Dog, 'foobar')
 
 
 class TestOperation:
@@ -215,7 +266,7 @@ class TestFieldSchema:
             'foo', 'my description', type=quiz.List[str],
             args=fdict.EMPTY,
             is_deprecated=False, deprecation_reason=None)
-        assert 'List[str]' in schema.__doc__
+        assert '[str]' in schema.__doc__
 
 
 class TestField:
@@ -374,6 +425,10 @@ class TestSelectionSet:
         def test_empty(self):
             assert _.foo() == SelectionSet(Field('foo'),)
 
+        def test_argument_named_self(self):
+            assert _.foo(self=4, bla=3) == SelectionSet(
+                Field('foo', fdict({'self': 4, 'bla': 3})))
+
         def test_invalid(self):
             with pytest.raises(Error):
                 _()
@@ -408,7 +463,7 @@ class TestSelectionSet:
 class TestArgumentAsGql:
 
     def test_string(self):
-        assert quiz.argument_as_gql("foo") == '"foo"'
+        assert quiz.argument_as_gql('foo\nb"ar') == '"foo\\nb\\"ar"'
 
     def test_invalid(self):
         class MyClass(object):
@@ -426,9 +481,51 @@ class TestArgumentAsGql:
         assert quiz.argument_as_gql(True) == 'true'
         assert quiz.argument_as_gql(False) == 'false'
 
+    @pytest.mark.parametrize('value, expect', [
+        (1.2, '1.2'),
+        (1., '1.0'),
+        (1.234e53, '1.234e+53'),
+    ])
+    def test_float(self, value, expect):
+        assert quiz.argument_as_gql(value) == expect
+
+    def test_enum(self):
+
+        class MyEnum(quiz.Enum):
+            FOO = 'FOOVALUE'
+            BLA = 'QUX'
+
+        assert quiz.argument_as_gql(MyEnum.BLA) == 'QUX'
+
 
 class TestRaw:
 
     def test_gql(self):
         raw = quiz.Raw('my raw graphql')
         assert gql(raw) == 'my raw graphql'
+
+
+class TestEscape:
+
+    def test_empty(self):
+        assert quiz.escape('') == ''
+
+    @pytest.mark.parametrize('value', [
+        'foo',
+        '   bla   ',
+        ' some words-here ',
+    ])
+    def test_no_escape_needed(self, value):
+        assert quiz.escape(value) == value
+
+    @pytest.mark.parametrize('value, expect', [
+        ('foo\nbar', 'foo\\nbar'),
+        ('"quoted" --', '\\"quoted\\" --'),
+        ('foøo', 'foøo'),
+    ])
+    def test_escape_needed(self, value, expect):
+        assert quiz.escape(value) == expect
+
+    @given(strategies.text())
+    def test_fuzzing(self, value):
+        assert isinstance(quiz.escape(value), six.text_type)

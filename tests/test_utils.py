@@ -53,6 +53,10 @@ class TestNamedtupleData:
         else:
             assert repr(instance) == 'Foo(foo=4, bla=\'foo\')'
 
+        # repr should never fail, even if everything is wrong
+        del instance._values
+        repr(instance)
+
     def test_defaults(self):
 
         @utils.value_object
@@ -86,3 +90,34 @@ class TestMergeMappings:
         assert result == {
             'foo': 9, 'bla': 2, 'blabla': 1
         }
+
+
+class TestInitList:
+
+    def test_simple(self):
+        assert utils.init_last([1, 2, 3, 4, 5]) == ([1, 2, 3, 4], 5)
+
+    def test_empty(self):
+        with pytest.raises(utils.Empty):
+            utils.init_last([])
+
+
+class TestCompose:
+
+    def test_empty(self):
+        obj = object()
+        func = utils.compose()
+        assert func(obj) is obj
+        assert isinstance(func.funcs, tuple)
+        assert func.funcs == ()
+
+    def test_one_func_with_multiple_args(self):
+        func = utils.compose(int)
+        assert func('10', base=5) == 5
+        assert isinstance(func.funcs, tuple)
+        assert func.funcs == (int, )
+
+    def test_multiple_funcs(self):
+        func = utils.compose(str, lambda x: x + 1, int)
+        assert isinstance(func.funcs, tuple)
+        assert func('30', base=5) == '16'

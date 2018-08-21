@@ -6,7 +6,9 @@ from itertools import chain
 import six
 
 from . import raw
-from .. import types
+from .. import core
+from ..compat import map
+from ..execution import execute
 from ..utils import FrozenDict, merge
 
 ClassDict = t.Dict[str, type]
@@ -18,43 +20,39 @@ def _namedict(classes):
 
 def object_as_type(typ, interfaces, module_name):
     # type: (raw.Object, Mapping[str, Type[types.Interface]], str) -> type
+    # we don't add the fields yet -- these types may not exist yet.
     return type(
         str(typ.name),
-        tuple(interfaces[i.name] for i in typ.interfaces) + (types.Object, ),
+        tuple(interfaces[i.name] for i in typ.interfaces) + (core.Object, ),
         {"__doc__": typ.desc, "__raw__": typ, '__module__': module_name},
     )
 
 
-# NOTE: fields are not added yet. These must be added later with _add_fields
-# why is this? Circular references may exist, which can only be added
-# after all classes have been defined
 def interface_as_type(typ, module_name):
     # type: (raw.Interface, str) -> type
-    return type(str(typ.name), (types.Interface, ),
+    # we don't add the fields yet -- these types may not exist yet.
+    return type(str(typ.name), (core.Interface, ),
                 {"__doc__": typ.desc, '__raw__': typ,
                  '__module__': module_name})
 
 
 def enum_as_type(typ, module_name):
     # type: (raw.Enum, str) -> Type[types.Enum]
-    # TODO: convert camelcase to snake-case?
     assert len(typ.values) > 0
-    cls = types.Enum(typ.name, [(v.name, v.name) for v in typ.values],
-                     module=module_name)
+    cls = core.Enum(typ.name, [(v.name, v.name) for v in typ.values],
+                    module=module_name)
     cls.__doc__ = typ.desc
     for member, conf in zip(cls.__members__.values(), typ.values):
         member.__doc__ = conf.desc
     return cls
 
 
-# TODO: better error handling:
-# - empty list of types
-# - types not found
 def union_as_type(typ, objs):
     # type (raw.Union, ClassDict) -> type
+    assert len(typ.types) > 1
     return type(
         str(typ.name),
-        (types.Union, ),
+        (core.Union, ),
         {
             '__doc__': typ.desc,
             '__args__': tuple(objs[o.name] for o in typ.types)
@@ -64,7 +62,7 @@ def union_as_type(typ, objs):
 
 def inputobject_as_type(typ):
     # type raw.InputObject -> type
-    return type(str(typ.name), (types.InputObject, ), {"__doc__": typ.desc})
+    return type(str(typ.name), (core.InputObject, ), {"__doc__": typ.desc})
 
 
 def _add_fields(obj, classes):
@@ -72,11 +70,11 @@ def _add_fields(obj, classes):
         setattr(
             obj,
             f.name,
-            types.FieldSchema(
+            core.FieldSchema(
                 name=f.name,
                 desc=f.desc,
                 args=FrozenDict({
-                    i.name: types.InputValue(
+                    i.name: core.InputValue(
                         name=i.name,
                         desc=i.desc,
                         type=resolve_typeref(i.type, classes),
@@ -97,18 +95,13 @@ def resolve_typeref(ref, classes):
     if ref.kind is raw.Kind.NON_NULL:
         return _resolve_typeref_required(ref.of_type, classes)
     else:
-        return type('Nullable', (types.Nullable, ), {
-            '__arg__': _resolve_typeref_required(ref, classes)
-        })
+        return core.Nullable[_resolve_typeref_required(ref, classes)]
 
 
-# TODO: exception handling?
 def _resolve_typeref_required(ref, classes):
     assert ref.kind is not raw.Kind.NON_NULL
     if ref.kind is raw.Kind.LIST:
-        return type('List', (types.List, ), {
-            '__arg__': resolve_typeref(ref.of_type, classes)
-        })
+        return core.List[resolve_typeref(ref.of_type, classes)]
     return classes[ref.name]
 
 
@@ -119,12 +112,11 @@ def build(type_schemas, module_name, scalars=FrozenDict.EMPTY):
     for tp in type_schemas:
         by_kind[tp.__class__].append(tp)
 
-    scalars_ = merge(scalars, types.BUILTIN_SCALARS)
+    scalars_ = merge(scalars, core.BUILTIN_SCALARS)
     undefined_scalars = {
         tp.name for tp in by_kind[raw.Scalar]} - six.viewkeys(scalars_)
     if undefined_scalars:
-        # TODO: special exception class
-        raise Exception('Undefined scalars: {}'.format(', '.join(
+        raise core.Error('Undefined scalars: {}'.format(', '.join(
             undefined_scalars)))
 
     interfaces = _namedict(map(
@@ -158,3 +150,31 @@ def build(type_schemas, module_name, scalars=FrozenDict.EMPTY):
         _add_fields(obj, classes)
 
     return classes
+
+
+def get(url, scalars=FrozenDict.EMPTY, module='__main__', **kwargs):
+    """Build a GraphQL schema by introspecting an API
+
+    Parameters
+    ----------
+    url: str
+        URL of the target GraphQL API
+    scalars: ~typing.Mapping[str, object]
+        Custom scalars to use
+
+        Warning
+        -------
+
+        Scalars are not yet properly implemented
+    module: str
+        The module name to set on the generated classes
+    **kwargs
+        ``auth`` or ``client``, passed to :func:`~quiz.execution.execute`.
+
+    Returns
+    -------
+    Mapping[str, type]
+        A mapping of names to classes
+    """
+    result = execute(raw.INTROSPECTION_QUERY, url=url, **kwargs)
+    return build(raw.load(result), scalars=scalars, module_name=module)

@@ -1,13 +1,13 @@
-"""main module for constructing graphQL queries"""
-import abc
+"""Main module for constructing graphQL queries"""
 import enum
+import re
 import typing as t
 from operator import attrgetter, methodcaller
 
 import six
 
 from .compat import indent, singledispatch
-from .utils import Error, FrozenDict, value_object
+from .utils import Empty, FrozenDict, compose, init_last, value_object
 
 NoneType = type(None)
 INDENT = "  "
@@ -21,26 +21,26 @@ JSON = t.Any
 JsonObject = t.Dict[str, JSON]
 
 
+class ID(str):
+    """represents a unique identifier, often used to refetch an object
+    or as the key for a cache. The ID type is serialized in the same way
+    as a String; however, defining it as an ID signifies that it is not
+    intended to be human-readable"""
+
+
+BUILTIN_SCALARS = {
+    "Boolean": bool,
+    "String":  str,
+    "ID":      ID,
+    "Float":   float,
+    "Int":     int,
+}
+
+
 @singledispatch
 def argument_as_gql(obj):
     # type: object -> str
     raise TypeError("cannot serialize to GraphQL: {}".format(type(obj)))
-
-
-# TODO: IMPORTANT! implement string escape
-argument_as_gql.register(str, '"{}"'.format)
-
-# TODO: limit to 32 bit integers!
-argument_as_gql.register(int, str)
-argument_as_gql.register(NoneType, 'null'.format)
-argument_as_gql.register(bool, {True: 'true', False: 'false'}.__getitem__)
-
-# TODO: float, with exponent form
-
-
-@argument_as_gql.register(enum.Enum)
-def _enum_to_gql(obj):
-    return obj.value
 
 
 @value_object
@@ -50,30 +50,29 @@ class FieldSchema(object):
         ('name', str),
         ('desc', str),
         ('type', type),
-        ('args', FrozenDict),  # TODO: FrozenDict[str, InputValue]
+        ('args', FrozenDict[str, 'InputValue']),
         ('is_deprecated', bool),
         ('deprecation_reason', t.Optional[str]),
     ]
 
-    # TODO: actual descriptor implementation
     def __get__(self, obj, objtype=None):  # pragma: no cover
-        return self
+        if obj is None:  # accessing on class
+            return self
+        raise NotImplementedError()
 
-    # TODO: actual descriptor implementation
     def __set__(self, obj, value):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     # __doc__ allows descriptor to be displayed nicely in help()
     @property
     def __doc__(self):
-        return '{.__name__}\n    {}'.format(self.type, self.desc)
+        # breakpoint()
+        return ': {.__name__}\n    {}'.format(self.type, self.desc)
 
 
-# TODO: add fragmentspread
 Selection = t.Union['Field', 'InlineFragment']
 
 
-# TODO: ** operator for specifying fragments
 class SelectionSet(t.Iterable[Selection], t.Sized):
     """A "magic" selection set builder"""
     # the attribute needs to have a dunder name to prevent
@@ -86,22 +85,20 @@ class SelectionSet(t.Iterable[Selection], t.Sized):
     def __init__(self, *selections):
         self.__selections__ = selections
 
-    # TODO: optimize
     @classmethod
     def _make(cls, selections):
-        return cls(*selections)
+        instance = cls.__new__(cls)
+        instance.__selections__ = tuple(selections)
+        return instance
 
     def __getattr__(self, name):
         return SelectionSet._make(self.__selections__ + (Field(name), ))
 
-    # TODO: support raw graphql strings
     def __getitem__(self, selection_set):
-        # TODO: check duplicate fieldnames
-        if not self.__selections__:
+        try:
+            rest, target = init_last(self.__selections__)
+        except Empty:
             raise Error('cannot select fields from empty field list')
-
-        # TODO: optimize
-        rest, target = self.__selections__[:-1], self.__selections__[-1]
 
         assert isinstance(selection_set, SelectionSet)
         assert len(selection_set.__selections__) >= 1
@@ -113,13 +110,12 @@ class SelectionSet(t.Iterable[Selection], t.Sized):
     def __repr__(self):
         return "<SelectionSet> {}".format(gql(self))
 
-    # TODO: prevent `self` from conflicting with kwargs
-    def __call__(self, **kwargs):
-        if not self.__selections__:
+    # `__self` allows `self` as an argument name
+    def __call__(__self, **kwargs):
+        try:
+            rest, target = init_last(__self.__selections__)
+        except Empty:
             raise Error('cannot call empty field list')
-
-        # TODO: optimize
-        rest, target = self.__selections__[:-1], self.__selections__[-1]
 
         return SelectionSet._make(
             tuple(rest) + (target.replace(kwargs=FrozenDict(kwargs)), ))
@@ -149,6 +145,9 @@ class SelectionSet(t.Iterable[Selection], t.Sized):
     __hash__ = property(attrgetter('__selections__.__hash__'))
 
 
+selector = SelectionSet()
+
+
 @value_object
 class Raw(object):
     __slots__ = '_values'
@@ -167,7 +166,7 @@ class Field(object):
         ('name', FieldName),
         ('kwargs', FrozenDict),
         ('selection_set', SelectionSet),
-        # TODO:
+        # in the future:
         # - alias
         # - directives
     ]
@@ -186,38 +185,27 @@ class Field(object):
         return self.name + arguments + selection_set
 
 
-selector = SelectionSet()
+class Error(Exception):
+    """Base error class"""
 
 
-class ID(str):
-    """represents a unique identifier, often used to refetch an object
-    or as the key for a cache. The ID type is serialized in the same way
-    as a String; however, defining it as an ID signifies that it is not
-    intended to be human-readable"""
-
-
-BUILTIN_SCALARS = {
-    "Boolean": bool,
-    "String":  str,
-    "ID":      ID,
-    "Float":   float,
-    "Int":     int,
-}
+@value_object
+class SelectionError(Error):
+    __fields__ = [
+        ('on', type),
+        ('path', str),
+        ('error', Error),
+    ]
 
 
 @value_object
 class NoSuchField(Error):
-    __fields__ = [
-        ('on', str),
-        ('name', str),
-    ]
+    __fields__ = []
 
 
 @value_object
 class NoSuchArgument(Error):
     __fields__ = [
-        ('on', type),
-        ('field', FieldSchema),
         ('name', str),
     ]
 
@@ -225,8 +213,6 @@ class NoSuchArgument(Error):
 @value_object
 class InvalidArgumentType(Error):
     __fields__ = [
-        ('on', type),
-        ('field', FieldSchema),
         ('name', str),
         ('value', object),
     ]
@@ -235,18 +221,13 @@ class InvalidArgumentType(Error):
 @value_object
 class MissingArgument(Error):
     __fields__ = [
-        ('on', type),
-        ('field', FieldSchema),
         ('name', str),
     ]
 
 
 @value_object
-class InvalidSelection(Error):
-    __fields__ = [
-        ('on', type),
-        ('field', FieldSchema),
-    ]
+class SelectionsNotSupported(Error):
+    __fields__ = []
 
 
 @value_object
@@ -263,7 +244,7 @@ class InlineFragment(object):
         ('on', type),
         ('selection_set', SelectionSet),
     ]
-    # TODO: directives
+    # in the future: directives
 
     def __gql__(self):
         return '... on {} {}'.format(
@@ -286,7 +267,7 @@ class Operation(object):
         ('selection_set', SelectionSet)
     ]
     __defaults__ = (SelectionSet(), )
-    # TODO:
+    # in the future:
     # - name (optional)
     # - variable_defs (optional)
     # - directives (optional)
@@ -297,57 +278,90 @@ class Operation(object):
 
 
 def _unwrap_list_or_nullable(type_):
-    # type: type -> type
+    # type: Type[Nullable, List, Scalar, Enum, InputObject]
+    # -> Type[Scalar | Enum | InputObject]
     if issubclass(type_, (Nullable, List)):
         return _unwrap_list_or_nullable(type_.__arg__)
     return type_
 
 
-def _check_args(cls, field, kwargs):
-    invalid_args = six.viewkeys(kwargs) - six.viewkeys(field.args)
+def _validate_args(schema, actual):
+    # type: (Mapping[str, InputValue], Mapping[str, object])
+    # -> Mapping[str, object]
+    invalid_args = six.viewkeys(actual) - six.viewkeys(schema)
     if invalid_args:
-        raise NoSuchArgument(cls, field, invalid_args.pop())
+        raise NoSuchArgument(invalid_args.pop())
 
-    for param in field.args.values():
+    for input_value in schema.values():
         try:
-            value = kwargs[param.name]
+            value = actual[input_value.name]
         except KeyError:
-            if not issubclass(param.type, Nullable):
-                raise MissingArgument(cls, field, param.name)
-        else:
-            if not isinstance(value, param.type):
-                raise InvalidArgumentType(
-                    cls, field, param.name, value
-                )
+            if issubclass(input_value.type, Nullable):
+                continue  # arguments of nullable type may be omitted
+            else:
+                raise MissingArgument(input_value.name)
+
+        if not isinstance(value, input_value.type):
+            raise InvalidArgumentType(input_value.name, value)
+
+    return actual
 
 
-def _check_field(parent, field):
-    assert isinstance(field, Field)
-    try:
-        schema = getattr(parent, field.name)
-    except AttributeError:
-        raise NoSuchField(parent, field.name)
+def _validate_field(schema, actual):
+    # type (Optional[FieldSchema], Field) -> Field
+    # raises:
+    # - NoSuchField
+    # - SelectionsNotSupported
+    # - NoSuchArgument
+    # - RequredArgument
+    # - InvalidArgumentType
+    if schema is None:
+        raise NoSuchField()
+    _validate_args(schema.args, actual.kwargs)
+    if actual.selection_set:
+        type_ = _unwrap_list_or_nullable(schema.type)
+        if not issubclass(type_, (Object, Interface)):
+            raise SelectionsNotSupported()
+        validate(type_, actual.selection_set)
+    return actual
 
-    _check_args(parent, schema, field.kwargs)
 
-    for f in field.selection_set:
-        _check_field(_unwrap_list_or_nullable(schema.type), f)
+def validate(cls, selection_set):
+    """Validate a selection set against a type
+
+    Parameters
+    ----------
+    cls: Type[Object, Interface]
+        The class to validate against, an ``Object`` or ``Interface``
+    selection_set: SelectionSet
+        The selection set to validate
+
+    Returns
+    -------
+    SelectionSet
+        The validated selection set
+
+    Raises
+    ------
+    SelectionError
+        If the selection set is not valid
+    """
+    for field in selection_set:
+        try:
+            _validate_field(getattr(cls, field.name, None), field)
+        except Error as e:
+            raise SelectionError(cls, field.name, e)
+    return selection_set
 
 
-# inherit from ABCMeta to allow mixing with other ABCs
-class ObjectMeta(abc.ABCMeta):
+class CanMakeFragmentMeta(type):
 
-    # TODO: also interfaces, unions can be made into fragments
     def __getitem__(self, selection_set):
         # type: SelectionSet -> InlineFragment
-        for field in selection_set:
-            _check_field(self, field)
-        return InlineFragment(self, selection_set)
-
-    # TODO: prevent direct instantiation
+        return InlineFragment(self, validate(self, selection_set))
 
 
-@six.add_metaclass(ObjectMeta)
+@six.add_metaclass(CanMakeFragmentMeta)
 class Object(object):
     """a graphQL object"""
 
@@ -359,13 +373,10 @@ class InputObject(object):
 
 
 # separate class to distinguish graphql enums from normal Enums
-# TODO: include deprecation attributes in instances?
-# TODO: a __repr__ which includes the description, deprecation, etc?
 class Enum(enum.Enum):
     pass
 
 
-# TODO: this should be a metaclass
 class Interface(object):
     pass
 
@@ -373,7 +384,7 @@ class Interface(object):
 class ListMeta(type):
 
     def __getitem__(self, arg):
-        return type('List[{.__name__}]'.format(arg), (List, ), {
+        return type('[{.__name__}]'.format(arg), (List, ), {
             '__arg__': arg
         })
 
@@ -390,7 +401,7 @@ class List(object):
 class NullableMeta(type):
 
     def __getitem__(self, arg):
-        return type('Nullable[{.__name__}]'.format(arg), (Nullable, ), {
+        return type('{.__name__} or None'.format(arg), (Nullable, ), {
             '__arg__': arg
         })
 
@@ -422,7 +433,7 @@ class Document(object):
     __slots__ = '_values'
     __fields__ = [
         ('operations', t.List[Operation])
-        # TODO: fragments
+        # future: fragments
     ]
 
 
@@ -448,12 +459,48 @@ def query(selection_set, cls):
     Operation
         The query operation
     """
-    for field in selection_set:
-        _check_field(cls, field)
-    return Operation(OperationType.QUERY, selection_set)
+    return Operation(OperationType.QUERY, validate(cls, selection_set))
 
 
-# introspection_query = Operation(
-#     OperationType.QUERY,
-#     Raw(schema.raw.INTROSPECTION_QUERY)
-# )
+_ESCAPE_PATTERNS = {
+    '\b': r'\b',
+    '\f': r'\f',
+    '\n': r'\n',
+    '\r': r'\r',
+    '\t': r'\t',
+    '\\': r'\\',
+    '"':  r'\"',
+}
+_ESCAPE_RE = re.compile('|'.join(map(re.escape, _ESCAPE_PATTERNS)))
+
+
+def _escape_match(match):
+    return _ESCAPE_PATTERNS[match.group(0)]
+
+
+def escape(txt):
+    """Escape a string according to GraphQL specification
+
+    Parameters
+    ----------
+    txt: str
+        The string to escape
+
+    Returns
+    -------
+    str
+        the escaped string
+    """
+    return _ESCAPE_RE.sub(_escape_match, txt)
+
+
+argument_as_gql.register(str, compose('"{}"'.format, escape))
+argument_as_gql.register(int, str)
+argument_as_gql.register(NoneType, 'null'.format)
+argument_as_gql.register(bool, {True: 'true', False: 'false'}.__getitem__)
+argument_as_gql.register(float, str)
+
+
+@argument_as_gql.register(Enum)
+def _enum_to_gql(obj):
+    return obj.value

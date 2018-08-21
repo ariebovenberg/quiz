@@ -7,19 +7,11 @@ import snug
 
 import quiz
 
+from .helpers import MockClient
+
 _ = quiz.selector
 
 py3 = pytest.mark.skipif(sys.version_info < (3, ), reason='python 3+ only')
-
-
-class MockClient:
-
-    def __init__(self, response):
-        self.response = response
-
-    def send(self, req):
-        self.request = req
-        return self.response
 
 
 snug.send.register(MockClient, MockClient.send)
