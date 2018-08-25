@@ -14,8 +14,6 @@ _ = quiz.selector
 py3 = pytest.mark.skipif(sys.version_info < (3, ), reason='python 3+ only')
 
 
-snug.send.register(MockClient, MockClient.send)
-
 if six.PY3:
     import asyncio
     snug.send_async.register(MockClient, asyncio.coroutine(MockClient.send))
