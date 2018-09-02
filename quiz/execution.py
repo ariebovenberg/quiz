@@ -7,7 +7,7 @@ import snug
 from gentools import py2_compatible, return_
 
 from .core import Document, Operation, SelectionSet, gql
-from .utils import value_object
+from .utils import JSON, ValueObject
 
 __all__ = [
     'execute',
@@ -156,10 +156,9 @@ def async_executor(**kwargs):
     return partial(execute_async, **kwargs)
 
 
-@value_object
-class ErrorResponse(Exception):
+class ErrorResponse(ValueObject, Exception):
     __fields__ = [
-        ('data', t.Dict[str, 'JSON'], 'Data returned in the response'),
-        ('errors', t.List[t.Dict[str, 'JSON']],
+        ('data', t.Dict[str, JSON], 'Data returned in the response'),
+        ('errors', t.List[t.Dict[str, JSON]],
          'Errors returned in the response'),
     ]

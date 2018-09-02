@@ -7,7 +7,7 @@ from operator import attrgetter, methodcaller
 import six
 
 from .compat import indent, singledispatch
-from .utils import FrozenDict, compose, init_last, value_object
+from .utils import FrozenDict, ValueObject, compose, init_last
 
 __all__ = [
     # building graphQL documents
@@ -49,8 +49,6 @@ __all__ = [
 
     # typing
     'FieldName',
-    'JsonObject',
-    'JSON',
 ]
 
 INDENT = "  "
@@ -58,8 +56,7 @@ INDENT = "  "
 gql = methodcaller("__gql__")
 
 
-@value_object
-class FieldDefinition(object):
+class FieldDefinition(ValueObject):
     __slots__ = '_values'
     __fields__ = [
         ('name', str, 'Field name'),
@@ -343,8 +340,7 @@ class _AliasForNextField(object):
 selector = SelectionSet()
 
 
-@value_object
-class Raw(object):
+class Raw(ValueObject):
     __slots__ = '_values'
     __fields__ = [
         ('content', str, 'The raw GraphQL content')
@@ -354,8 +350,7 @@ class Raw(object):
         return self.content
 
 
-@value_object
-class Field(object):
+class Field(ValueObject):
     __slots__ = '_values'
     __fields__ = [
         ('name', 'FieldName', 'Field name'),
@@ -385,8 +380,7 @@ class ValidationError(Exception):
     """base class for validation errors"""
 
 
-@value_object
-class SelectionError(ValidationError):
+class SelectionError(ValueObject, ValidationError):
     __fields__ = [
         ('on', type, 'Type on which the error occurred'),
         ('path', str, 'Path at which the error occurred'),
@@ -394,40 +388,34 @@ class SelectionError(ValidationError):
     ]
 
 
-@value_object
-class NoSuchField(ValidationError):
+class NoSuchField(ValueObject, ValidationError):
     __fields__ = []
 
 
-@value_object
-class NoSuchArgument(ValidationError):
+class NoSuchArgument(ValueObject, ValidationError):
     __fields__ = [
         ('name', str, '(Invalid) argument name'),
     ]
 
 
-@value_object
-class InvalidArgumentType(ValidationError):
+class InvalidArgumentType(ValueObject, ValidationError):
     __fields__ = [
         ('name', str, 'Argument name'),
         ('value', object, '(Invalid) value'),
     ]
 
 
-@value_object
-class MissingArgument(ValidationError):
+class MissingArgument(ValueObject, ValidationError):
     __fields__ = [
         ('name', str, 'Missing argument name'),
     ]
 
 
-@value_object
-class SelectionsNotSupported(ValidationError):
+class SelectionsNotSupported(ValueObject, ValidationError):
     __fields__ = []
 
 
-@value_object
-class InlineFragment(object):
+class InlineFragment(ValueObject):
     __fields__ = [
         ('on', type, 'Type of the fragment'),
         ('selection_set', SelectionSet, 'Subfields of the fragment'),
@@ -442,13 +430,13 @@ class InlineFragment(object):
 
 
 class OperationType(enum.Enum):
+    """Operation type, either ``QUERY``, ``MUTATION``, or ``SUBSCRIPTION``"""
     QUERY = 'query'
     MUTATION = 'mutation'
     SUBSCRIPTION = 'subscription'
 
 
-@value_object
-class Operation(object):
+class Operation(ValueObject):
     __slots__ = '_values'
     __fields__ = [
         ('type', OperationType, 'Type of the operation'),
@@ -616,8 +604,7 @@ class Union(object):
     __args__ = ()
 
 
-@value_object
-class Document(object):
+class Document(ValueObject):
     __slots__ = '_values'
     __fields__ = [
         ('operations', t.List[Operation], 'List of operations')
@@ -704,10 +691,6 @@ Selection = t.Union[Field, InlineFragment]
 """Field or inline fragment"""
 FieldName = str
 """Valid GraphQL fieldname"""
-JSON = t.NewType('JSON', t.Any)
-"""JSON serializable data"""
-JsonObject = t.Dict[str, JSON]
-"""Dictionary of strings to JSON serializable data"""
 
 
 class ID(str):
