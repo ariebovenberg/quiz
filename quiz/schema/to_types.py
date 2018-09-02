@@ -6,7 +6,7 @@ from itertools import chain
 import six
 
 from . import raw
-from .. import core
+from .. import types
 from ..compat import map
 from ..execution import execute
 from ..utils import FrozenDict, merge
@@ -23,7 +23,7 @@ def object_as_type(typ, interfaces, module_name):
     # we don't add the fields yet -- these types may not exist yet.
     return type(
         str(typ.name),
-        tuple(interfaces[i.name] for i in typ.interfaces) + (core.Object, ),
+        tuple(interfaces[i.name] for i in typ.interfaces) + (types.Object, ),
         {"__doc__": typ.desc, "__raw__": typ, '__module__': module_name},
     )
 
@@ -31,7 +31,7 @@ def object_as_type(typ, interfaces, module_name):
 def interface_as_type(typ, module_name):
     # type: (raw.Interface, str) -> type
     # we don't add the fields yet -- these types may not exist yet.
-    return type(str(typ.name), (core.Interface, ),
+    return type(str(typ.name), (types.Interface, ),
                 {"__doc__": typ.desc, '__raw__': typ,
                  '__module__': module_name})
 
@@ -39,8 +39,8 @@ def interface_as_type(typ, module_name):
 def enum_as_type(typ, module_name):
     # type: (raw.Enum, str) -> Type[types.Enum]
     assert len(typ.values) > 0
-    cls = core.Enum(typ.name, [(v.name, v.name) for v in typ.values],
-                    module=module_name)
+    cls = types.Enum(typ.name, [(v.name, v.name) for v in typ.values],
+                     module=module_name)
     cls.__doc__ = typ.desc
     for member, conf in zip(cls.__members__.values(), typ.values):
         member.__doc__ = conf.desc
@@ -52,7 +52,7 @@ def union_as_type(typ, objs):
     assert len(typ.types) > 1
     return type(
         str(typ.name),
-        (core.Union, ),
+        (types.Union, ),
         {
             '__doc__': typ.desc,
             '__args__': tuple(objs[o.name] for o in typ.types)
@@ -62,7 +62,7 @@ def union_as_type(typ, objs):
 
 def inputobject_as_type(typ):
     # type raw.InputObject -> type
-    return type(str(typ.name), (core.InputObject, ), {"__doc__": typ.desc})
+    return type(str(typ.name), (types.InputObject, ), {"__doc__": typ.desc})
 
 
 def _add_fields(obj, classes):
@@ -70,11 +70,11 @@ def _add_fields(obj, classes):
         setattr(
             obj,
             f.name,
-            core.FieldDefinition(
+            types.FieldDefinition(
                 name=f.name,
                 desc=f.desc,
                 args=FrozenDict({
-                    i.name: core.InputValue(
+                    i.name: types.InputValue(
                         name=i.name,
                         desc=i.desc,
                         type=resolve_typeref(i.type, classes),
@@ -95,13 +95,13 @@ def resolve_typeref(ref, classes):
     if ref.kind is raw.Kind.NON_NULL:
         return _resolve_typeref_required(ref.of_type, classes)
     else:
-        return core.Nullable[_resolve_typeref_required(ref, classes)]
+        return types.Nullable[_resolve_typeref_required(ref, classes)]
 
 
 def _resolve_typeref_required(ref, classes):
     assert ref.kind is not raw.Kind.NON_NULL
     if ref.kind is raw.Kind.LIST:
-        return core.List[resolve_typeref(ref.of_type, classes)]
+        return types.List[resolve_typeref(ref.of_type, classes)]
     return classes[ref.name]
 
 
@@ -112,7 +112,7 @@ def build(type_schemas, module_name, scalars=FrozenDict.EMPTY):
     for tp in type_schemas:
         by_kind[tp.__class__].append(tp)
 
-    scalars_ = merge(scalars, core.BUILTIN_SCALARS)
+    scalars_ = merge(scalars, types.BUILTIN_SCALARS)
     undefined_scalars = {
         tp.name for tp in by_kind[raw.Scalar]} - six.viewkeys(scalars_)
     if undefined_scalars:

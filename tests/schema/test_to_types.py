@@ -246,7 +246,7 @@ def test_end_to_end(type_schemas):
 
     class Issue(Node, Assignable, Closable, Comment, Updatable, \
 UpdatableComment, Labelable, Lockable, Reactable, RepositoryNode, \
-Subscribable, UniformResourceLocatable, quiz.core.Object)
+Subscribable, UniformResourceLocatable, quiz.types.Object)
      |  An Issue is a place to discuss ideas, enhancements, tasks, and bugs \
 for a project.
      |
@@ -264,8 +264,8 @@ for a project.
      |      RepositoryNode
      |      Subscribable
      |      UniformResourceLocatable
-     |      quiz.core.Interface
-     |      quiz.core.Object
+     |      quiz.types.Interface
+     |      quiz.types.Object
      |      {}
      |
      |  Data descriptors defined here:
@@ -431,7 +431,7 @@ for the repository.
 the subscribable entity.
      |
      |  ----------------------------------------------------------------------
-     |  Data descriptors inherited from quiz.core.Interface:
+     |  Data descriptors inherited from quiz.types.Interface:
      |
      |  __dict__
      |      dictionary for instance variables (if defined)
