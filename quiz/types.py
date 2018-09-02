@@ -1,22 +1,13 @@
+"""Components for typed GraphQL interactions"""
 import enum
 import typing as t
 
 import six
 
-from .core import InlineFragment, Operation, OperationType
+from .build import InlineFragment, Operation, OperationType
 from .utils import FrozenDict, ValueObject
 
 __all__ = [
-    # validation
-    'validate',
-    'ValidationError',
-    'SelectionError',
-    'NoSuchField',
-    'NoSuchArgument',
-    'SelectionsNotSupported',
-    'InvalidArgumentType',
-    'MissingArgument',
-
     # types
     'Enum',
     'Union',
@@ -30,6 +21,15 @@ __all__ = [
     # TODO: mutation
     # TODO: subscription
 
+    # validation
+    'validate',
+    'ValidationError',
+    'SelectionError',
+    'NoSuchField',
+    'NoSuchArgument',
+    'SelectionsNotSupported',
+    'InvalidArgumentType',
+    'MissingArgument',
 ]
 
 

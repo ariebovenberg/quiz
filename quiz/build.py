@@ -22,9 +22,6 @@ __all__ = [
     'gql',
     'escape',
     'argument_as_gql',
-
-    # typing
-    'FieldName',
 ]
 
 INDENT = "  "
@@ -302,7 +299,7 @@ class Raw(ValueObject):
 
 class Field(ValueObject):
     __fields__ = [
-        ('name', 'FieldName', 'Field name'),
+        ('name', str, 'Field name'),
         ('kwargs', FrozenDict, 'Given arguments'),
         ('selection_set', SelectionSet, 'Selection of subfields'),
         ('alias', t.Optional[str], 'Field alias'),
@@ -421,21 +418,3 @@ def _enum_to_gql(obj):
 
 Selection = t.Union[Field, InlineFragment]
 """Field or inline fragment"""
-FieldName = str
-"""Valid GraphQL fieldname"""
-
-
-class ID(str):
-    """Represents a unique identifier, often used to refetch an object
-    or as the key for a cache. The ID type is serialized in the same way
-    as a String; however, defining it as an ID signifies that it is not
-    intended to be human-readable"""
-
-
-BUILTIN_SCALARS = {
-    "Boolean": bool,
-    "String":  str,
-    "ID":      ID,
-    "Float":   float,
-    "Int":     int,
-}
