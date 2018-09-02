@@ -1,3 +1,5 @@
+import inspect
+
 import pytest
 
 from quiz import utils
@@ -66,7 +68,6 @@ class TestValueObject:
 
         class Foo(MyBase, utils.ValueObject):
             """my foo class"""
-            __slots__ = '_values'
             __fields__ = [
                 ('foo', int, 'the foo'),
                 ('bla', str, 'description for bla'),
@@ -78,6 +79,8 @@ class TestValueObject:
 
         if PY3:
             Foo.__qualname__ = 'my_module.Foo'
+            assert inspect.signature(Foo) == inspect.signature(
+                Foo.__namedtuple_cls__)
 
         instance = Foo(4, bla='foo')
 

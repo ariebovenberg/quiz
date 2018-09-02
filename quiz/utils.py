@@ -2,6 +2,7 @@
 import sys
 import typing as t
 from collections import namedtuple
+from functools import wraps
 from itertools import chain, starmap
 from operator import attrgetter
 
@@ -77,35 +78,46 @@ def init_last(items):
         raise Empty
 
 
+def _make_init_fn(ntuple):
+    @wraps(ntuple.__new__)
+    def __init__(self, *args, **kwargs):
+        self._values = ntuple(*args, **kwargs)
+    return __init__
+
+
 class _ValueObjectMeta(type(t.Generic)):
     """Metaclass for ``ValueObject``"""
 
+    # TODO: add parameters to __doc__
     def __new__(self, name, bases, dct):
-        cls = super(_ValueObjectMeta, self).__new__(self, name, bases, dct)
-
         # skip the ``ValueObject`` class itself
-        if bases == (object, ):
-            return cls
-
-        fieldnames = [n for n, _, _ in cls.__fields__]
-        assert 'replace' not in fieldnames
-        cls.__namedtuple_cls__ = namedtuple(
-            '_' + name,
-            [n for n, _, _ in cls.__fields__],
-        )
-        cls.__namedtuple_cls__.__new__.__defaults__ = getattr(
-            cls, '__defaults__', ())
-        for name, _, doc in cls.__fields__:
-            setattr(cls, name, property(attrgetter('_values.' + name),
-                                        doc=doc))
-
-        return cls
+        if bases != (object, ):
+            fields = dct['__fields__']
+            fieldnames = [n for n, _, _ in dct['__fields__']]
+            assert 'replace' not in fieldnames
+            ntuple = namedtuple('_' + name, fieldnames)
+            ntuple.__new__.__defaults__ = dct.get('__defaults__', ())
+            dct.update({
+                '__namedtuple_cls__': ntuple,
+                '__slots__': '_values',
+                # For the signature to appear correctly in
+                # introspection and docs,
+                # we create the __init__ function for
+                # each ValueObject class individually
+                '__init__': _make_init_fn(ntuple)
+            })
+            dct.update(
+                (name, property(attrgetter('_values.' + name),
+                                doc=doc))
+                for name, _, doc in fields
+            )
+        return super(_ValueObjectMeta, self).__new__(self, name, bases, dct)
 
 
 @six.add_metaclass(_ValueObjectMeta)
 class ValueObject(object):
     """Base class for "value object"-like classes,
-    similar to frozen dataclasses in python 3.7+
+    similar to frozen dataclasses in python 3.7+.
 
     Example
     -------
@@ -123,9 +135,6 @@ class ValueObject(object):
 
     """
     __slots__ = ()
-
-    def __init__(self, *args, **kwargs):
-        self._values = self.__namedtuple_cls__(*args, **kwargs)
 
     def replace(self, **kwargs):
         """Create a new instance, with certain fields replaced with new values

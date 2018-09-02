@@ -17,9 +17,9 @@ __all__ = [
     'InlineFragment',
     'Raw',
     'Operation',
-    'query',
     'OperationType',
     'selector',
+
 
     # render
     'gql',
@@ -35,11 +35,13 @@ __all__ = [
     'Nullable',
     'FieldDefinition',
     'InputValue',
-
+    'query',
+    # TODO: mutation
+    # TODO: subscription
 
     # validation
     'validate',
-    # TODO: ValidationError
+    'ValidationError',
     'SelectionError',
     'NoSuchField',
     'NoSuchArgument',
@@ -57,7 +59,6 @@ gql = methodcaller("__gql__")
 
 
 class FieldDefinition(ValueObject):
-    __slots__ = '_values'
     __fields__ = [
         ('name', str, 'Field name'),
         ('desc', str, 'Field description'),
@@ -341,7 +342,6 @@ selector = SelectionSet()
 
 
 class Raw(ValueObject):
-    __slots__ = '_values'
     __fields__ = [
         ('content', str, 'The raw GraphQL content')
     ]
@@ -351,7 +351,6 @@ class Raw(ValueObject):
 
 
 class Field(ValueObject):
-    __slots__ = '_values'
     __fields__ = [
         ('name', 'FieldName', 'Field name'),
         ('kwargs', FrozenDict, 'Given arguments'),
@@ -437,7 +436,6 @@ class OperationType(enum.Enum):
 
 
 class Operation(ValueObject):
-    __slots__ = '_values'
     __fields__ = [
         ('type', OperationType, 'Type of the operation'),
         ('selection_set', SelectionSet, 'Fields selection')
@@ -605,7 +603,6 @@ class Union(object):
 
 
 class Document(ValueObject):
-    __slots__ = '_values'
     __fields__ = [
         ('operations', t.List[Operation], 'List of operations')
         # future: fragments
