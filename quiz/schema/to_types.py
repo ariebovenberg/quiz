@@ -70,7 +70,7 @@ def _add_fields(obj, classes):
         setattr(
             obj,
             f.name,
-            core.FieldSchema(
+            core.FieldDefinition(
                 name=f.name,
                 desc=f.desc,
                 args=FrozenDict({

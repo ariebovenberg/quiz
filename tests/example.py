@@ -3,7 +3,7 @@ from functools import partial
 import quiz as q
 from quiz.utils import FrozenDict
 
-mkfield = partial(q.FieldSchema,
+mkfield = partial(q.FieldDefinition,
                   args=FrozenDict.EMPTY,
                   is_deprecated=False,
                   desc='',

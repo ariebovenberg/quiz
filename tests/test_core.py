@@ -259,10 +259,10 @@ class TestOperation:
         ''').strip()
 
 
-class TestFieldSchema:
+class TestFieldDefinition:
 
     def test_doc(self):
-        schema = quiz.FieldSchema(
+        schema = quiz.FieldDefinition(
             'foo', 'my description', type=quiz.List[str],
             args=fdict.EMPTY,
             is_deprecated=False, deprecation_reason=None)

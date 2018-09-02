@@ -21,7 +21,7 @@ __all__ = [
     'OperationType',
     'validate',
 
-    'FieldSchema',
+    'FieldDefinition',
     'InputValue',
 
     # types
@@ -62,7 +62,7 @@ gql = methodcaller("__gql__")
 
 
 @value_object
-class FieldSchema(object):
+class FieldDefinition(object):
     __slots__ = '_values'
     __fields__ = [
         ('name', str, 'Field name'),
@@ -514,7 +514,7 @@ def _validate_args(schema, actual):
 
 
 def _validate_field(schema, actual):
-    # type (Optional[FieldSchema], Field) -> Field
+    # type (Optional[FieldDefinition], Field) -> Field
     # raises:
     # - NoSuchField
     # - SelectionsNotSupported
