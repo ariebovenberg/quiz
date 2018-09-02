@@ -9,38 +9,56 @@ import six
 from .compat import indent, singledispatch
 from .utils import Empty, FrozenDict, compose, init_last, value_object
 
-NoneType = type(None)
+__all__ = [
+    # building graphQL documents
+    'SelectionSet',
+    'Selection',
+    'Field',
+    'InlineFragment',
+    'Raw',
+    'Operation',
+    'query',
+    'OperationType',
+    'validate',
+
+    'FieldSchema',
+    'InputValue',
+
+    # types
+    'Enum',
+    'Union',
+    'List',
+    'Interface',
+    'Object',
+    'Nullable',
+
+    'selector',
+    'gql',
+
+    # typing
+    'FieldName',
+    'JsonObject',
+    'JSON',
+
+    # exceptions
+    'Error',
+    'ErrorResponse',
+
+    'SelectionError',
+    'NoSuchField',
+    'NoSuchArgument',
+    'SelectionsNotSupported',
+    'InvalidArgumentType',
+    'MissingArgument',
+
+    # utils (low-level)
+    'escape',
+    'argument_as_gql',
+]
+
 INDENT = "  "
 
 gql = methodcaller("__gql__")
-
-FieldName = str
-"""a valid GraphQL fieldname"""
-
-JSON = t.Any
-JsonObject = t.Dict[str, JSON]
-
-
-class ID(str):
-    """represents a unique identifier, often used to refetch an object
-    or as the key for a cache. The ID type is serialized in the same way
-    as a String; however, defining it as an ID signifies that it is not
-    intended to be human-readable"""
-
-
-BUILTIN_SCALARS = {
-    "Boolean": bool,
-    "String":  str,
-    "ID":      ID,
-    "Float":   float,
-    "Int":     int,
-}
-
-
-@singledispatch
-def argument_as_gql(obj):
-    # type: object -> str
-    raise TypeError("cannot serialize to GraphQL: {}".format(type(obj)))
 
 
 @value_object
@@ -66,26 +84,21 @@ class FieldSchema(object):
     # __doc__ allows descriptor to be displayed nicely in help()
     @property
     def __doc__(self):
-        # breakpoint()
         return ': {.__name__}\n    {}'.format(self.type, self.desc)
 
 
-Selection = t.Union['Field', 'InlineFragment']
-"""Selection bla"""
-
-
-class SelectionSet(t.Iterable[Selection], t.Sized):
-    """A "magic" selection set builder
+class SelectionSet(t.Iterable['Selection'], t.Sized):
+    """Sequence of selections
 
     Parameters
     ----------
     *selections: Selection
-        items in the selection set.
+        Items in the selection set.
 
     Notes
     -----
     * Instances are immutable.
-    * Extending Selection sets is possible through special methods
+    * Extending selection sets is possible through special methods
       (``__getattr__``, ``__call__``, ``__getitem__``)
     """
     # The attribute needs to have a dunder name to prevent
@@ -355,7 +368,7 @@ class Raw(object):
 class Field(object):
     __slots__ = '_values'
     __fields__ = [
-        ('name', FieldName, 'Field name'),
+        ('name', 'FieldName', 'Field name'),
         ('kwargs', FrozenDict, 'Given arguments'),
         ('selection_set', SelectionSet, 'Selection of subfields'),
         ('alias', t.Optional[str], 'Field alias'),
@@ -425,8 +438,8 @@ class SelectionsNotSupported(Error):
 @value_object
 class ErrorResponse(Error):
     __fields__ = [
-        ('data', t.Dict[str, JSON], 'Data returned in the response'),
-        ('errors', t.List[t.Dict[str, JSON]],
+        ('data', t.Dict[str, 'JSON'], 'Data returned in the response'),
+        ('errors', t.List[t.Dict[str, 'JSON']],
          'Errors returned in the response'),
     ]
 
@@ -687,9 +700,15 @@ def escape(txt):
     return _ESCAPE_RE.sub(_escape_match, txt)
 
 
+@singledispatch
+def argument_as_gql(obj):
+    # type: object -> str
+    raise TypeError("cannot serialize to GraphQL: {}".format(type(obj)))
+
+
 argument_as_gql.register(str, compose('"{}"'.format, escape))
 argument_as_gql.register(int, str)
-argument_as_gql.register(NoneType, 'null'.format)
+argument_as_gql.register(type(None), 'null'.format)
 argument_as_gql.register(bool, {True: 'true', False: 'false'}.__getitem__)
 argument_as_gql.register(float, str)
 
@@ -697,3 +716,29 @@ argument_as_gql.register(float, str)
 @argument_as_gql.register(Enum)
 def _enum_to_gql(obj):
     return obj.value
+
+
+Selection = t.Union[Field, InlineFragment]
+"""Field or inline fragment"""
+FieldName = str
+"""Valid GraphQL fieldname"""
+JSON = t.NewType('JSON', t.Any)
+"""JSON serializable data"""
+JsonObject = t.Dict[str, JSON]
+"""Dictionary of strings to JSON serializable data"""
+
+
+class ID(str):
+    """Represents a unique identifier, often used to refetch an object
+    or as the key for a cache. The ID type is serialized in the same way
+    as a String; however, defining it as an ID signifies that it is not
+    intended to be human-readable"""
+
+
+BUILTIN_SCALARS = {
+    "Boolean": bool,
+    "String":  str,
+    "ID":      ID,
+    "Float":   float,
+    "Int":     int,
+}
