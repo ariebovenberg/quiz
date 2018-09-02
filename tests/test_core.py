@@ -6,7 +6,7 @@ import six
 from hypothesis import given, strategies
 
 import quiz
-from quiz import Error, Field, InlineFragment, SelectionSet, gql
+from quiz import Field, InlineFragment, SelectionSet, gql
 from quiz import selector as _
 from quiz.utils import FrozenDict as fdict
 
@@ -401,7 +401,7 @@ class TestSelectionSet:
             )
 
         def test_empty(self):
-            with pytest.raises(Error):
+            with pytest.raises(quiz.utils.Empty):
                 _['bla']
 
         def test_nested(self):
@@ -436,7 +436,7 @@ class TestSelectionSet:
                 Field('foo', fdict({'self': 4, 'bla': 3})))
 
         def test_invalid(self):
-            with pytest.raises(Error):
+            with pytest.raises(quiz.utils.Empty):
                 _()
 
         def test_alias(self):

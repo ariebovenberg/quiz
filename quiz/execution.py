@@ -6,13 +6,15 @@ from functools import partial
 import snug
 from gentools import py2_compatible, return_
 
-from .core import Document, ErrorResponse, Operation, SelectionSet, gql
+from .core import Document, Operation, SelectionSet, gql
+from .utils import value_object
 
 __all__ = [
     'execute',
     'execute_async',
     'executor',
     'async_executor',
+    'ErrorResponse',
 ]
 
 Executable = t.Union[str, Document, Operation, SelectionSet]
@@ -152,3 +154,12 @@ def async_executor(**kwargs):
     ... ''', client=aiohttp.ClientSession())
     """
     return partial(execute_async, **kwargs)
+
+
+@value_object
+class ErrorResponse(Exception):
+    __fields__ = [
+        ('data', t.Dict[str, 'JSON'], 'Data returned in the response'),
+        ('errors', t.List[t.Dict[str, 'JSON']],
+         'Errors returned in the response'),
+    ]

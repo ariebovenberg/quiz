@@ -7,7 +7,7 @@ from operator import attrgetter, methodcaller
 import six
 
 from .compat import indent, singledispatch
-from .utils import Empty, FrozenDict, compose, init_last, value_object
+from .utils import FrozenDict, compose, init_last, value_object
 
 __all__ = [
     # building graphQL documents
@@ -19,10 +19,12 @@ __all__ = [
     'Operation',
     'query',
     'OperationType',
-    'validate',
+    'selector',
 
-    'FieldDefinition',
-    'InputValue',
+    # render
+    'gql',
+    'escape',
+    'argument_as_gql',
 
     # types
     'Enum',
@@ -31,19 +33,13 @@ __all__ = [
     'Interface',
     'Object',
     'Nullable',
+    'FieldDefinition',
+    'InputValue',
 
-    'selector',
-    'gql',
 
-    # typing
-    'FieldName',
-    'JsonObject',
-    'JSON',
-
-    # exceptions
-    'Error',
-    'ErrorResponse',
-
+    # validation
+    'validate',
+    # TODO: ValidationError
     'SelectionError',
     'NoSuchField',
     'NoSuchArgument',
@@ -51,9 +47,10 @@ __all__ = [
     'InvalidArgumentType',
     'MissingArgument',
 
-    # utils (low-level)
-    'escape',
-    'argument_as_gql',
+    # typing
+    'FieldName',
+    'JsonObject',
+    'JSON',
 ]
 
 INDENT = "  "
@@ -188,13 +185,10 @@ class SelectionSet(t.Iterable['Selection'], t.Sized):
 
         Raises
         ------
-        Error
+        utils.Empty
             In case the selection set is empty
         """
-        try:
-            rest, target = init_last(self.__selections__)
-        except Empty:
-            raise Error('cannot select fields from empty field list')
+        rest, target = init_last(self.__selections__)
 
         assert isinstance(selections, SelectionSet)
         assert len(selections.__selections__) >= 1
@@ -274,7 +268,7 @@ class SelectionSet(t.Iterable['Selection'], t.Sized):
 
         Raises
         ------
-        Error
+        utils.Empty
             In case field arguments are given, but the selection set is empty
         """
         # TODO: check alias validity
@@ -289,11 +283,7 @@ class SelectionSet(t.Iterable['Selection'], t.Sized):
             return _AliasForNextField(*args)
 
     def __add_kwargs(self, args):
-        try:
-            rest, target = init_last(self.__selections__)
-        except Empty:
-            raise Error('cannot call empty field list')
-
+        rest, target = init_last(self.__selections__)
         return SelectionSet._make(
             tuple(rest) + (target.replace(kwargs=FrozenDict(args)), ))
 
@@ -391,33 +381,33 @@ class Field(object):
         return alias + self.name + arguments + selection_set
 
 
-class Error(Exception):
-    """Base error class"""
+class ValidationError(Exception):
+    """base class for validation errors"""
 
 
 @value_object
-class SelectionError(Error):
+class SelectionError(ValidationError):
     __fields__ = [
         ('on', type, 'Type on which the error occurred'),
         ('path', str, 'Path at which the error occurred'),
-        ('error', Error, 'Original error'),
+        ('error', ValidationError, 'Original error'),
     ]
 
 
 @value_object
-class NoSuchField(Error):
+class NoSuchField(ValidationError):
     __fields__ = []
 
 
 @value_object
-class NoSuchArgument(Error):
+class NoSuchArgument(ValidationError):
     __fields__ = [
         ('name', str, '(Invalid) argument name'),
     ]
 
 
 @value_object
-class InvalidArgumentType(Error):
+class InvalidArgumentType(ValidationError):
     __fields__ = [
         ('name', str, 'Argument name'),
         ('value', object, '(Invalid) value'),
@@ -425,24 +415,15 @@ class InvalidArgumentType(Error):
 
 
 @value_object
-class MissingArgument(Error):
+class MissingArgument(ValidationError):
     __fields__ = [
         ('name', str, 'Missing argument name'),
     ]
 
 
 @value_object
-class SelectionsNotSupported(Error):
+class SelectionsNotSupported(ValidationError):
     __fields__ = []
-
-
-@value_object
-class ErrorResponse(Error):
-    __fields__ = [
-        ('data', t.Dict[str, 'JSON'], 'Data returned in the response'),
-        ('errors', t.List[t.Dict[str, 'JSON']],
-         'Errors returned in the response'),
-    ]
 
 
 @value_object
@@ -556,7 +537,7 @@ def validate(cls, selection_set):
     for field in selection_set:
         try:
             _validate_field(getattr(cls, field.name, None), field)
-        except Error as e:
+        except ValidationError as e:
             raise SelectionError(cls, field.name, e)
     return selection_set
 

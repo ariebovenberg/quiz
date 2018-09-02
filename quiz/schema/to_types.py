@@ -116,7 +116,7 @@ def build(type_schemas, module_name, scalars=FrozenDict.EMPTY):
     undefined_scalars = {
         tp.name for tp in by_kind[raw.Scalar]} - six.viewkeys(scalars_)
     if undefined_scalars:
-        raise core.Error('Undefined scalars: {}'.format(', '.join(
+        raise Exception('Undefined scalars: {}'.format(', '.join(
             undefined_scalars)))
 
     interfaces = _namedict(map(
