@@ -387,7 +387,8 @@ class Field(object):
         selection_set = (
             ' ' + gql(self.selection_set)
             if self.selection_set else '')
-        return self.name + arguments + selection_set
+        alias = self.alias + ': ' if self.alias else ''
+        return alias + self.name + arguments + selection_set
 
 
 class Error(Exception):

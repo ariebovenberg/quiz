@@ -300,6 +300,12 @@ class TestField:
                 'foo(blabla: "my string!", foo: 4)',
             ]
 
+        def test_alias(self):
+            field = Field('foo', {
+                'a': 4,
+            }, alias='my_alias')
+            assert gql(field) == 'my_alias: foo(a: 4)'
+
         def test_selection_set(self):
             field = Field('bla', fdict({'q': 9}), selection_set=SelectionSet(
                 Field('blabla'),
