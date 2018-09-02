@@ -433,6 +433,11 @@ class TestSelectionSet:
             with pytest.raises(Error):
                 _()
 
+        def test_alias(self):
+            assert _('foo').bla(a=4) == SelectionSet(
+                Field('bla', {'a': 4}, alias='foo')
+            )
+
     def test_combination(self):
         assert _.foo.bar[
             _

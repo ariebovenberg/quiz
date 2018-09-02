@@ -12,11 +12,14 @@ class TestNamedtupleData:
 
         @utils.value_object
         class Foo(object):
+            """my foo class"""
             __slots__ = '_values'
             __fields__ = [
-                ('foo', int),
-                ('bla', str),
+                ('foo', int, 'the foo'),
+                ('bla', str, 'description for bla'),
             ]
+
+        assert Foo.__doc__ == 'my foo class'
 
         if PY3:
             Foo.__qualname__ = 'my_module.Foo'
@@ -53,6 +56,8 @@ class TestNamedtupleData:
         else:
             assert repr(instance) == 'Foo(foo=4, bla=\'foo\')'
 
+        assert Foo.bla.__doc__ == 'description for bla'
+
         # repr should never fail, even if everything is wrong
         del instance._values
         repr(instance)
@@ -62,9 +67,9 @@ class TestNamedtupleData:
         @utils.value_object
         class Foo(object):
             __fields__ = [
-                ('foo', int),
-                ('bla', str),
-                ('qux', float),
+                ('foo', int, 'the foo'),
+                ('bla', str, 'the bla'),
+                ('qux', float, 'another field!'),
             ]
             __defaults__ = ('', 1.0)
 

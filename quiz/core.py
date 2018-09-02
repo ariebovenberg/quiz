@@ -47,12 +47,12 @@ def argument_as_gql(obj):
 class FieldSchema(object):
     __slots__ = '_values'
     __fields__ = [
-        ('name', str),
-        ('desc', str),
-        ('type', type),
-        ('args', FrozenDict[str, 'InputValue']),
-        ('is_deprecated', bool),
-        ('deprecation_reason', t.Optional[str]),
+        ('name', str, 'Field name'),
+        ('desc', str, 'Field description'),
+        ('type', type, 'Field data type'),
+        ('args', FrozenDict[str, 'InputValue'], 'Accepted field arguments'),
+        ('is_deprecated', bool, 'Whether the field is deprecated'),
+        ('deprecation_reason', t.Optional[str], 'Reason for deprecation'),
     ]
 
     def __get__(self, obj, objtype=None):  # pragma: no cover
@@ -71,59 +71,237 @@ class FieldSchema(object):
 
 
 Selection = t.Union['Field', 'InlineFragment']
+"""Selection bla"""
 
 
 class SelectionSet(t.Iterable[Selection], t.Sized):
-    """A "magic" selection set builder"""
-    # the attribute needs to have a dunder name to prevent
-    # conflicts with GraphQL field names
-    __slots__ = '__selections__'
+    """A "magic" selection set builder
 
-    # Q: why can't this subclass tuple?
-    # A: Then we would have unwanted methods like index()
+    Parameters
+    ----------
+    *selections: Selection
+        items in the selection set.
+
+    Notes
+    -----
+    * Instances are immutable.
+    * Extending Selection sets is possible through special methods
+      (``__getattr__``, ``__call__``, ``__getitem__``)
+    """
+    # The attribute needs to have a dunder name to prevent
+    # conflicts with GraphQL field names.
+    # This is also why we can't just subclass `tuple`.
+    __slots__ = '__selections__'
 
     def __init__(self, *selections):
         self.__selections__ = selections
 
+    # TODO: check if actually faster
+    # faster, internal, alternative to __init__
     @classmethod
     def _make(cls, selections):
         instance = cls.__new__(cls)
         instance.__selections__ = tuple(selections)
         return instance
 
-    def __getattr__(self, name):
-        return SelectionSet._make(self.__selections__ + (Field(name), ))
+    def __getattr__(self, fieldname):
+        """Add a new field to the selection set.
 
-    def __getitem__(self, selection_set):
+        Parameters
+        ----------
+        fieldname: str
+            The name of the field to add.
+
+        Returns
+        -------
+        SelectionSet
+            A selection set with the new field added to the end.
+
+        Example
+        -------
+
+        This functionality can be used to quickly create a sequence of fields:
+
+        >>> _ = SelectionSet()
+        >>> (
+        ...     _
+        ...     .foo
+        ...     .bar
+        ...     .bing
+        ... )
+        <SelectionSet> {
+          foo
+          bar
+          bing
+        }
+        """
+        return SelectionSet._make(self.__selections__ + (Field(fieldname), ))
+
+    def __getitem__(self, selections):
+        """Add a sub-selection to the last field in the selection set
+
+        Parameters
+        ----------
+        selections: SelectionSet
+            The selection set to nest
+
+        Example
+        -------
+
+        >>> _ = SelectionSet()
+        >>> (
+        ...     _
+        ...     .foo
+        ...     .bar[
+        ...         _
+        ...         .qux
+        ...         .bing
+        ...     ]
+        ...     .other_field
+        ... )
+        <SelectionSet> {
+          foo
+          bar {
+            qux
+            bing
+          }
+          other_field
+        }
+
+        Returns
+        -------
+        SelectionSet
+            A selection set with selections added to the last field.
+
+        Raises
+        ------
+        Error
+            In case the selection set is empty
+        """
         try:
             rest, target = init_last(self.__selections__)
         except Empty:
             raise Error('cannot select fields from empty field list')
 
-        assert isinstance(selection_set, SelectionSet)
-        assert len(selection_set.__selections__) >= 1
+        assert isinstance(selections, SelectionSet)
+        assert len(selections.__selections__) >= 1
 
         return SelectionSet._make(
             tuple(rest)
-            + (target.replace(selection_set=selection_set), ))
+            + (target.replace(selection_set=selections), ))
 
     def __repr__(self):
         return "<SelectionSet> {}".format(gql(self))
 
-    # `__self` allows `self` as an argument name
-    def __call__(__self, **kwargs):
+    # Positional arguments are retrieved manually from *args.
+    # This ensures there can be no conflict with (named) **kwargs.
+    # Otherwise, something like `self` could not be given as a keyword arg.
+    def __call__(*args, **kwargs):
+        """The selection set may be called in two distinct ways:
+
+        1. With keyword arguments ``**kwargs``.
+           These will be added as arguments to the last field
+           in the selection set.
+        2. With a single ``alias`` argument. This has the affect of adding
+           an alias to the next field in the selection set.
+
+        Parameters
+        ----------
+        alias: str, optional
+            If given, the next field in the selection set will get this alias.
+
+            Example
+            -------
+
+            >>> _ = SelectionSet()
+            >>> selection = (
+            ...     _
+            ...     .foo
+            ...     ('my_alias').bla
+            ...     .other_field
+            ... )
+            <SelectionSet> {
+               foo
+               my_alias: bla
+               other_field
+            }
+
+            Note
+            ----
+            The alias can only be specified as a :term:`positional argument`,
+            and may not be combined with ``**kwargs``.
+
+        **kwargs
+            Adds arguments to the previous field in the chain
+
+            Example
+            -------
+
+            >>> _ = SelectionSet()
+            >>> (
+            ...     _
+            ...     .foo
+            ...     .bla(a=4, b='qux')
+            ...     .other_field
+            ... )
+            <SelectionSet> {
+              foo
+              bla(a: 4, b: "qux")
+              other_field
+            }
+
+            Note
+            ----
+            Each field argument must be a :term:`keyword argument`.
+
+        Returns
+        -------
+        SelectionSet
+            The new selection set
+
+        Raises
+        ------
+        Error
+            In case field arguments are given, but the selection set is empty
+        """
+        # TODO: check alias validity
         try:
-            rest, target = init_last(__self.__selections__)
+            self, alias = args
+        except ValueError:
+            # alias is *not* given --> case 1
+            self, = args
+            return self.__add_kwargs(kwargs)
+        else:
+            # alias is given --> case 2
+            return _AliasForNextField(*args)
+
+    def __add_kwargs(self, args):
+        try:
+            rest, target = init_last(self.__selections__)
         except Empty:
             raise Error('cannot call empty field list')
 
         return SelectionSet._make(
-            tuple(rest) + (target.replace(kwargs=FrozenDict(kwargs)), ))
+            tuple(rest) + (target.replace(kwargs=FrozenDict(args)), ))
 
     def __iter__(self):
+        """Iterate over the selection set contents
+
+        Returns
+        -------
+        Iterator[Selection]
+            An iterator over selections
+        """
         return iter(self.__selections__)
 
     def __len__(self):
+        """Number of items in the selection set
+
+        Returns
+        -------
+        int
+            The number of items in the selection set
+        """
         return len(self.__selections__)
 
     def __gql__(self):
@@ -145,6 +323,20 @@ class SelectionSet(t.Iterable[Selection], t.Sized):
     __hash__ = property(attrgetter('__selections__.__hash__'))
 
 
+class _AliasForNextField(object):
+    __slots__ = '__selection_set', '__alias'
+
+    def __init__(self, selection_set, alias):
+        self.__selection_set = selection_set
+        self.__alias = alias
+
+    def __getattr__(self, fieldname):
+        return SelectionSet._make(
+            self.__selection_set.__selections__
+            + (Field(fieldname, alias=self.__alias), )
+        )
+
+
 selector = SelectionSet()
 
 
@@ -152,7 +344,7 @@ selector = SelectionSet()
 class Raw(object):
     __slots__ = '_values'
     __fields__ = [
-        ('content', str)
+        ('content', str, 'The raw GraphQL content')
     ]
 
     def __gql__(self):
@@ -163,14 +355,14 @@ class Raw(object):
 class Field(object):
     __slots__ = '_values'
     __fields__ = [
-        ('name', FieldName),
-        ('kwargs', FrozenDict),
-        ('selection_set', SelectionSet),
+        ('name', FieldName, 'Field name'),
+        ('kwargs', FrozenDict, 'Given arguments'),
+        ('selection_set', SelectionSet, 'Selection of subfields'),
+        ('alias', t.Optional[str], 'Field alias'),
         # in the future:
-        # - alias
         # - directives
     ]
-    __defaults__ = (FrozenDict.EMPTY, SelectionSet())
+    __defaults__ = (FrozenDict.EMPTY, SelectionSet(), None)
 
     def __gql__(self):
         arguments = '({})'.format(
@@ -192,9 +384,9 @@ class Error(Exception):
 @value_object
 class SelectionError(Error):
     __fields__ = [
-        ('on', type),
-        ('path', str),
-        ('error', Error),
+        ('on', type, 'Type on which the error occurred'),
+        ('path', str, 'Path at which the error occurred'),
+        ('error', Error, 'Original error'),
     ]
 
 
@@ -206,22 +398,22 @@ class NoSuchField(Error):
 @value_object
 class NoSuchArgument(Error):
     __fields__ = [
-        ('name', str),
+        ('name', str, '(Invalid) argument name'),
     ]
 
 
 @value_object
 class InvalidArgumentType(Error):
     __fields__ = [
-        ('name', str),
-        ('value', object),
+        ('name', str, 'Argument name'),
+        ('value', object, '(Invalid) value'),
     ]
 
 
 @value_object
 class MissingArgument(Error):
     __fields__ = [
-        ('name', str),
+        ('name', str, 'Missing argument name'),
     ]
 
 
@@ -233,16 +425,17 @@ class SelectionsNotSupported(Error):
 @value_object
 class ErrorResponse(Error):
     __fields__ = [
-        ('data', t.Dict[str, JSON]),
-        ('errors', t.List[t.Dict[str, JSON]]),
+        ('data', t.Dict[str, JSON], 'Data returned in the response'),
+        ('errors', t.List[t.Dict[str, JSON]],
+         'Errors returned in the response'),
     ]
 
 
 @value_object
 class InlineFragment(object):
     __fields__ = [
-        ('on', type),
-        ('selection_set', SelectionSet),
+        ('on', type, 'Type of the fragment'),
+        ('selection_set', SelectionSet, 'Subfields of the fragment'),
     ]
     # in the future: directives
 
@@ -263,8 +456,8 @@ class OperationType(enum.Enum):
 class Operation(object):
     __slots__ = '_values'
     __fields__ = [
-        ('type', OperationType),
-        ('selection_set', SelectionSet)
+        ('type', OperationType, 'Type of the operation'),
+        ('selection_set', SelectionSet, 'Fields selection')
     ]
     __defaults__ = (SelectionSet(), )
     # in the future:
@@ -432,7 +625,7 @@ class Union(object):
 class Document(object):
     __slots__ = '_values'
     __fields__ = [
-        ('operations', t.List[Operation])
+        ('operations', t.List[Operation], 'List of operations')
         # future: fragments
     ]
 

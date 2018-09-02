@@ -113,8 +113,8 @@ def value_object(cls):
     ... class Foo(...):
     ...     __slots__ = '_values'  # optional
     ...     __fields__ = [
-    ...         ('foo', int),
-    ...         ('bla', str),
+    ...         ('foo', int, 'the foo'),
+    ...         ('bla', str, 'description for bla'),
     ...     ]
     ...
     >>> f = Foo(4, bla='foo')
@@ -122,11 +122,11 @@ def value_object(cls):
     Foo(foo=4, bla='foo')
 
     """
-    fieldnames = [n for n, _ in cls.__fields__]
+    fieldnames = [n for n, _, _ in cls.__fields__]
     assert 'replace' not in fieldnames
     cls.__namedtuple_cls__ = namedtuple(
         '_' + cls.__name__,
-        [n for n, _ in cls.__fields__],
+        [n for n, _, _ in cls.__fields__],
     )
     cls.__namedtuple_cls__.__new__.__defaults__ = getattr(
         cls, '__defaults__', ())
@@ -136,8 +136,8 @@ def value_object(cls):
     cls.__repr__ = __repr__
     cls.__hash__ = property(attrgetter('_values.__hash__'))
     cls.replace = replace
-    for name, _ in cls.__fields__:
-        setattr(cls, name, property(attrgetter('_values.' + name)))
+    for name, _, doc in cls.__fields__:
+        setattr(cls, name, property(attrgetter('_values.' + name), doc=doc))
 
     return cls
 
