@@ -121,7 +121,7 @@ class TestInterfaceAsType:
         created = to_types.interface_as_type(interface_schema,
                                              module_name='mymodule')
 
-        assert issubclass(created, quiz.Interface)
+        assert isinstance(created, quiz.Interface)
         assert created.__name__ == 'Foo'
         assert created.__doc__ == 'my interface!'
         assert created.__module__ == 'mymodule'
@@ -264,7 +264,6 @@ for a project.
      |      RepositoryNode
      |      Subscribable
      |      UniformResourceLocatable
-     |      quiz.types.Interface
      |      quiz.types.Object
      |      {}
      |
@@ -431,7 +430,7 @@ for the repository.
 the subscribable entity.
      |
      |  ----------------------------------------------------------------------
-     |  Data descriptors inherited from quiz.types.Interface:
+     |  Data descriptors inherited from Node:
      |
      |  __dict__
      |      dictionary for instance variables (if defined)

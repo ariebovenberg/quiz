@@ -1,5 +1,7 @@
 from functools import partial
 
+import six
+
 import quiz as q
 from quiz.utils import FrozenDict
 
@@ -13,7 +15,8 @@ mkfield = partial(q.FieldDefinition,
 Command = q.Enum('Command', {'SIT': 'SIT', 'DOWN': 'DOWN'})
 
 
-class Sentient(q.Interface):
+@six.add_metaclass(q.Interface)
+class Sentient(object):
     name = mkfield('name', type=str)
 
 

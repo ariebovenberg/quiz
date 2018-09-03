@@ -19,7 +19,7 @@ def _namedict(classes):
 
 
 def object_as_type(typ, interfaces, module_name):
-    # type: (raw.Object, Mapping[str, Type[types.Interface]], str) -> type
+    # type: (raw.Object, Mapping[str, types.Interface], str) -> type
     # we don't add the fields yet -- these types may not exist yet.
     return type(
         str(typ.name),
@@ -31,9 +31,11 @@ def object_as_type(typ, interfaces, module_name):
 def interface_as_type(typ, module_name):
     # type: (raw.Interface, str) -> type
     # we don't add the fields yet -- these types may not exist yet.
-    return type(str(typ.name), (types.Interface, ),
-                {"__doc__": typ.desc, '__raw__': typ,
-                 '__module__': module_name})
+    return six.add_metaclass(types.Interface)(
+        type(str(typ.name), (),
+             {"__doc__": typ.desc,
+              '__raw__': typ,
+              '__module__': module_name}))
 
 
 def enum_as_type(typ, module_name):

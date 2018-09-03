@@ -40,14 +40,15 @@ InputValue = t.NamedTuple('InputValue', [
 ])
 
 
-class CanMakeFragmentMeta(type):
+class HasFields(type):
+    """metaclass for classes with GraphQL field definitions"""
 
     def __getitem__(self, selection_set):
         # type: SelectionSet -> InlineFragment
         return InlineFragment(self, validate(self, selection_set))
 
 
-@six.add_metaclass(CanMakeFragmentMeta)
+@six.add_metaclass(HasFields)
 class Object(object):
     """a graphQL object"""
 
@@ -63,8 +64,8 @@ class Enum(enum.Enum):
     pass
 
 
-class Interface(object):
-    pass
+class Interface(HasFields):
+    """metaclass for interfaces"""
 
 
 class FieldDefinition(ValueObject):
@@ -72,7 +73,7 @@ class FieldDefinition(ValueObject):
         ('name', str, 'Field name'),
         ('desc', str, 'Field description'),
         ('type', type, 'Field data type'),
-        ('args', FrozenDict[str, 'InputValue'], 'Accepted field arguments'),
+        ('args', FrozenDict[str, InputValue], 'Accepted field arguments'),
         ('is_deprecated', bool, 'Whether the field is deprecated'),
         ('deprecation_reason', t.Optional[str], 'Reason for deprecation'),
     ]
@@ -181,7 +182,7 @@ def _validate_field(schema, actual):
     _validate_args(schema.args, actual.kwargs)
     if actual.selection_set:
         type_ = _unwrap_list_or_nullable(schema.type)
-        if not issubclass(type_, (Object, Interface)):
+        if not isinstance(type_, HasFields):
             raise SelectionsNotSupported()
         validate(type_, actual.selection_set)
     return actual
