@@ -4,8 +4,8 @@ API reference
 .. automodule:: quiz
 
 
-Build
------
+``quiz.build``
+--------------
 
 .. automodule:: quiz.build
    :members:
@@ -15,8 +15,8 @@ Build
       __new__, __repr__, __eq__, __ne__, __init__
 
 
-Types
------
+``quiz.types``
+--------------
 
 .. automodule:: quiz.types
    :members:
@@ -26,15 +26,22 @@ Types
       __new__, __repr__, __eq__, __ne__, __init__
 
 
-Execution
----------
+``quiz.execution``
+------------------
 
 .. automodule:: quiz.execution
    :members:
 
 
-Schema
-------
+``quiz.schema``
+---------------
 
 .. automodule:: quiz.schema
    :members: get
+
+
+``quiz.utils``
+--------------
+
+.. automodule:: quiz.utils
+   :members:

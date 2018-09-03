@@ -1,4 +1,4 @@
-"""Components for executing GraphQL"""
+"""Components for executing GraphQL operations"""
 import json
 import typing as t
 from functools import partial
@@ -15,9 +15,11 @@ __all__ = [
     'executor',
     'async_executor',
     'ErrorResponse',
+    'Executable',
 ]
 
 Executable = t.Union[str, Document, Operation, SelectionSet]
+"""Anything which can be executed as a GraphQL operation"""
 
 
 def as_gql(obj):
@@ -45,7 +47,7 @@ def execute(obj, url, **kwargs):
 
     Parameters
     ----------
-    obj: str or Document or Operation or SelectionSet
+    obj: Executable
         The object to execute.
         This may be raw GraphQL, a document, single operation,
         or a query shorthand
@@ -78,7 +80,7 @@ def executor(**kwargs):
 
     Returns
     -------
-    ~typing.Callable[[str or Document or Operation or SelectionSet], JSON]
+    ~typing.Callable[[Executable], JSON]
         A callable to execute GraphQL executables
 
     Example
@@ -102,7 +104,7 @@ def execute_async(obj, url, **kwargs):
 
     Parameters
     ----------
-    obj: str or Document or Operation or SelectionSet
+    obj: Executable
         The object to execute.
         This may be raw GraphQL, a document, single operation,
         or a query shorthand
@@ -136,8 +138,7 @@ def async_executor(**kwargs):
 
     Returns
     -------
-    ~typing.Callable[[str or Document or Operation or SelectionSet], \
-            ~typing.Awaitable[JSON]]
+    ~typing.Callable[[Executable], ~typing.Awaitable[JSON]]
         A callable to asynchronously execute GraphQL executables
 
     Example
