@@ -205,10 +205,10 @@ CI                                                                 done
 Test for help()                                                    done
 Text escaping                                                      done
 Floats                                                             done
+Field aliases                                                      done
 Examples working                                                   v0.0.3
 Up-to-date documentation                                           v0.0.3
 Improve schema API (consistent with docs)                          v0.0.3
-Aliases                                                            v0.0.3
 Object/Interface as metaclass                                      v0.0.3
 Mutations                                                          v0.0.4
 Input objects                                                      v0.0.4
