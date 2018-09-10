@@ -224,6 +224,8 @@ class TestBuild:
         assert isinstance(schema, quiz.Schema)
         assert 'Query' in schema.classes
         assert schema.query_type == schema.classes['Query']
+        assert schema.mutation_type == schema.classes['Mutation']
+        assert schema.subscription_type is None
 
 
 class TestSchema:

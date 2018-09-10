@@ -118,6 +118,8 @@ class Schema(ValueObject):
     __fields__ = [
         ('classes', ClassDict, 'Mapping of classes in the schema'),
         ('query_type', type, 'The query type of the schema'),
+        ('mutation_type', type, 'The mutation type of the schema'),
+        ('subscription_type', type, 'The subscription type of the schema'),
         ('module', str, 'The module to which the classes are namespaced'),
     ]
 
@@ -131,7 +133,7 @@ class Schema(ValueObject):
         return list(self.classes) + dir(super(Schema, self))
 
     def populate_module(self):
-        """populate the given module with the schema's classes"""
+        """populate the schema's module with the schema's classes"""
         module_obj = sys.modules[self.module]
         for name, cls in self.classes.items():
             setattr(module_obj, name, cls)
@@ -181,9 +183,24 @@ def build(raw_schema, module, scalars=FrozenDict.EMPTY):
     for obj in chain(objs.values(), interfaces.values()):
         _add_fields(obj, classes)
 
-    return Schema(classes,
-                  query_type=classes[raw_schema['queryType']['name']],
-                  module=module)
+    return Schema(
+        classes,
+        query_type=classes[raw_schema['queryType']['name']],
+        mutation_type=(
+            raw_schema['mutationType']
+            and classes[raw_schema['mutationType']['name']]
+            ),
+        subscription_type=(
+            raw_schema['subscriptionType']
+            and classes[raw_schema['subscriptionType']['name']]
+        ),
+        module=module
+    )
+
+
+def _load(raw_schema):
+    # type RawSchema -> Iterable[TypeSchema]
+    return map(_cast_type, map(_deserialize_type, raw_schema['types']))
 
 
 def get(url, scalars=FrozenDict.EMPTY, module='__main__', **kwargs):
@@ -456,8 +473,3 @@ def _cast_type(typ):
         )
     else:
         raise NotImplementedError(type.kind)
-
-
-def _load(raw_schema):
-    # type RawSchema -> Iterable[TypeSchema]
-    return map(_cast_type, map(_deserialize_type, raw_schema['types']))
