@@ -2,6 +2,8 @@ import datetime
 import enum
 import json
 import pydoc
+import sys
+import types
 from textwrap import dedent
 
 import pytest
@@ -59,7 +61,7 @@ class TestEnumAsType:
                 None
             )
         ])
-        created = schema.enum_as_type(enum_schema, module_name='foo')
+        created = schema.enum_as_type(enum_schema, module='foo')
         assert issubclass(created, quiz.Enum)
         assert issubclass(created, enum.Enum)
 
@@ -119,7 +121,7 @@ class TestInterfaceAsType:
             ),
         ])
         created = schema.interface_as_type(interface_schema,
-                                           module_name='mymodule')
+                                           module='mymodule')
 
         assert isinstance(created, quiz.Interface)
         assert created.__name__ == 'Foo'
@@ -158,7 +160,7 @@ class TestObjectAsType:
                 '__module__': 'foo'}),
         }
         created = schema.object_as_type(obj_schema, interfaces,
-                                        module_name='foo')
+                                        module='foo')
         assert issubclass(created, quiz.Object)
         assert created.__name__ == 'Foo'
         assert created.__doc__ == 'the foo description!'
@@ -214,28 +216,43 @@ class TestBuild:
 
     def test_missing_scalars(self, raw_schema):
         with pytest.raises(Exception, match='DateTime'):
-            quiz.schema.build(raw_schema, scalars={}, module_name='foo')
+            quiz.schema.build(raw_schema, scalars={}, module='foo')
 
     def test_valid(self, raw_schema):
-        schema = quiz.schema.build(raw_schema, scalars={
-            'URI':             str,
-            'DateTime':        datetime.datetime,
-            'HTML':            str,
-            'GitObjectID':     str,
-            'GitTimestamp':    str,
-            'Date':            datetime.date,
-            'X509Certificate': str,
-            'GitSSHRemote':    str,
-        }, module_name='mymodule')
+        schema = quiz.schema.build(raw_schema, scalars=EXAMPLE_SCALARS,
+                                   module='mymodule')
         assert isinstance(schema, quiz.Schema)
+        assert 'Query' in schema.classes
         assert schema.query_type == schema.classes['Query']
+
+
+class TestSchema:
+
+    def test_attributes(self, raw_schema):
+        schema = quiz.schema.build(raw_schema, scalars=EXAMPLE_SCALARS,
+                                   module='mymodule')
         assert schema.Query is schema.classes['Query']
+        assert schema.module == 'mymodule'
         assert issubclass(schema.classes['Repository'], quiz.Object)
         assert 'Repository' in dir(schema)
         assert '__class__' in dir(schema)
 
         with pytest.raises(AttributeError, match='foo'):
             schema.foo
+
+    def test_populate_module(self, raw_schema, mocker):
+        mymodule = types.ModuleType('mymodule')
+        mocker.patch.dict(sys.modules, {'mymodule': mymodule})
+
+        schema = quiz.schema.build(raw_schema, module='mymodule',
+                                   scalars=EXAMPLE_SCALARS)
+
+        with pytest.raises(AttributeError, match='Repository'):
+            mymodule.Repository
+
+        schema.populate_module()
+
+        assert mymodule.Repository is schema.Repository
 
 
 def test_end_to_end(raw_schema):
@@ -248,7 +265,7 @@ def test_end_to_end(raw_schema):
         'Date':            datetime.date,
         'X509Certificate': str,
         'GitSSHRemote':    str,
-    }, module_name='github')
+    }, module='github')
     expect = dedent('''
     Python Library Documentation: class Issue
 

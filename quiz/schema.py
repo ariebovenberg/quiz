@@ -1,5 +1,6 @@
 """Functionality relating to the raw GraphQL schema"""
 import enum
+import sys
 import typing as t
 from collections import defaultdict
 from functools import partial
@@ -24,31 +25,31 @@ def _namedict(classes):
     return {c.__name__: c for c in classes}
 
 
-def object_as_type(typ, interfaces, module_name):
+def object_as_type(typ, interfaces, module):
     # type: (Object, Mapping[str, types.Interface], str) -> type
     # we don't add the fields yet -- these types may not exist yet.
     return type(
         str(typ.name),
         tuple(interfaces[i.name] for i in typ.interfaces) + (types.Object, ),
-        {"__doc__": typ.desc, "__raw__": typ, '__module__': module_name},
+        {"__doc__": typ.desc, "__raw__": typ, '__module__': module},
     )
 
 
-def interface_as_type(typ, module_name):
+def interface_as_type(typ, module):
     # type: (Interface, str) -> type
     # we don't add the fields yet -- these types may not exist yet.
     return six.add_metaclass(types.Interface)(
         type(str(typ.name), (),
              {"__doc__": typ.desc,
               '__raw__': typ,
-              '__module__': module_name}))
+              '__module__': module}))
 
 
-def enum_as_type(typ, module_name):
+def enum_as_type(typ, module):
     # type: (Enum, str) -> Type[types.Enum]
     assert len(typ.values) > 0
     cls = types.Enum(typ.name, [(v.name, v.name) for v in typ.values],
-                     module=module_name)
+                     module=module)
     cls.__doc__ = typ.desc
     for member, conf in zip(cls.__members__.values(), typ.values):
         member.__doc__ = conf.desc
@@ -117,19 +118,26 @@ class Schema(ValueObject):
     __fields__ = [
         ('classes', ClassDict, 'Mapping of classes in the schema'),
         ('query_type', type, 'The query type of the schema'),
+        ('module', str, 'The module to which the classes are namespaced'),
     ]
 
     def __getattr__(self, name):
         try:
             return self.classes[name]
         except KeyError:
-            return getattr(super(Schema, self), name)
+            raise AttributeError(name)
 
     def __dir__(self):
         return list(self.classes) + dir(super(Schema, self))
 
+    def populate_module(self):
+        """populate the given module with the schema's classes"""
+        module_obj = sys.modules[self.module]
+        for name, cls in self.classes.items():
+            setattr(module_obj, name, cls)
 
-def build(raw_schema, module_name, scalars=FrozenDict.EMPTY):
+
+def build(raw_schema, module, scalars=FrozenDict.EMPTY):
     # type: (Iterable[TypeSchema], str, ClassDict) -> ClassDict
 
     by_kind = defaultdict(list)
@@ -144,16 +152,16 @@ def build(raw_schema, module_name, scalars=FrozenDict.EMPTY):
             undefined_scalars)))
 
     interfaces = _namedict(map(
-        partial(interface_as_type, module_name=module_name),
+        partial(interface_as_type, module=module),
         by_kind[Interface]
     ))
     enums = _namedict(map(
-        partial(enum_as_type, module_name=module_name),
+        partial(enum_as_type, module=module),
         by_kind[Enum]
     ))
     objs = _namedict(map(
         partial(object_as_type, interfaces=interfaces,
-                module_name=module_name),
+                module=module),
         by_kind[Object],
     ))
     unions = _namedict(map(
@@ -174,7 +182,8 @@ def build(raw_schema, module_name, scalars=FrozenDict.EMPTY):
         _add_fields(obj, classes)
 
     return Schema(classes,
-                  query_type=classes[raw_schema['queryType']['name']])
+                  query_type=classes[raw_schema['queryType']['name']],
+                  module=module)
 
 
 def get(url, scalars=FrozenDict.EMPTY, module='__main__', **kwargs):
@@ -202,7 +211,7 @@ def get(url, scalars=FrozenDict.EMPTY, module='__main__', **kwargs):
         A mapping of names to classes
     """
     result = execute(INTROSPECTION_QUERY, url=url, **kwargs)
-    return build(result, scalars=scalars, module_name=module)
+    return build(result, scalars=scalars, module=module)
 
 
 INTROSPECTION_QUERY = """
