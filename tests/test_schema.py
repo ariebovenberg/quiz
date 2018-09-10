@@ -9,7 +9,7 @@ import six
 import snug
 
 import quiz
-from quiz.schema import raw, to_types
+from quiz import schema
 
 
 def trim_whitespace(txt):
@@ -39,33 +39,33 @@ EXAMPLE_SCALARS = {
 def test_load(raw_schema):
     loaded = list(quiz.schema.load(raw_schema))
     assert loaded
-    assert isinstance(loaded[0], quiz.schema.raw.Scalar)
+    assert isinstance(loaded[0], quiz.schema.Scalar)
 
 
 class TestEnumAsType:
 
     def test_simple(self):
-        enum_schema = raw.Enum('MyValues', 'my enum!', values=[
-            raw.EnumValue(
+        enum_schema = schema.Enum('MyValues', 'my enum!', values=[
+            schema.EnumValue(
                 'foo',
                 'foo value...',
                 True,
                 'this is deprecated!'
             ),
-            raw.EnumValue(
+            schema.EnumValue(
                 'blabla',
                 '...',
                 False,
                 None
             ),
-            raw.EnumValue(
+            schema.EnumValue(
                 'qux',
                 'qux value.',
                 False,
                 None
             )
         ])
-        created = to_types.enum_as_type(enum_schema, module_name='foo')
+        created = schema.enum_as_type(enum_schema, module_name='foo')
         assert issubclass(created, quiz.Enum)
         assert issubclass(created, enum.Enum)
 
@@ -86,10 +86,10 @@ class TestEnumAsType:
 class TestUnionAsType:
 
     def test_simple(self):
-        union_schema = raw.Union('Foo', 'my union!', [
-            raw.TypeRef('BlaType', raw.Kind.OBJECT, None),
-            raw.TypeRef('Quxlike', raw.Kind.INTERFACE, None),
-            raw.TypeRef('Foobar', raw.Kind.UNION, None),
+        union_schema = schema.Union('Foo', 'my union!', [
+            schema.TypeRef('BlaType', schema.Kind.OBJECT, None),
+            schema.TypeRef('Quxlike', schema.Kind.INTERFACE, None),
+            schema.TypeRef('Foobar', schema.Kind.UNION, None),
         ])
 
         objs = {
@@ -99,7 +99,7 @@ class TestUnionAsType:
             'Bla': type('Bla', (), {}),
         }
 
-        created = to_types.union_as_type(union_schema, objs)
+        created = schema.union_as_type(union_schema, objs)
         assert created.__name__ == 'Foo'
         assert created.__doc__ == 'my union!'
         assert issubclass(created, quiz.Union)
@@ -114,18 +114,18 @@ class TestUnionAsType:
 class TestInterfaceAsType:
 
     def test_simple(self):
-        interface_schema = raw.Interface('Foo', 'my interface!', [
-            raw.Field(
+        interface_schema = schema.Interface('Foo', 'my interface!', [
+            schema.Field(
                 'blabla',
-                type=raw.TypeRef('String', raw.Kind.SCALAR, None),
+                type=schema.TypeRef('String', schema.Kind.SCALAR, None),
                 args=[],
                 desc='my description',
                 is_deprecated=False,
                 deprecation_reason=None,
             ),
         ])
-        created = to_types.interface_as_type(interface_schema,
-                                             module_name='mymodule')
+        created = schema.interface_as_type(interface_schema,
+                                           module_name='mymodule')
 
         assert isinstance(created, quiz.Interface)
         assert created.__name__ == 'Foo'
@@ -136,18 +136,18 @@ class TestInterfaceAsType:
 class TestObjectAsType:
 
     def test_simple(self):
-        obj_schema = raw.Object(
+        obj_schema = schema.Object(
             'Foo',
             'the foo description!',
             interfaces=[
-                raw.TypeRef('Interface1', raw.Kind.INTERFACE, None),
-                raw.TypeRef('BlaInterface', raw.Kind.INTERFACE, None),
+                schema.TypeRef('Interface1', schema.Kind.INTERFACE, None),
+                schema.TypeRef('BlaInterface', schema.Kind.INTERFACE, None),
             ],
             input_fields=None,
             fields=[
-                raw.Field(
+                schema.Field(
                     'blabla',
-                    type=raw.TypeRef('String', raw.Kind.SCALAR, None),
+                    type=schema.TypeRef('String', schema.Kind.SCALAR, None),
                     args=[],
                     desc='my description',
                     is_deprecated=False,
@@ -163,8 +163,8 @@ class TestObjectAsType:
             'Qux': type('Qux', (quiz.Interface, ), {
                 '__module__': 'foo'}),
         }
-        created = to_types.object_as_type(obj_schema, interfaces,
-                                          module_name='foo')
+        created = schema.object_as_type(obj_schema, interfaces,
+                                        module_name='foo')
         assert issubclass(created, quiz.Object)
         assert created.__name__ == 'Foo'
         assert created.__doc__ == 'the foo description!'
@@ -176,42 +176,42 @@ class TestObjectAsType:
 class TestResolveTypeRef:
 
     def test_default(self):
-        ref = raw.TypeRef('Foo', raw.Kind.ENUM, None)
+        ref = schema.TypeRef('Foo', schema.Kind.ENUM, None)
 
         classes = {'Foo': quiz.Enum('Foo', {})}
-        resolved = to_types.resolve_typeref(ref, classes)
+        resolved = schema.resolve_typeref(ref, classes)
         assert issubclass(resolved, quiz.Nullable)
         assert resolved.__arg__ is classes['Foo']
 
     def test_non_null(self):
-        ref = raw.TypeRef(None, raw.Kind.NON_NULL,
-                          raw.TypeRef('Foo', raw.Kind.OBJECT, None))
+        ref = schema.TypeRef(None, schema.Kind.NON_NULL,
+                             schema.TypeRef('Foo', schema.Kind.OBJECT, None))
 
         classes = {'Foo': type('Foo', (), {})}
-        resolved = to_types.resolve_typeref(ref, classes)
+        resolved = schema.resolve_typeref(ref, classes)
         assert resolved == classes['Foo']
 
     def test_list(self):
-        ref = raw.TypeRef(None, raw.Kind.LIST,
-                          raw.TypeRef('Foo', raw.Kind.OBJECT, None))
+        ref = schema.TypeRef(None, schema.Kind.LIST,
+                             schema.TypeRef('Foo', schema.Kind.OBJECT, None))
         classes = {'Foo': type('Foo', (), {})}
-        resolved = to_types.resolve_typeref(ref, classes)
+        resolved = schema.resolve_typeref(ref, classes)
         assert issubclass(resolved, quiz.Nullable)
         assert issubclass(resolved.__arg__, quiz.List)
         assert issubclass(resolved.__arg__.__arg__, quiz.Nullable)
         assert resolved.__arg__.__arg__.__arg__ == classes['Foo']
 
     def test_list_non_null(self):
-        ref = raw.TypeRef(
-            None, raw.Kind.NON_NULL,
-            raw.TypeRef(
-                None, raw.Kind.LIST,
-                raw.TypeRef(
-                    None, raw.Kind.NON_NULL,
-                    raw.TypeRef('Foo', raw.Kind.OBJECT, None)
+        ref = schema.TypeRef(
+            None, schema.Kind.NON_NULL,
+            schema.TypeRef(
+                None, schema.Kind.LIST,
+                schema.TypeRef(
+                    None, schema.Kind.NON_NULL,
+                    schema.TypeRef('Foo', schema.Kind.OBJECT, None)
                 )))
         classes = {'Foo': type('Foo', (), {})}
-        resolved = to_types.resolve_typeref(ref, classes)
+        resolved = schema.resolve_typeref(ref, classes)
         assert issubclass(resolved, quiz.List)
         assert resolved.__arg__ == classes['Foo']
 
