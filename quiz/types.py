@@ -78,11 +78,13 @@ class FieldDefinition(ValueObject):
         ('deprecation_reason', t.Optional[str], 'Reason for deprecation'),
     ]
 
-    def __get__(self, obj, objtype=None):  # pragma: no cover
+    # descriptor interface is necessary to be displayed nicely in help()
+    def __get__(self, obj, objtype=None):
         if obj is None:  # accessing on class
             return self
         raise NotImplementedError()
 
+    # descriptor interface is necessary to be displayed nicely in help()
     def __set__(self, obj, value):
         raise NotImplementedError()
 
