@@ -217,7 +217,7 @@ class TestBuild:
             quiz.schema.build(type_schemas, scalars={}, module_name='foo')
 
     def test_valid(self, type_schemas):
-        classes = quiz.schema.build(type_schemas, scalars={
+        schema = quiz.schema.build(type_schemas, scalars={
             'URI':             str,
             'DateTime':        datetime.datetime,
             'HTML':            str,
@@ -227,7 +227,8 @@ class TestBuild:
             'X509Certificate': str,
             'GitSSHRemote':    str,
         }, module_name='mymodule')
-        assert issubclass(classes['Query'], quiz.Object)
+        assert isinstance(schema, quiz.Schema)
+        assert issubclass(schema['Query'], quiz.Object)
 
 
 def test_end_to_end(type_schemas):

@@ -1,3 +1,4 @@
+"""Converting from raw GraphQL schema to python types"""
 import typing as t
 from collections import defaultdict
 from functools import partial
@@ -10,6 +11,12 @@ from .. import types
 from ..compat import map
 from ..execution import execute
 from ..utils import FrozenDict, merge
+
+__all__ = [
+    'Schema',
+    'build',
+    'get',
+]
 
 ClassDict = t.Dict[str, type]
 
@@ -107,6 +114,21 @@ def _resolve_typeref_required(ref, classes):
     return classes[ref.name]
 
 
+class Schema(t.Mapping):
+
+    def __init__(self, classes):
+        self.classes = classes
+
+    def __getitem__(self, clsname):
+        return self.classes[clsname]
+
+    def __iter__(self):
+        return iter(self.classes)
+
+    def __len__(self):
+        return len(self.classes)
+
+
 def build(type_schemas, module_name, scalars=FrozenDict.EMPTY):
     # type: (Iterable[raw.TypeSchema], str, ClassDict) -> ClassDict
 
@@ -151,7 +173,7 @@ def build(type_schemas, module_name, scalars=FrozenDict.EMPTY):
     for obj in chain(objs.values(), interfaces.values()):
         _add_fields(obj, classes)
 
-    return classes
+    return Schema(classes)
 
 
 def get(url, scalars=FrozenDict.EMPTY, module='__main__', **kwargs):
