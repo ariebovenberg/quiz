@@ -7,8 +7,22 @@
 
    <br/>
 
+   <a href="https://travis-ci.org/ariebovenberg/quiz" class="reference external image-reference">
+         <img src="https://img.shields.io/travis/ariebovenberg/quiz.svg?style=flat-square" alt="Build status">
+   </a>
+
+   <a href="https://codecov.io/gh/ariebovenberg/quiz" class="reference external image-reference">
+         <img src="https://img.shields.io/codecov/c/github/ariebovenberg/quiz.svg?style=flat-square" alt="Test coverage">
+   </a>
+
+   <a href="http://quiz.readthedocs.io/" class="reference external image-reference">
+         <img src="https://img.shields.io/readthedocs/quiz.svg?style=flat-square" alt="Documentation status">
+   </a>
+
+   <br/>
+
    <a href="https://pypi.python.org/pypi/quiz" class="reference external image-reference">
-         <img src="https://img.shields.io/badge/status-Pre--Alpha-red.svg?style=flat-square" alt="Development status">
+         <img src="https://img.shields.io/badge/status-Alpha-orange.svg?style=flat-square" alt="Development status">
    </a>
 
    <a href="https://pypi.python.org/pypi/quiz" class="reference external image-reference">
@@ -21,20 +35,6 @@
 
    <a href="https://pypi.python.org/pypi/quiz" class="reference external image-reference">
          <img src="https://img.shields.io/pypi/pyversions/quiz.svg?style=flat-square" alt="Supported python versions">
-   </a>
-
-   <br/>
-
-   <a href="https://travis-ci.org/ariebovenberg/quiz" class="reference external image-reference">
-         <img src="https://img.shields.io/travis/ariebovenberg/quiz.svg?style=flat-square" alt="Build status">
-   </a>
-
-   <a href="https://codecov.io/gh/ariebovenberg/quiz" class="reference external image-reference">
-         <img src="https://img.shields.io/codecov/c/github/ariebovenberg/quiz.svg?style=flat-square" alt="Test coverage">
-   </a>
-
-   <a href="http://quiz.readthedocs.io/" class="reference external image-reference">
-         <img src="https://img.shields.io/readthedocs/quiz.svg?style=flat-square" alt="Documentation status">
    </a>
 
    </p>
