@@ -12,6 +12,7 @@ Contents
    :maxdepth: 2
 
    guide.rst
+   advanced.rst
    api.rst
 
 

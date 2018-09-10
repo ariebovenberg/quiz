@@ -26,6 +26,8 @@ API reference
       __new__, __repr__, __eq__, __ne__, __init__
 
 
+.. _execution-api:
+
 ``quiz.execution``
 ------------------
 
