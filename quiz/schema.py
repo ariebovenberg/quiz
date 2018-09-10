@@ -10,12 +10,10 @@ import six
 from . import types
 from .compat import map
 from .execution import execute
-from .utils import FrozenDict, merge
+from .utils import FrozenDict, ValueObject, merge
 
 __all__ = [
     'Schema',
-    'build',
-    'get',
 ]
 
 RawSchema = t.List[dict]
@@ -115,19 +113,20 @@ def _resolve_typeref_required(ref, classes):
     return classes[ref.name]
 
 
-class Schema(t.Mapping[str, type]):
+class Schema(ValueObject):
+    __fields__ = [
+        ('classes', ClassDict, 'Mapping of classes in the schema'),
+        ('query_type', type, 'The query type of the schema'),
+    ]
 
-    def __init__(self, classes: t.Dict[str, type], query_type: type) -> None:
-        self.classes, self.query_type = classes, query_type
+    def __getattr__(self, name):
+        try:
+            return self.classes[name]
+        except KeyError:
+            return getattr(super(Schema, self), name)
 
-    def __getitem__(self, clsname):
-        return self.classes[clsname]
-
-    def __iter__(self):
-        return iter(self.classes)
-
-    def __len__(self):
-        return len(self.classes)
+    def __dir__(self):
+        return list(self.classes) + dir(super(Schema, self))
 
 
 def build(raw_schema, module_name, scalars=FrozenDict.EMPTY):

@@ -229,11 +229,17 @@ class TestBuild:
         }, module_name='mymodule')
         assert isinstance(schema, quiz.Schema)
         assert schema.query_type == schema.classes['Query']
-        assert issubclass(schema['Query'], quiz.Object)
+        assert schema.Query is schema.classes['Query']
+        assert issubclass(schema.classes['Repository'], quiz.Object)
+        assert 'Repository' in dir(schema)
+        assert '__class__' in dir(schema)
+
+        with pytest.raises(AttributeError, match='foo'):
+            schema.foo
 
 
 def test_end_to_end(raw_schema):
-    classes = quiz.schema.build(raw_schema, scalars={
+    schema = quiz.schema.build(raw_schema, scalars={
         'URI':             str,
         'DateTime':        datetime.datetime,
         'HTML':            str,
@@ -440,7 +446,7 @@ the subscribable entity.
      |  __weakref__
      |      list of weak references to the object (if defined)
     '''.format('{0.__module__}.{0.__name__}'.format(object))).strip()
-    assert render_doc(classes['Issue']).strip() == expect
+    assert render_doc(schema.Issue).strip() == expect
 
 
 # TODO: more comprehensive tests
@@ -453,4 +459,4 @@ def test_get_schema(raw_schema):
                              client=client)
 
     assert client.request.url == 'https://my.url/graphql'
-    assert result['Query']
+    assert isinstance(result, quiz.Schema)
