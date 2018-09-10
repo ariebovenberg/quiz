@@ -36,12 +36,6 @@ EXAMPLE_SCALARS = {
 }
 
 
-def test_load(raw_schema):
-    loaded = list(quiz.schema.load(raw_schema))
-    assert loaded
-    assert isinstance(loaded[0], quiz.schema.Scalar)
-
-
 class TestEnumAsType:
 
     def test_simple(self):
@@ -218,12 +212,12 @@ class TestResolveTypeRef:
 
 class TestBuild:
 
-    def test_missing_scalars(self, type_schemas):
+    def test_missing_scalars(self, raw_schema):
         with pytest.raises(Exception, match='DateTime'):
-            quiz.schema.build(type_schemas, scalars={}, module_name='foo')
+            quiz.schema.build(raw_schema, scalars={}, module_name='foo')
 
-    def test_valid(self, type_schemas):
-        schema = quiz.schema.build(type_schemas, scalars={
+    def test_valid(self, raw_schema):
+        schema = quiz.schema.build(raw_schema, scalars={
             'URI':             str,
             'DateTime':        datetime.datetime,
             'HTML':            str,
@@ -234,11 +228,12 @@ class TestBuild:
             'GitSSHRemote':    str,
         }, module_name='mymodule')
         assert isinstance(schema, quiz.Schema)
+        assert schema.query_type == schema.classes['Query']
         assert issubclass(schema['Query'], quiz.Object)
 
 
-def test_end_to_end(type_schemas):
-    classes = quiz.schema.build(type_schemas, scalars={
+def test_end_to_end(raw_schema):
+    classes = quiz.schema.build(raw_schema, scalars={
         'URI':             str,
         'DateTime':        datetime.datetime,
         'HTML':            str,

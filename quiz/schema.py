@@ -10,7 +10,7 @@ import six
 from . import types
 from .compat import map
 from .execution import execute
-from .utils import FrozenDict, ValueObject, merge
+from .utils import FrozenDict, merge
 
 __all__ = [
     'Schema',
@@ -115,10 +115,10 @@ def _resolve_typeref_required(ref, classes):
     return classes[ref.name]
 
 
-class Schema(ValueObject):
-    __fields__ = [
-        ('classes', t.Dict[str, type], 'mapping of classes')
-    ]
+class Schema(t.Mapping[str, type]):
+
+    def __init__(self, classes: t.Dict[str, type], query_type: type) -> None:
+        self.classes, self.query_type = classes, query_type
 
     def __getitem__(self, clsname):
         return self.classes[clsname]
@@ -130,11 +130,11 @@ class Schema(ValueObject):
         return len(self.classes)
 
 
-def build(type_schemas, module_name, scalars=FrozenDict.EMPTY):
+def build(raw_schema, module_name, scalars=FrozenDict.EMPTY):
     # type: (Iterable[TypeSchema], str, ClassDict) -> ClassDict
 
     by_kind = defaultdict(list)
-    for tp in type_schemas:
+    for tp in load(raw_schema):
         by_kind[tp.__class__].append(tp)
 
     scalars_ = merge(scalars, types.BUILTIN_SCALARS)
@@ -174,7 +174,8 @@ def build(type_schemas, module_name, scalars=FrozenDict.EMPTY):
     for obj in chain(objs.values(), interfaces.values()):
         _add_fields(obj, classes)
 
-    return Schema(classes)
+    return Schema(classes,
+                  query_type=classes[raw_schema['queryType']['name']])
 
 
 def get(url, scalars=FrozenDict.EMPTY, module='__main__', **kwargs):
@@ -202,7 +203,7 @@ def get(url, scalars=FrozenDict.EMPTY, module='__main__', **kwargs):
         A mapping of names to classes
     """
     result = execute(INTROSPECTION_QUERY, url=url, **kwargs)
-    return build(load(result), scalars=scalars, module_name=module)
+    return build(result, scalars=scalars, module_name=module)
 
 
 INTROSPECTION_QUERY = """
