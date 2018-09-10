@@ -127,7 +127,7 @@ Features
        ...
 
 
-3. **GraphQL ORM**. Write queries as you would with an ORM:
+3. **GraphQL "ORM"**. Write queries as you would with an ORM:
 
    .. code-block:: python3
 
@@ -206,10 +206,12 @@ Test for help()                                                    done
 Text escaping                                                      done
 Floats                                                             done
 Field aliases                                                      done
+Improve schema API (consistent with docs)                          v0.0.3
 Examples working                                                   v0.0.3
 Up-to-date documentation                                           v0.0.3
-Improve schema API (consistent with docs)                          v0.0.3
 Object/Interface as metaclass                                      v0.0.3
+scalars                                                            v0.0.3
+
 Mutations                                                          v0.0.4
 Input objects                                                      v0.0.4
 Inline fragments                                                   v0.0.4
