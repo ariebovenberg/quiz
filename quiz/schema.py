@@ -133,7 +133,7 @@ def build(raw_schema, module_name, scalars=FrozenDict.EMPTY):
     # type: (Iterable[TypeSchema], str, ClassDict) -> ClassDict
 
     by_kind = defaultdict(list)
-    for tp in load(raw_schema):
+    for tp in _load(raw_schema):
         by_kind[tp.__class__].append(tp)
 
     scalars_ = merge(scalars, types.BUILTIN_SCALARS)
@@ -449,6 +449,6 @@ def _cast_type(typ):
         raise NotImplementedError(type.kind)
 
 
-def load(raw_schema):
+def _load(raw_schema):
     # type RawSchema -> Iterable[TypeSchema]
-    return (_cast_type(_deserialize_type(t)) for t in raw_schema['types'])
+    return map(_cast_type, map(_deserialize_type, raw_schema['types']))
