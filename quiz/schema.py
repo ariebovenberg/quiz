@@ -426,15 +426,8 @@ TypeSchema = t.Union[Interface, Object, Scalar, Enum, Union, InputObject]
 def _cast_type(typ):
     # type: Type -> TypeSchema
     if typ.kind is Kind.SCALAR:
-        assert typ.interfaces is None
-        assert typ.input_fields is None
-        assert typ.fields is None
-        assert typ.possible_types is None
-        assert typ.enum_values is None
         return Scalar(name=typ.name, desc=typ.desc)
     elif typ.kind is Kind.OBJECT:
-        assert typ.enum_values is None
-        assert typ.possible_types is None
         return Object(
             name=typ.name,
             desc=typ.desc,
@@ -443,27 +436,12 @@ def _cast_type(typ):
             fields=typ.fields,
         )
     elif typ.kind is Kind.INTERFACE:
-        assert typ.input_fields is None
-        assert typ.interfaces is None
-        assert typ.enum_values is None
-        assert typ.possible_types is not None
         return Interface(name=typ.name, desc=typ.desc, fields=typ.fields)
     elif typ.kind is Kind.ENUM:
-        assert typ.interfaces is None
-        assert typ.input_fields is None
-        assert typ.fields is None
-        assert typ.possible_types is None
         return Enum(name=typ.name, desc=typ.desc, values=typ.enum_values)
     elif typ.kind is Kind.UNION:
-        assert typ.interfaces is None
-        assert typ.input_fields is None
-        assert typ.fields is None
         return Union(name=typ.name, desc=typ.desc, types=typ.possible_types)
     elif typ.kind is Kind.INPUT_OBJECT:
-        assert typ.fields is None
-        assert typ.interfaces is None
-        assert typ.possible_types is None
-        assert typ.enum_values is None
         return InputObject(
             name=typ.name, desc=typ.desc, input_fields=typ.input_fields
         )
