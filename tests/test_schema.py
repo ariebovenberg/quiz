@@ -36,6 +36,12 @@ EXAMPLE_SCALARS = {
 }
 
 
+def test_load(raw_schema):
+    loaded = list(quiz.schema.load(raw_schema))
+    assert loaded
+    assert isinstance(loaded[0], quiz.schema.raw.Scalar)
+
+
 class TestEnumAsType:
 
     def test_simple(self):
@@ -444,7 +450,7 @@ the subscribable entity.
 
 # TODO: more comprehensive tests
 def test_get_schema(raw_schema):
-    from ..helpers import MockClient
+    from .helpers import MockClient
 
     client = MockClient(
         snug.Response(200, json.dumps({'data': raw_schema}).encode()))
