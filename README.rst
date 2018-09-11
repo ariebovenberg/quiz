@@ -211,6 +211,7 @@ Examples working                                                   v0.0.3
 Up-to-date documentation                                           v0.0.3
 Object/Interface as metaclass                                      v0.0.3
 scalars                                                            v0.0.3
+value object docs                                                  v0.0.3
 
 Mutations                                                          v0.0.4
 Input objects                                                      v0.0.4

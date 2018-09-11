@@ -15,6 +15,7 @@ from .utils import FrozenDict, ValueObject, merge
 
 __all__ = [
     'Schema',
+    'INTROSPECTION_QUERY',
 ]
 
 RawSchema = t.List[dict]
@@ -115,6 +116,11 @@ def _resolve_typeref_required(ref, classes):
 
 
 class Schema(ValueObject):
+    """A GraphQL schema.
+
+    Use :meth:`~Schema.from_raw` or :meth:`~Schema.from_url`
+    to instantiate.
+    """
     __fields__ = [
         ('classes', ClassDict, 'Mapping of classes in the schema'),
         ('query_type', type, 'The query type of the schema'),
@@ -138,97 +144,120 @@ class Schema(ValueObject):
         for name, cls in self.classes.items():
             setattr(module_obj, name, cls)
 
+    @classmethod
+    def from_raw(cls, raw_schema, module, scalars=FrozenDict.EMPTY):
+        """Create a :class:`Schema` from a raw JSON schema
 
-def build(raw_schema, module, scalars=FrozenDict.EMPTY):
-    # type: (Iterable[TypeSchema], str, ClassDict) -> ClassDict
+        Parameters
+        ----------
+        raw_schema: ~typing.List[~typing.Dict[str, JSON]]
+            The raw GraphQL schema.
+            I.e. the result of the :data:`INTROSPECTION_QUERY`
+        module: str
+            The name of the module to use when creating classes
+        scalars: ~typing.Mapping[str, type]
+            A mapping of scalars
 
-    by_kind = defaultdict(list)
-    for tp in _load(raw_schema):
-        by_kind[tp.__class__].append(tp)
+            Warning
+            -------
+            Scalars are not yet properly implemented
 
-    scalars_ = merge(scalars, types.BUILTIN_SCALARS)
-    undefined_scalars = {
-        tp.name for tp in by_kind[Scalar]} - six.viewkeys(scalars_)
-    if undefined_scalars:
-        raise Exception('Undefined scalars: {}'.format(', '.join(
-            undefined_scalars)))
+        Returns
+        -------
+        Schema
+            The schema constructed from raw data
+        """
+        # type: (Iterable[TypeSchema], str, ClassDict) -> ClassDict
 
-    interfaces = _namedict(map(
-        partial(interface_as_type, module=module),
-        by_kind[Interface]
-    ))
-    enums = _namedict(map(
-        partial(enum_as_type, module=module),
-        by_kind[Enum]
-    ))
-    objs = _namedict(map(
-        partial(object_as_type, interfaces=interfaces,
-                module=module),
-        by_kind[Object],
-    ))
-    unions = _namedict(map(
-        partial(union_as_type, objs=objs),
-        by_kind[Union]
-    ))
-    input_objects = _namedict(map(
-        inputobject_as_type,
-        by_kind[InputObject]
-    ))
+        by_kind = defaultdict(list)
+        for tp in _load(raw_schema):
+            by_kind[tp.__class__].append(tp)
 
-    classes = merge(
-        scalars_, interfaces, enums, objs, unions, input_objects
-    )
+        scalars_ = merge(scalars, types.BUILTIN_SCALARS)
+        undefined_scalars = {
+            tp.name for tp in by_kind[Scalar]} - six.viewkeys(scalars_)
+        if undefined_scalars:
+            raise Exception('Undefined scalars: {}'.format(', '.join(
+                undefined_scalars)))
 
-    # we can only add fields after all classes have been created.
-    for obj in chain(objs.values(), interfaces.values()):
-        _add_fields(obj, classes)
+        interfaces = _namedict(map(
+            partial(interface_as_type, module=module),
+            by_kind[Interface]
+        ))
+        enums = _namedict(map(
+            partial(enum_as_type, module=module),
+            by_kind[Enum]
+        ))
+        objs = _namedict(map(
+            partial(object_as_type, interfaces=interfaces,
+                    module=module),
+            by_kind[Object],
+        ))
+        unions = _namedict(map(
+            partial(union_as_type, objs=objs),
+            by_kind[Union]
+        ))
+        input_objects = _namedict(map(
+            inputobject_as_type,
+            by_kind[InputObject]
+        ))
 
-    return Schema(
-        classes,
-        query_type=classes[raw_schema['queryType']['name']],
-        mutation_type=(
-            raw_schema['mutationType']
-            and classes[raw_schema['mutationType']['name']]
+        classes = merge(
+            scalars_, interfaces, enums, objs, unions, input_objects
+        )
+
+        # we can only add fields after all classes have been created.
+        for obj in chain(objs.values(), interfaces.values()):
+            _add_fields(obj, classes)
+
+        return cls(
+            classes,
+            query_type=classes[raw_schema['queryType']['name']],
+            mutation_type=(
+                raw_schema['mutationType']
+                and classes[raw_schema['mutationType']['name']]
+                ),
+            subscription_type=(
+                raw_schema['subscriptionType']
+                and classes[raw_schema['subscriptionType']['name']]
             ),
-        subscription_type=(
-            raw_schema['subscriptionType']
-            and classes[raw_schema['subscriptionType']['name']]
-        ),
-        module=module
-    )
+            module=module
+        )
+
+    @classmethod
+    def from_url(cls, url, scalars=FrozenDict.EMPTY, module='__main__',
+                 **kwargs):
+        """Build a GraphQL schema by introspecting an API
+
+        Parameters
+        ----------
+        url: str
+            URL of the target GraphQL API
+        scalars: ~typing.Mapping[str, object]
+            Custom scalars to use
+
+            Warning
+            -------
+
+            Scalars are not yet properly implemented
+
+        module: str
+            The module name to set on the generated classes
+        **kwargs
+            ``auth`` or ``client``, passed to :func:`~quiz.execution.execute`.
+
+        Returns
+        -------
+        Mapping[str, type]
+            A mapping of names to classes
+        """
+        result = execute(INTROSPECTION_QUERY, url=url, **kwargs)
+        return cls.from_raw(result, scalars=scalars, module=module)
 
 
 def _load(raw_schema):
     # type RawSchema -> Iterable[TypeSchema]
     return map(_cast_type, map(_deserialize_type, raw_schema['types']))
-
-
-def get(url, scalars=FrozenDict.EMPTY, module='__main__', **kwargs):
-    """Build a GraphQL schema by introspecting an API
-
-    Parameters
-    ----------
-    url: str
-        URL of the target GraphQL API
-    scalars: ~typing.Mapping[str, object]
-        Custom scalars to use
-
-        Warning
-        -------
-
-        Scalars are not yet properly implemented
-    module: str
-        The module name to set on the generated classes
-    **kwargs
-        ``auth`` or ``client``, passed to :func:`~quiz.execution.execute`.
-
-    Returns
-    -------
-    Mapping[str, type]
-        A mapping of names to classes
-    """
-    result = execute(INTROSPECTION_QUERY, url=url, **kwargs)
-    return build(result, scalars=scalars, module=module)
 
 
 INTROSPECTION_QUERY = """
@@ -310,6 +339,7 @@ fragment TypeRef on __Type {
   }
 }
 """
+"""Query to retrieve the raw schema"""
 
 
 class Kind(enum.Enum):

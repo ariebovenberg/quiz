@@ -39,7 +39,7 @@ API reference
 ---------------
 
 .. automodule:: quiz.schema
-   :members: get
+   :members:
 
 
 ``quiz.utils``

@@ -13,53 +13,46 @@ Making a simple GraphQL query is easy. We'll use github's API v4 as an example.
    >>> import quiz
    >>> query = '''
    ...   {
-   ...     my_repo: repository(owner: "octocat", name: "Hello-World") {
+   ...     repository(owner: "octocat", name: "Hello-World") {
    ...       createdAt
    ...       description
-   ...     }
-   ...     organization(login: "github") {
-   ...       location
-   ...       email
-   ...       avatarUrl(size: 50)
-   ...       project(number: 1) {
-   ...         name
-   ...         state
-   ...       }
    ...     }
    ...   }
    ... '''
    >>> quiz.execute(query, url='https://api.github.com/graphl',
    ...              auth=('me', 'password'))
-   {"my_repo": ..., "organization": ...}
+   {"repository": ...}
 
 
 :func:`~quiz.execution.execute` allows us to specify the query as text,
-along with the ``url`` of the API and authentication.
+along with the target ``url`` and authentication credentials.
 
-Executing a query returns the result as JSON.
-
-For more information about executing queries, see :ref:`here <executors>`.
+Executing a raw query (i.e. :class:`str`) returns the result as JSON.
 
 .. note::
 
    For executing queries asynchronously,
    use :func:`~quiz.execution.execute_async`.
+   For more information about executing queries, see :ref:`here <executors>`.
 
 
 Retrieving a schema
 -------------------
 
 When performing multiple requests to a GraphQL API,
-it is useful to retrieve its schema.
+it is useful to retrieve its :class:`~quiz.schema.Schema`.
 The schema will allow us to:
 
 * validate queries
 * convert responses into python objects
 * introspect types and fields
 
+The fastest way to retrieve a :class:`~quiz.schema.Schema`
+is with :meth:`~quiz.Schema.from_url`.
+
 .. code-block:: python3
 
-   >>> schema = quiz.Schema.get('https://api.github.com/graphql',
+   >>> schema = quiz.schema.get('https://api.github.com/graphql',
    ...                          auth=('me', 'password'))
    >>> help(schema.Repository)
    class Repository(Node, ProjectOwner, Subscribable, Starrable,

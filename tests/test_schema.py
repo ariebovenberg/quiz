@@ -212,15 +212,15 @@ class TestResolveTypeRef:
         assert resolved.__arg__ == classes['Foo']
 
 
-class TestBuild:
+class TestSchemaFromRaw:
 
     def test_missing_scalars(self, raw_schema):
         with pytest.raises(Exception, match='DateTime'):
-            quiz.schema.build(raw_schema, scalars={}, module='foo')
+            quiz.Schema.from_raw(raw_schema, scalars={}, module='foo')
 
     def test_valid(self, raw_schema):
-        schema = quiz.schema.build(raw_schema, scalars=EXAMPLE_SCALARS,
-                                   module='mymodule')
+        schema = quiz.Schema.from_raw(raw_schema, scalars=EXAMPLE_SCALARS,
+                                      module='mymodule')
         assert isinstance(schema, quiz.Schema)
         assert 'Query' in schema.classes
         assert schema.query_type == schema.classes['Query']
@@ -231,8 +231,8 @@ class TestBuild:
 class TestSchema:
 
     def test_attributes(self, raw_schema):
-        schema = quiz.schema.build(raw_schema, scalars=EXAMPLE_SCALARS,
-                                   module='mymodule')
+        schema = quiz.Schema.from_raw(raw_schema, scalars=EXAMPLE_SCALARS,
+                                      module='mymodule')
         assert schema.Query is schema.classes['Query']
         assert schema.module == 'mymodule'
         assert issubclass(schema.classes['Repository'], quiz.Object)
@@ -246,8 +246,8 @@ class TestSchema:
         mymodule = types.ModuleType('mymodule')
         mocker.patch.dict(sys.modules, {'mymodule': mymodule})
 
-        schema = quiz.schema.build(raw_schema, module='mymodule',
-                                   scalars=EXAMPLE_SCALARS)
+        schema = quiz.Schema.from_raw(raw_schema, module='mymodule',
+                                      scalars=EXAMPLE_SCALARS)
 
         with pytest.raises(AttributeError, match='Repository'):
             mymodule.Repository
@@ -258,7 +258,7 @@ class TestSchema:
 
 
 def test_end_to_end(raw_schema):
-    schema = quiz.schema.build(raw_schema, scalars={
+    schema = quiz.Schema.from_raw(raw_schema, scalars={
         'URI':             str,
         'DateTime':        datetime.datetime,
         'HTML':            str,
@@ -468,14 +468,16 @@ the subscribable entity.
     assert render_doc(schema.Issue).strip() == expect
 
 
-# TODO: more comprehensive tests
-def test_get_schema(raw_schema):
-    from .helpers import MockClient
+class TestSchemaFromAPI:
 
-    client = MockClient(
-        snug.Response(200, json.dumps({'data': raw_schema}).encode()))
-    result = quiz.schema.get('https://my.url/graphql', scalars=EXAMPLE_SCALARS,
-                             client=client)
+    def test_success(self, raw_schema):
+        from .helpers import MockClient
 
-    assert client.request.url == 'https://my.url/graphql'
-    assert isinstance(result, quiz.Schema)
+        client = MockClient(
+            snug.Response(200, json.dumps({'data': raw_schema}).encode()))
+        result = quiz.Schema.from_url('https://my.url/graphql',
+                                      scalars=EXAMPLE_SCALARS,
+                                      client=client)
+
+        assert client.request.url == 'https://my.url/graphql'
+        assert isinstance(result, quiz.Schema)
