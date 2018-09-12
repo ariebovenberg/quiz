@@ -47,7 +47,7 @@ def execute(obj, url, **kwargs):
 
     Parameters
     ----------
-    obj: Executable
+    obj: :data:`~quiz.execution.Executable`
         The object to execute.
         This may be raw GraphQL, a document, single operation,
         or a query shorthand
@@ -152,7 +152,7 @@ def async_executor(**kwargs):
     ...       description
     ...     }
     ...   }
-    ... ''', client=aiohttp.ClientSession())
+    ... ''')
     """
     return partial(execute_async, **kwargs)
 

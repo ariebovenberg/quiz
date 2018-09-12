@@ -1,5 +1,6 @@
 """Functionality relating to the raw GraphQL schema"""
 import enum
+import json
 import sys
 import typing as t
 from collections import defaultdict
@@ -9,7 +10,7 @@ from itertools import chain
 import six
 
 from . import types
-from .compat import map
+from .compat import fspath, map
 from .execution import execute
 from .utils import FrozenDict, ValueObject, merge
 
@@ -118,8 +119,8 @@ def _resolve_typeref_required(ref, classes):
 class Schema(ValueObject):
     """A GraphQL schema.
 
-    Use :meth:`~Schema.from_raw` or :meth:`~Schema.from_url`
-    to instantiate.
+    Use :meth:`~Schema.from_path`, :meth:`~Schema.from_url`,
+    or :meth:`~Schema.from_raw` to instantiate.
     """
     __fields__ = [
         ('classes', ClassDict, 'Mapping of classes in the schema'),
@@ -143,6 +144,37 @@ class Schema(ValueObject):
         module_obj = sys.modules[self.module]
         for name, cls in self.classes.items():
             setattr(module_obj, name, cls)
+
+    @classmethod
+    def from_path(cls, path, module, scalars=FrozenDict.EMPTY):
+        """Create a :class:`Schema` from a JSON at a path
+
+        Parameters
+        ----------
+        path: str or ~os.PathLike
+            The path to the raw schema JSON file
+        module: str
+            The name of the module to use when creating classes
+        scalars: ~typing.Mapping[str, type]
+            A mapping of scalars
+
+            Warning
+            -------
+            Scalars are not yet properly implemented
+
+        Raturns
+        -------
+        Schema
+            The generated schema
+
+        Raises
+        ------
+        IOError
+            If the file at given path cannot be read
+        """
+        with open(fspath(path)) as rfile:
+            return cls.from_raw(json.load(rfile), module=module,
+                                scalars=scalars)
 
     @classmethod
     def from_raw(cls, raw_schema, module, scalars=FrozenDict.EMPTY):
@@ -248,11 +280,18 @@ class Schema(ValueObject):
 
         Returns
         -------
-        Mapping[str, type]
-            A mapping of names to classes
+        Schema
+            The generated schema
+
+        Raises
+        ------
+        ~quiz.types.ErrorResponse
+            If there are errors in the response data
         """
         result = execute(INTROSPECTION_QUERY, url=url, **kwargs)
         return cls.from_raw(result, scalars=scalars, module=module)
+
+    # TODO: from_url_async
 
 
 def _load(raw_schema):

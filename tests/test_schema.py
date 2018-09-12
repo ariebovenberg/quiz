@@ -13,6 +13,8 @@ import snug
 import quiz
 from quiz import schema
 
+from .helpers import MockClient
+
 
 def trim_whitespace(txt):
     return ''.join(t.rstrip() + '\n' for t in txt.splitlines())
@@ -257,6 +259,54 @@ class TestSchema:
         assert mymodule.Repository is schema.Repository
 
 
+class TestSchemaFromUrl:
+
+    def test_success(self, raw_schema):
+        client = MockClient(
+            snug.Response(200, json.dumps({'data': raw_schema}).encode()))
+        result = quiz.Schema.from_url('https://my.url/graphql',
+                                      scalars=EXAMPLE_SCALARS,
+                                      client=client)
+
+        assert client.request.url == 'https://my.url/graphql'
+        assert isinstance(result, quiz.Schema)
+
+    def test_fails(self, raw_schema):
+        client = MockClient(
+            snug.Response(200, json.dumps({'data': raw_schema,
+                                           'errors': 'foo'}).encode()))
+
+        with pytest.raises(quiz.ErrorResponse):
+            quiz.Schema.from_url('https://my.url/graphql',
+                                 scalars=EXAMPLE_SCALARS,
+                                 client=client)
+
+
+class TestSchemaFromPath:
+
+    def test_success(self, raw_schema, tmpdir):
+
+        schema_file = tmpdir / 'myfile.json'
+        with schema_file.open('w') as wfile:
+            json.dump(raw_schema, wfile)
+
+        class MyPath(object):
+
+            def __fspath__(self):
+                return str(schema_file)
+
+        schema = quiz.Schema.from_path(MyPath(), module='mymodule',
+                                       scalars=EXAMPLE_SCALARS)
+        assert isinstance(schema, quiz.Schema)
+
+    def test_does_not_exist(self, tmpdir):
+        schema_file = tmpdir / 'does-not-exist.json'
+
+        with pytest.raises(IOError):
+            quiz.Schema.from_path(str(schema_file), module='mymodule',
+                                  scalars=EXAMPLE_SCALARS)
+
+
 def test_end_to_end(raw_schema):
     schema = quiz.Schema.from_raw(raw_schema, scalars={
         'URI':             str,
@@ -466,18 +516,3 @@ the subscribable entity.
      |      list of weak references to the object (if defined)
     '''.format('{0.__module__}.{0.__name__}'.format(object))).strip()
     assert render_doc(schema.Issue).strip() == expect
-
-
-class TestSchemaFromAPI:
-
-    def test_success(self, raw_schema):
-        from .helpers import MockClient
-
-        client = MockClient(
-            snug.Response(200, json.dumps({'data': raw_schema}).encode()))
-        result = quiz.Schema.from_url('https://my.url/graphql',
-                                      scalars=EXAMPLE_SCALARS,
-                                      client=client)
-
-        assert client.request.url == 'https://my.url/graphql'
-        assert isinstance(result, quiz.Schema)
