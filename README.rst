@@ -62,24 +62,15 @@ A quick 'n dirty request to GitHub's new V4 API:
    >>> import quiz
    >>> query = '''
    ...   {
-   ...     my_repo: repository(owner: "octocat", name: "Hello-World") {
+   ...     repository(owner: "octocat", name: "Hello-World") {
    ...       createdAt
    ...       description
-   ...     }
-   ...     organization(login: "github") {
-   ...       location
-   ...       email
-   ...       avatarUrl(size: 50)
-   ...       project(number: 1) {
-   ...         name
-   ...         state
-   ...       }
    ...     }
    ...   }
    ... '''
    >>> quiz.execute(query, url='https://api.github.com/graphl',
    ...              auth=('me', 'password'))
-   {"my_repo": ..., "organization": ...}
+   {"repository": ...}
 
 
 Features
@@ -134,37 +125,17 @@ Features
       >>> _ = quiz.SELECTOR
       >>> q = schema.query(
       ...     _
-      ...     ('my_repo').repository(owner='octocat', name='Hello-World')[
+      ...     .repository(owner='octocat', name='Hello-World')[
       ...         _
       ...         .createdAt
       ...         .description
       ...     ]
-      ...     .organization(login='github')[
-      ...         _
-      ...         .location
-      ...         .email
-      ...         .avatarUrl(size=50)
-      ...         .project(number=1)[
-      ...             _
-      ...             .name
-      ...             .state
-      ...         ]
-      ...     ]
       ... )
       >>> print(q)
       query {
-        my_repo: repository(owner: "octocat", name: "Hello-World") {
+        repository(owner: "octocat", name: "Hello-World") {
           createdAt
           description
-        }
-        organization(login: "github") {
-          location
-          email
-          avatarUrl(size: 50)
-          project(number: 1) {
-            name
-            state
-          }
         }
       }
 

@@ -48,12 +48,21 @@ The schema will allow us to:
 * introspect types and fields
 
 The fastest way to retrieve a :class:`~quiz.schema.Schema`
-is with :meth:`~quiz.Schema.from_url`.
+is with :meth:`~quiz.schema.Schema.from_url`.
+Let's retrieve GitHub's GraphQL schema:
 
 .. code-block:: python3
 
-   >>> schema = quiz.schema.get('https://api.github.com/graphql',
-   ...                          auth=('me', 'password'))
+   >>> schema = quiz.Schema.from_url('https://api.github.com/graphql',
+   ...                               auth=('me', 'password'))
+
+
+The schema contains python classes for GraphQL types.
+These can be inspected with python's own :func:`help`:
+
+
+.. code-block:: python3
+
    >>> help(schema.Repository)
    class Repository(Node, ProjectOwner, Subscribable, Starrable,
     UniformResourceLocatable, RepositoryInfo, quiz.types.Object)
@@ -71,12 +80,25 @@ is with :meth:`~quiz.Schema.from_url`.
     |  codeOfConduct
     |      : CodeOfConduct or None
     |      Returns the code of conduct for this repository
+    (truncated)
 
 
-As we can see, :func:`schema.get() <quiz.schema.get>` retrieves the schema.
+In the next section, we will see how this will allow us
+to easily write and validate queries.
+
+.. note::
+
+   For more information about creating and inspecting schemas,
+   see :ref:`here <schemas>`.
 
 
 Constructing GraphQL
 --------------------
    
-hello
+As we've seen in the first section,
+we can execute queries in GraphQL syntax.
+
+.. code-block:: python3
+
+   >>> schema.query(
+   ...
