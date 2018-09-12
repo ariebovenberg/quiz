@@ -346,7 +346,7 @@ class OperationType(enum.Enum):
 class Operation(ValueObject):
     __fields__ = [
         ('type', OperationType, 'Type of the operation'),
-        ('selection_set', SelectionSet, 'Fields selection')
+        ('selection_set', SelectionSet, 'Fields selection'),
     ]
     __defaults__ = (SelectionSet(), )
     # in the future:
@@ -357,13 +357,6 @@ class Operation(ValueObject):
     def __gql__(self):
         return '{} {}'.format(self.type.value,
                               gql(self.selection_set))
-
-
-class Document(ValueObject):
-    __fields__ = [
-        ('operations', t.List[Operation], 'List of operations')
-        # future: fragments
-    ]
 
 
 _ESCAPE_PATTERNS = {

@@ -6,7 +6,7 @@ from functools import partial
 import snug
 from gentools import py2_compatible, return_
 
-from .build import Document, Operation, SelectionSet, gql
+from .build import Operation, SelectionSet, gql
 from .utils import JSON, ValueObject
 
 __all__ = [
@@ -18,7 +18,7 @@ __all__ = [
     'Executable',
 ]
 
-Executable = t.Union[str, Document, Operation, SelectionSet]
+Executable = t.Union[str, Operation, SelectionSet]
 """Anything which can be executed as a GraphQL operation"""
 
 
@@ -26,7 +26,7 @@ def as_gql(obj):
     # type: Executable -> str
     if isinstance(obj, str):
         return obj
-    assert isinstance(obj, (Document, Operation, SelectionSet))
+    assert isinstance(obj, (Operation, SelectionSet))
     return gql(obj)
 
 
