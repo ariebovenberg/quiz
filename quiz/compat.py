@@ -20,7 +20,7 @@ else:  # pragma: no cover
 
 if HAS_PEP519:
     from os import fspath
-else:
+else:  # pragma: no cover
     # code adapted from https://www.python.org/dev/peps/pep-0519/
     def fspath(path):
         # type: Union[Pathlike, str, bytes] -> Union[str, bytes]
