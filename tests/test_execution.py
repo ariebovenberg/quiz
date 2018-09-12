@@ -9,7 +9,7 @@ import quiz
 
 from .helpers import MockClient
 
-_ = quiz.selector
+_ = quiz.SELECTOR
 
 py3 = pytest.mark.skipif(sys.version_info < (3, ), reason='python 3+ only')
 

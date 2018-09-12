@@ -16,7 +16,7 @@ __all__ = [
     'Raw',
     'Operation',
     'OperationType',
-    'selector',
+    'SELECTOR',
 
     # render
     'gql',
@@ -285,7 +285,7 @@ class _AliasForNextField(object):
         )
 
 
-selector = SelectionSet()
+SELECTOR = SelectionSet()
 
 
 class Raw(ValueObject):

@@ -6,8 +6,8 @@ import six
 from hypothesis import given, strategies
 
 import quiz
+from quiz import SELECTOR as _
 from quiz import Field, InlineFragment, SelectionSet, gql
-from quiz import selector as _
 from quiz.utils import FrozenDict as fdict
 
 from .example import Dog
