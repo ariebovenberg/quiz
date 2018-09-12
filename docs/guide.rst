@@ -48,7 +48,7 @@ The schema will allow us to:
 * introspect types and fields
 
 The fastest way to retrieve a :class:`~quiz.schema.Schema`
-is with :meth:`~quiz.schema.Schema.from_url`.
+is to grab it right from the API with :meth:`~quiz.schema.Schema.from_url`.
 Let's retrieve GitHub's GraphQL schema:
 
 .. code-block:: python3
@@ -96,9 +96,60 @@ Constructing GraphQL
 --------------------
    
 As we've seen in the first section,
-we can execute queries in GraphQL syntax.
+we can execute queries in text form.
+Using the :class:`~quiz.schema.Schema`, however,
+we can write GraphQL using python syntax.
+To do this, we use the :data:`~quiz.build.SELECTOR` object
+combined with python's :term:`slice` syntax.
+
+The example below shows how we can recreate our original query in this syntax:
 
 .. code-block:: python3
 
-   >>> schema.query(
-   ...
+   >>> from quiz import SELECTOR as _
+   >>> query = schema.query[
+   ...     _
+   ...     .repository(owner='octocat', name='hello-world')[
+   ...         _
+   ...         .createdAt
+   ...         .description
+   ...     ]
+   ... ]
+
+We can easily convert this to a GraphQL string:
+
+.. code-block:: python3
+
+   >>> print(query)
+   query {
+     repository(owner: "octocat", name: "Hello-World") {
+       createdAt
+       description
+     }
+   }
+
+The main advantage of using python syntax is to catch mistakes
+before sending anything to the API.
+
+For example, what would happen if we added a non-existent field?
+
+.. code-block:: python3
+
+   >>> schema.query[
+   ...     _
+   ...     .repository(owner='octocat', name='hello-world')[
+   ...         _
+   ...         .createdAt
+   ...         .description
+   ...         .foo
+   ...     ]
+   ... ]
+   NoSuchField: Object "Repository" has no field "foo"
+
+Now we are confident with our query, we can use :func:`~quiz.execution.execute`
+to evaluate the result.
+
+.. code-block:: python3
+
+   >>> result = quiz.execute(query)
+
