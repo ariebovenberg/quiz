@@ -123,14 +123,14 @@ Features
    .. code-block:: python3
 
       >>> _ = quiz.SELECTOR
-      >>> q = schema.query(
+      >>> q = schema.query[
       ...     _
       ...     .repository(owner='octocat', name='Hello-World')[
       ...         _
       ...         .createdAt
       ...         .description
       ...     ]
-      ... )
+      ... ]
       >>> print(q)
       query {
         repository(owner: "octocat", name: "Hello-World") {
