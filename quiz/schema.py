@@ -125,8 +125,9 @@ class Schema(ValueObject):
     __fields__ = [
         ('classes', ClassDict, 'Mapping of classes in the schema'),
         ('query_type', type, 'The query type of the schema'),
-        ('mutation_type', type, 'The mutation type of the schema'),
-        ('subscription_type', type, 'The subscription type of the schema'),
+        ('mutation_type', t.Optional[type], 'The mutation type of the schema'),
+        ('subscription_type', t.Optional[type],
+         'The subscription type of the schema'),
         ('module', str, 'The module to which the classes are namespaced'),
     ]
 
