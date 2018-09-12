@@ -200,8 +200,6 @@ class Schema(ValueObject):
         Schema
             The schema constructed from raw data
         """
-        # type: (Iterable[TypeSchema], str, ClassDict) -> ClassDict
-
         by_kind = defaultdict(list)
         for tp in _load(raw_schema):
             by_kind[tp.__class__].append(tp)
