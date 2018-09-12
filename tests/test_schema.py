@@ -129,7 +129,7 @@ class TestInterfaceAsType:
             ),
         ])
         created = s.interface_as_type(interface_schema,
-                                           module='mymodule')
+                                      module='mymodule')
 
         assert isinstance(created, quiz.Interface)
         assert created.__name__ == 'Foo'
@@ -168,7 +168,7 @@ class TestObjectAsType:
                 '__module__': 'foo'}),
         }
         created = s.object_as_type(obj_schema, interfaces,
-                                        module='foo')
+                                   module='foo')
         assert issubclass(created, quiz.Object)
         assert created.__name__ == 'Foo'
         assert created.__doc__ == 'the foo description!'
@@ -189,7 +189,7 @@ class TestResolveTypeRef:
 
     def test_non_null(self):
         ref = s.TypeRef(None, s.Kind.NON_NULL,
-                             s.TypeRef('Foo', s.Kind.OBJECT, None))
+                        s.TypeRef('Foo', s.Kind.OBJECT, None))
 
         classes = {'Foo': type('Foo', (), {})}
         resolved = s.resolve_typeref(ref, classes)
@@ -197,7 +197,7 @@ class TestResolveTypeRef:
 
     def test_list(self):
         ref = s.TypeRef(None, s.Kind.LIST,
-                             s.TypeRef('Foo', s.Kind.OBJECT, None))
+                        s.TypeRef('Foo', s.Kind.OBJECT, None))
         classes = {'Foo': type('Foo', (), {})}
         resolved = s.resolve_typeref(ref, classes)
         assert issubclass(resolved, quiz.Nullable)
