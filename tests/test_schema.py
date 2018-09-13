@@ -267,7 +267,9 @@ class TestSchemaFromUrl:
 
     def test_success(self, raw_schema):
         client = MockClient(
-            snug.Response(200, json.dumps({'data': raw_schema}).encode()))
+            snug.Response(
+                200,
+                json.dumps({'data': {'__schema': raw_schema}}).encode()))
         result = quiz.Schema.from_url('https://my.url/graphql',
                                       scalars=EXAMPLE_SCALARS,
                                       client=client)
@@ -277,7 +279,7 @@ class TestSchemaFromUrl:
 
     def test_fails(self, raw_schema):
         client = MockClient(
-            snug.Response(200, json.dumps({'data': raw_schema,
+            snug.Response(200, json.dumps({'data': {'__schema': None},
                                            'errors': 'foo'}).encode()))
 
         with pytest.raises(quiz.ErrorResponse):

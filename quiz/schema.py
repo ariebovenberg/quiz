@@ -288,7 +288,7 @@ class Schema(ValueObject):
             If there are errors in the response data
         """
         result = execute(INTROSPECTION_QUERY, url=url, **kwargs)
-        return cls.from_raw(result, scalars=scalars, module=module)
+        return cls.from_raw(result['__schema'], scalars=scalars, module=module)
 
     # TODO: from_url_async
 
