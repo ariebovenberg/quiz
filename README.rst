@@ -177,20 +177,22 @@ Test for help()                                                    done
 Text escaping                                                      done
 Floats                                                             done
 Field aliases                                                      done
-Improve schema API (consistent with docs)                          v0.0.3
+Improve schema API (consistent with docs)                          done
 Examples working                                                   v0.0.3
 Up-to-date documentation                                           v0.0.3
-Object/Interface as metaclass                                      v0.0.3
 scalars                                                            v0.0.3
-value object docs                                                  v0.0.3
+download_schema                                                    v0.0.3
+validation error messages                                          v0.0.3
+Deserialization                                                    v0.0.3
 
+Object/Interface as metaclass                                      v0.0.4
+value object docs                                                  v0.0.4
 Mutations                                                          v0.0.4
 Input objects                                                      v0.0.4
 Inline fragments                                                   v0.0.4
 Fragments and fragment spreads                                     v0.0.5
-Custom primitives                                                  v0.0.5
+py2 unicode robustness                                             v0.0.5
 Mixing in raw GraphQL                                              planned
-Deserialization                                                    planned
 Module autogeneration                                              planned
 Type inference (e.g. enum values)                                  planned
 Variables                                                          planned
