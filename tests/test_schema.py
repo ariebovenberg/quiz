@@ -11,6 +11,7 @@ import six
 import snug
 
 import quiz
+from quiz import SELECTOR as _
 from quiz import schema as s
 
 from .helpers import MockClient
@@ -261,6 +262,21 @@ class TestSchema:
         schema.populate_module()
 
         assert mymodule.Repository is schema.Repository
+
+    def test_query(self, schema):
+
+        query = schema.query[
+            _
+            .license(key='MIT')
+        ]
+        assert query == quiz.Operation(
+            type=quiz.OperationType.QUERY,
+            selection_set=quiz.SelectionSet(
+                quiz.Field('license', {'key': 'MIT'}),
+            )
+        )
+        with pytest.raises(quiz.SelectionError, match='foo'):
+            schema.query[_.foo]
 
 
 class TestSchemaFromUrl:

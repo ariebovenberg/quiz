@@ -12,6 +12,7 @@ import six
 from . import types
 from .compat import fspath, map
 from .execution import execute
+from .types import query
 from .utils import FrozenDict, ValueObject, merge
 
 __all__ = [
@@ -116,6 +117,15 @@ def _resolve_typeref_required(ref, classes):
     return classes[ref.name]
 
 
+class _QueryCreator(object):
+
+    def __init__(self, schema):
+        self.schema = schema
+
+    def __getitem__(self, selection_set):
+        return query(selection_set, cls=self.schema.query_type)
+
+
 class Schema(ValueObject):
     """A GraphQL schema.
 
@@ -145,6 +155,11 @@ class Schema(ValueObject):
         module_obj = sys.modules[self.module]
         for name, cls in self.classes.items():
             setattr(module_obj, name, cls)
+
+    # interim object to allow slice syntax: Schema.query[...]
+    @property
+    def query(self):
+        return _QueryCreator(self)
 
     @classmethod
     def from_path(cls, path, module, scalars=FrozenDict.EMPTY):
