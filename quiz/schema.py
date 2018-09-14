@@ -178,7 +178,7 @@ class Schema(ValueObject):
             -------
             Scalars are not yet properly implemented
 
-        Raturns
+        Returns
         -------
         Schema
             The generated schema

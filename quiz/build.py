@@ -286,6 +286,7 @@ class _AliasForNextField(object):
 
 
 SELECTOR = SelectionSet()
+"""An empty, extendable :class:`SelectionSet`"""
 
 
 class Raw(ValueObject):
