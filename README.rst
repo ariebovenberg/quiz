@@ -184,6 +184,7 @@ scalars                                                            v0.0.3
 download_schema                                                    v0.0.3
 validation error messages                                          v0.0.3
 Deserialization                                                    v0.0.3
+SelectionSet.__str__                                               v0.0.3
 
 Object/Interface as metaclass                                      v0.0.4
 value object docs                                                  v0.0.4

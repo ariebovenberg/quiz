@@ -24,16 +24,19 @@ Making a simple GraphQL query is easy. We'll use github's API v4 as an example.
    {"repository": ...}
 
 
-:func:`~quiz.execution.execute` allows us to specify the query as text,
+:func:`~quiz.execution.execute` allows us to specify the query as text (:class:`str`),
 along with the target ``url`` and authentication credentials.
-
-Executing a raw query (i.e. :class:`str`) returns the result as JSON.
+Executing such a query returns the result as JSON.
 
 .. note::
 
-   For executing queries asynchronously,
-   use :func:`~quiz.execution.execute_async`.
-   For more information about executing queries, see :ref:`here <executors>`.
+   See the :ref:`advanced topics <advanced>` section for information about:
+   
+   * :ref:`Alternative authentication methods<custom-auth>`
+   * :ref:`Using alternative HTTP clients <http-clients>`
+     (e.g. ``requests``, ``aiohttp``)
+   * :ref:`Asynchronous execution <async>`
+   * :ref:`Keeping everything DRY <executors>`
 
 
 Retrieving a schema
@@ -99,7 +102,7 @@ As we've seen in the first section,
 we can execute queries in text form.
 Using the :class:`~quiz.schema.Schema`, however,
 we can write GraphQL using python syntax.
-To do this, we use the :data:`~quiz.build.SELECTOR` object
+To do this, we use the :class:`~quiz.build.SELECTOR` object
 combined with python's :term:`slice` syntax.
 
 The example below shows how we can recreate our original query in this syntax:
