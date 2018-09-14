@@ -178,14 +178,15 @@ Text escaping                                                      done
 Floats                                                             done
 Field aliases                                                      done
 Improve schema API (consistent with docs)                          done
+SelectionSet.__str__                                               done
 Examples working                                                   v0.0.3
 Up-to-date documentation                                           v0.0.3
-scalars                                                            v0.0.3
 download_schema                                                    v0.0.3
 validation error messages                                          v0.0.3
 Deserialization                                                    v0.0.3
-SelectionSet.__str__                                               v0.0.3
+default scalars                                                    v0.0.3
 
+proper scalars                                                     v0.0.4
 Object/Interface as metaclass                                      v0.0.4
 value object docs                                                  v0.0.4
 Mutations                                                          v0.0.4
