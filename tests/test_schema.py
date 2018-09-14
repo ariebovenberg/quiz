@@ -275,7 +275,7 @@ class TestSchema:
                 quiz.Field('license', {'key': 'MIT'}),
             )
         )
-        with pytest.raises(quiz.SelectionError, match='foo'):
+        with pytest.raises(quiz.SelectionError):
             schema.query[_.foo]
 
 
