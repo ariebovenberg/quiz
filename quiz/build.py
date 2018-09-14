@@ -78,13 +78,13 @@ class SelectionSet(t.Iterable['Selection'], t.Sized):
         This functionality can be used to quickly create a sequence of fields:
 
         >>> _ = SelectionSet()
-        >>> (
+        >>> str(
         ...     _
         ...     .foo
         ...     .bar
         ...     .bing
         ... )
-        <SelectionSet> {
+        {
           foo
           bar
           bing
@@ -104,7 +104,7 @@ class SelectionSet(t.Iterable['Selection'], t.Sized):
         -------
 
         >>> _ = SelectionSet()
-        >>> (
+        >>> str(
         ...     _
         ...     .foo
         ...     .bar[
@@ -114,7 +114,7 @@ class SelectionSet(t.Iterable['Selection'], t.Sized):
         ...     ]
         ...     .other_field
         ... )
-        <SelectionSet> {
+        {
           foo
           bar {
             qux
@@ -166,13 +166,13 @@ class SelectionSet(t.Iterable['Selection'], t.Sized):
             -------
 
             >>> _ = SelectionSet()
-            >>> selection = (
+            >>> str(
             ...     _
             ...     .foo
             ...     ('my_alias').bla
             ...     .other_field
             ... )
-            <SelectionSet> {
+            {
                foo
                my_alias: bla
                other_field
@@ -190,13 +190,13 @@ class SelectionSet(t.Iterable['Selection'], t.Sized):
             -------
 
             >>> _ = SelectionSet()
-            >>> (
+            >>> str(
             ...     _
             ...     .foo
             ...     .bla(a=4, b='qux')
             ...     .other_field
             ... )
-            <SelectionSet> {
+            {
               foo
               bla(a: 4, b: "qux")
               other_field
@@ -252,11 +252,13 @@ class SelectionSet(t.Iterable['Selection'], t.Sized):
         """
         return len(self.__selections__)
 
+    def __str__(self):
+        """The selection set as raw graphQL"""
+        return self.__gql__()
+
     def __gql__(self):
         return '{{\n{}\n}}'.format(
-            '\n'.join(
-                indent(gql(f), INDENT) for f in self.__selections__
-            )
+            '\n'.join(indent(gql(f), INDENT) for f in self)
         ) if self.__selections__ else ''
 
     def __eq__(self, other):

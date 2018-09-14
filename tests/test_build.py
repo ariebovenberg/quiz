@@ -129,6 +129,10 @@ class TestSelectionSet:
         assert tuple(SelectionSet(*items)) == items
         assert len(SelectionSet(*items)) == 2
 
+    def test_str(self):
+        instance = _.foo.bar(bla=5)
+        assert str(instance) == gql(instance)
+
     class TestGetItem:
 
         def test_simple(self):
