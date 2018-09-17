@@ -227,6 +227,12 @@ class TestSchemaFromRaw:
         with pytest.raises(Exception, match='DateTime'):
             quiz.Schema.from_raw(raw_schema, scalars={}, module='foo')
 
+    def test_no_scalars(self, raw_schema):
+        schema = quiz.Schema.from_raw(raw_schema, scalars=None, module='foo')
+        assert isinstance(schema, quiz.Schema)
+        assert issubclass(schema.DateTime, quiz.GenericScalar)
+        assert schema.String is str
+
     def test_valid(self, raw_schema):
         schema = quiz.Schema.from_raw(raw_schema, scalars=EXAMPLE_SCALARS,
                                       module='mymodule')

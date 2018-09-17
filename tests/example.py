@@ -15,6 +15,10 @@ mkfield = partial(q.FieldDefinition,
 Command = q.Enum('Command', {'SIT': 'SIT', 'DOWN': 'DOWN'})
 
 
+class MyDateTime(q.GenericScalar):
+    """a datatime string"""
+
+
 @six.add_metaclass(q.Interface)
 class Sentient(object):
     name = mkfield('name', type=str)
@@ -63,6 +67,17 @@ class Dog(Sentient, q.Object):
     )
     owner = mkfield('owner', type=q.Nullable[Human])
     best_friend = mkfield('best_friend', type=q.Nullable[Sentient])
+    age = mkfield(
+        'age',
+        type=int,
+        args=FrozenDict({
+            'on_date': q.InputValue(
+                'on_date',
+                '',
+                type=q.Nullable[MyDateTime]
+            )
+        })
+    )
 
 
 class Query(q.Object):

@@ -48,6 +48,22 @@ class TestList:
         assert not isinstance((1, 2), MyList)
 
 
+class TestGenericScalar:
+
+    def test_isinstancecheck(self):
+
+        class MyScalar(quiz.GenericScalar):
+            """foo"""
+
+        assert isinstance(4, MyScalar)
+        assert isinstance(u'foo', MyScalar)
+        assert isinstance(0.1, MyScalar)
+        assert isinstance(True, MyScalar)
+
+        assert not isinstance([], MyScalar)
+        assert not isinstance(None, MyScalar)
+
+
 class TestObject:
 
     class TestGetItem:
@@ -144,6 +160,7 @@ class TestValidate:
                 _
                 .name
             ]
+            .age(on_date='2018-09-17T08:52:13.956621')
         )
         assert quiz.validate(Dog, selection_set) == selection_set
 

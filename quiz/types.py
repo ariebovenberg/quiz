@@ -11,6 +11,7 @@ __all__ = [
     # types
     'Enum',
     'Union',
+    'GenericScalar',
     'List',
     'Interface',
     'Object',
@@ -38,6 +39,8 @@ InputValue = t.NamedTuple('InputValue', [
     ('desc', str),
     ('type', type),
 ])
+
+_PRIMITIVE_TYPES = (int, float, bool, six.text_type)
 
 
 class HasFields(type):
@@ -139,6 +142,17 @@ class UnionMeta(type):
 @six.add_metaclass(UnionMeta)
 class Union(object):
     __args__ = ()
+
+
+class GenericScalarMeta(type):
+
+    def __instancecheck__(self, instance):
+        return isinstance(instance, _PRIMITIVE_TYPES)
+
+
+@six.add_metaclass(GenericScalarMeta)
+class GenericScalar(object):
+    pass
 
 
 def _unwrap_list_or_nullable(type_):

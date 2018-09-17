@@ -162,7 +162,7 @@ class Schema(ValueObject):
         return _QueryCreator(self)
 
     @classmethod
-    def from_path(cls, path, module, scalars=FrozenDict.EMPTY):
+    def from_path(cls, path, module, scalars=None):
         """Create a :class:`Schema` from a JSON at a path
 
         Parameters
@@ -171,12 +171,13 @@ class Schema(ValueObject):
             The path to the raw schema JSON file
         module: str
             The name of the module to use when creating classes
-        scalars: ~typing.Mapping[str, type]
-            A mapping of scalars
+        scalars: ~typing.Optional[~typing.Mapping[str, type]]
+            A mapping of scalars.
+            If omitted or ``None``, generic scalars are used
 
             Warning
             -------
-            Scalars are not yet properly implemented
+            Scalars are not yet implemented
 
         Returns
         -------
@@ -193,7 +194,7 @@ class Schema(ValueObject):
                                 scalars=scalars)
 
     @classmethod
-    def from_raw(cls, raw_schema, module, scalars=FrozenDict.EMPTY):
+    def from_raw(cls, raw_schema, module, scalars=None):
         """Create a :class:`Schema` from a raw JSON schema
 
         Parameters
@@ -203,12 +204,13 @@ class Schema(ValueObject):
             I.e. the result of the :data:`INTROSPECTION_QUERY`
         module: str
             The name of the module to use when creating classes
-        scalars: ~typing.Mapping[str, type]
-            A mapping of scalars
+        scalars: ~typing.Optional[~typing.Mapping[str, type]]
+            A mapping of scalars.
+            If omitted or ``None``, generic scalars are used
 
             Warning
             -------
-            Scalars are not yet properly implemented
+            Scalars are not yet implemented
 
         Returns
         -------
@@ -219,12 +221,24 @@ class Schema(ValueObject):
         for tp in _load(raw_schema):
             by_kind[tp.__class__].append(tp)
 
-        scalars_ = merge(scalars, types.BUILTIN_SCALARS)
-        undefined_scalars = {
-            tp.name for tp in by_kind[Scalar]} - six.viewkeys(scalars_)
-        if undefined_scalars:
-            raise Exception('Undefined scalars: {}'.format(', '.join(
-                undefined_scalars)))
+        if scalars is None:
+            scalars_ = {
+                # TODO: this could be more efficient
+                tp.name: types.BUILTIN_SCALARS.get(
+                    tp.name,
+                    type(tp.name, (types.GenericScalar, ), {
+                        '__doc__': tp.desc
+                    })
+                )
+                for tp in by_kind[Scalar]
+            }
+        else:
+            scalars_ = merge(scalars, types.BUILTIN_SCALARS)
+            undefined_scalars = {
+                tp.name for tp in by_kind[Scalar]} - six.viewkeys(scalars_)
+            if undefined_scalars:
+                raise Exception('Undefined scalars: {}'.format(', '.join(
+                    undefined_scalars)))
 
         interfaces = _namedict(map(
             partial(interface_as_type, module=module),
@@ -271,7 +285,7 @@ class Schema(ValueObject):
         )
 
     @classmethod
-    def from_url(cls, url, scalars=FrozenDict.EMPTY, module='__main__',
+    def from_url(cls, url, scalars=None, module='__main__',
                  **kwargs):
         """Build a GraphQL schema by introspecting an API
 
@@ -279,13 +293,13 @@ class Schema(ValueObject):
         ----------
         url: str
             URL of the target GraphQL API
-        scalars: ~typing.Mapping[str, object]
-            Custom scalars to use
+        scalars: ~typing.Optional[~typing.Mapping[str, type]]
+            A mapping of scalars.
+            If omitted or ``None``, generic scalars are used
 
             Warning
             -------
-
-            Scalars are not yet properly implemented
+            Scalars are not yet implemented
 
         module: str
             The module name to set on the generated classes
