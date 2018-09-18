@@ -181,9 +181,9 @@ Improve schema API (consistent with docs)                          done
 SelectionSet.__str__                                               done
 default scalars                                                    done
 validation error messages                                          done
-Examples working                                                   v0.0.3
 Up-to-date documentation                                           v0.0.3
 download_schema                                                    v0.0.3
+Examples working                                                   v0.0.3
 Deserialization                                                    v0.0.3
 
 proper scalars                                                     v0.0.4

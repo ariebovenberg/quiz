@@ -241,6 +241,7 @@ class TestSchemaFromRaw:
         assert schema.query_type == schema.classes['Query']
         assert schema.mutation_type == schema.classes['Mutation']
         assert schema.subscription_type is None
+        assert schema.raw == raw_schema
 
 
 class TestSchema:
@@ -298,6 +299,7 @@ class TestSchemaFromUrl:
 
         assert client.request.url == 'https://my.url/graphql'
         assert isinstance(result, quiz.Schema)
+        assert result.raw == raw_schema
 
     def test_fails(self, raw_schema):
         client = MockClient(

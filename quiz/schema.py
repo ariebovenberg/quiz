@@ -13,14 +13,14 @@ from . import types
 from .compat import fspath, map
 from .execution import execute
 from .types import query
-from .utils import FrozenDict, ValueObject, merge
+from .utils import JSON, FrozenDict, ValueObject, merge
 
 __all__ = [
     'Schema',
     'INTROSPECTION_QUERY',
 ]
 
-RawSchema = t.List[dict]
+RawSchema = t.Dict[str, JSON]
 ClassDict = t.Dict[str, type]
 
 
@@ -139,6 +139,7 @@ class Schema(ValueObject):
         ('subscription_type', t.Optional[type],
          'The subscription type of the schema'),
         ('module', str, 'The module to which the classes are namespaced'),
+        ('raw', RawSchema, 'The raw schema (JSON). To be deprecated'),
     ]
 
     def __getattr__(self, name):
@@ -218,7 +219,7 @@ class Schema(ValueObject):
             The schema constructed from raw data
         """
         by_kind = defaultdict(list)
-        for tp in _load(raw_schema):
+        for tp in _load_types(raw_schema):
             by_kind[tp.__class__].append(tp)
 
         if scalars is None:
@@ -281,7 +282,8 @@ class Schema(ValueObject):
                 raw_schema['subscriptionType']
                 and classes[raw_schema['subscriptionType']['name']]
             ),
-            module=module
+            module=module,
+            raw=raw_schema,
         )
 
     @classmethod
@@ -322,7 +324,7 @@ class Schema(ValueObject):
     # TODO: from_url_async
 
 
-def _load(raw_schema):
+def _load_types(raw_schema):
     # type RawSchema -> Iterable[TypeSchema]
     return map(_cast_type, map(_deserialize_type, raw_schema['types']))
 
