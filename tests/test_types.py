@@ -132,6 +132,41 @@ class TestOperation:
         ''').strip()
 
 
+def test_selection_error_str():
+    exc = quiz.SelectionError(Dog, 'best_friend.foo',
+                              quiz.NoSuchArgument('bla'))
+    assert str(exc).strip() == dedent('''\
+    SelectionError on "Dog" at path "best_friend.foo":
+
+        NoSuchArgument: argument "bla" does not exist''')
+
+
+def test_no_such_argument_str():
+    exc = quiz.NoSuchArgument('foo')
+    assert str(exc) == 'argument "foo" does not exist'
+
+
+def test_no_such_field_str():
+    exc = quiz.NoSuchField()
+    assert str(exc) == 'field does not exist'
+
+
+def test_invalid_arg_type_str():
+    exc = quiz.InvalidArgumentType('foo', 5)
+    assert str(exc) == (
+        'invalid value "5" of type {} for argument "foo"'.format(int))
+
+
+def test_missing_argument_str():
+    exc = quiz.MissingArgument('bla')
+    assert str(exc) == 'argument "bla" missing (required)'
+
+
+def test_selections_not_supported_str():
+    exc = quiz.SelectionsNotSupported()
+    assert str(exc) == 'selections not supported on this object'
+
+
 class TestValidate:
 
     def test_empty(self):

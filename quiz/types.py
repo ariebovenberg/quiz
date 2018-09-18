@@ -243,15 +243,30 @@ class SelectionError(ValueObject, ValidationError):
         ('error', ValidationError, 'Original error'),
     ]
 
+    def __str__(self):
+        return '{} on "{}" at path "{}":\n\n    {}: {}'.format(
+            self.__class__.__name__,
+            self.on.__name__,
+            self.path,
+            self.error.__class__.__name__,
+            self.error,
+        )
+
 
 class NoSuchField(ValueObject, ValidationError):
     __fields__ = []
+
+    def __str__(self):
+        return 'field does not exist'
 
 
 class NoSuchArgument(ValueObject, ValidationError):
     __fields__ = [
         ('name', str, '(Invalid) argument name'),
     ]
+
+    def __str__(self):
+        return 'argument "{}" does not exist'.format(self.name)
 
 
 class InvalidArgumentType(ValueObject, ValidationError):
@@ -260,15 +275,28 @@ class InvalidArgumentType(ValueObject, ValidationError):
         ('value', object, '(Invalid) value'),
     ]
 
+    def __str__(self):
+        return 'invalid value "{}" of type {} for argument "foo"'.format(
+            self.value,
+            type(self.value),
+            self.name,
+        )
+
 
 class MissingArgument(ValueObject, ValidationError):
     __fields__ = [
         ('name', str, 'Missing argument name'),
     ]
 
+    def __str__(self):
+        return 'argument "{}" missing (required)'.format(self.name)
+
 
 class SelectionsNotSupported(ValueObject, ValidationError):
     __fields__ = []
+
+    def __str__(self):
+        return 'selections not supported on this object'
 
 
 def query(selection_set, cls):
