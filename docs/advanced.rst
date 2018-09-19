@@ -105,30 +105,28 @@ Here is an example usage:
 
 .. note::
 
-   :func:`~quiz.execution.async_executor()` is also available.
+   :func:`~quiz.execution.async_executor` is also available
+   with a similar API as :func:`~quiz.execution.executor`.
 
 .. _schemas:
 
 Caching schemas
 ---------------
 
-Retrieving a schema every time with :meth:`~quiz.schema.Schema.from_url`
-is not efficient.
-A better way is to store the schema locally, and load it once.
+We've seen that :meth:`Schema.from_url() <quiz.schema.Schema.from_url>`
+allows us to retrieve a schema directly from the API.
+It is also possible to store a retrieved schema on the filesystem,
+to avoid the need for downloading it every time.
 
-A schema can be downloaded with :func:`quiz.download_schema_to_path`:
+This can be done with :meth:`~quiz.schema.Schema.to_path`.
 
 .. code-block:: python3
 
-   >>> schema_path = '/path/to/schema.Jason'
-   >>> quiz.download_schema_to_path('https://api.github.com/graphql',
-   ...                              path=schema_path,
-   ...                              auth=('me', 'password'),)
+   >>> schema = quiz.Schema.from_url(...)
+   >>> schema.to_path('/path/to/schema.json')
 
-Such a schema can be loaded with :func:`quiz.Schema.from_path <quiz.schema.Schema.from_path>`:
+Such a schema can be loaded with :func:`Schema.from_path() <quiz.schema.Schema.from_path>`:
 
 .. code-block:: python3
 
    >>> schema = quiz.Schema.from_path(schema_path)
-
-Making modules

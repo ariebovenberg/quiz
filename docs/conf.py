@@ -15,9 +15,10 @@
 import os
 import sys
 from collections import OrderedDict
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-import quiz  # noqa
+import quiz  # noqa isort:skip
 
 
 # -- Project information -----------------------------------------------------
@@ -104,11 +105,11 @@ html_theme_options = {
         ('Issue Tracker', 'http://github.com/ariebovenberg/quiz/issues'),
     ]),
 
-    'note_bg': '#DAF2ED',
-    'note_border': '#DAF2ED',
-    'warn_bg': '#FFE8E8',
-    'warn_border': '#FFE8E8',
-    'pre_bg': '#E8EDDF',
+    'note_bg': '#D5E8ED',
+    'note_border': '#D5E8ED',
+    'warn_bg': '#EDDAD5',
+    'warn_border': '#EDDAD5',
+    'pre_bg': '#DCEDD5',
 }
 
 html_sidebars = {
