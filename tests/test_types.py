@@ -195,7 +195,7 @@ class TestValidate:
                 _
                 .name
             ]
-            .age(on_date='2018-09-17T08:52:13.956621')
+            .age(on_date=u'2018-09-17T08:52:13.956621')
         )
         assert quiz.validate(Dog, selection_set) == selection_set
 

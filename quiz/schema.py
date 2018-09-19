@@ -227,7 +227,7 @@ class Schema(ValueObject):
                 # TODO: this could be more efficient
                 tp.name: types.BUILTIN_SCALARS.get(
                     tp.name,
-                    type(tp.name, (types.GenericScalar, ), {
+                    type(str(tp.name), (types.GenericScalar, ), {
                         '__doc__': tp.desc
                     })
                 )

@@ -21,28 +21,28 @@ class MyDateTime(q.GenericScalar):
 
 @six.add_metaclass(q.Interface)
 class Sentient(object):
-    name = mkfield('name', type=str)
+    name = mkfield('name', type=six.text_type)
 
 
 class Hobby(q.Object):
-    name = mkfield('name', type=str)
+    name = mkfield('name', type=six.text_type)
     cool_factor = mkfield('description', type=int)
 
 
 class Human(Sentient, q.Object):
-    name = mkfield('name', type=str)
+    name = mkfield('name', type=six.text_type)
     hobbies = mkfield('hobbies',
                       type=q.Nullable[q.List[q.Nullable[Hobby]]])
 
 
 class Alien(Sentient, q.Object):
-    name = mkfield('name', type=str)
-    home_planet = mkfield('home_planer', type=q.Nullable[str])
+    name = mkfield('name', type=six.text_type)
+    home_planet = mkfield('home_planer', type=q.Nullable[six.text_type])
 
 
 class Dog(Sentient, q.Object):
     """An example type"""
-    name = mkfield('name', type=str)
+    name = mkfield('name', type=six.text_type)
     is_housetrained = mkfield(
         'is_housetrained',
         args=FrozenDict({
