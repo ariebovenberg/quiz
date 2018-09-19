@@ -327,6 +327,14 @@ class TestSchemaFromUrl:
 
 class TestSchemaFromPath:
 
+    def test_defaults(self, raw_schema, tmpdir):
+        schema_file = tmpdir / 'myfile.json'
+        with schema_file.open('w') as wfile:
+            json.dump(raw_schema, wfile)
+
+        schema = quiz.Schema.from_path(schema_file)
+        assert schema.module == '__main__'
+
     def test_success(self, raw_schema, tmpdir):
 
         schema_file = tmpdir / 'myfile.json'

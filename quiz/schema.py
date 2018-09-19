@@ -163,7 +163,7 @@ class Schema(ValueObject):
         return _QueryCreator(self)
 
     @classmethod
-    def from_path(cls, path, module, scalars=None):
+    def from_path(cls, path, module='__main__', scalars=None):
         """Create a :class:`Schema` from a JSON at a path
 
         Parameters
