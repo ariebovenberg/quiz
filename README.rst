@@ -152,7 +152,11 @@ Features
       ...         .description
       ...     ]
       ... )
-      quiz.NoSuchField: "Repository" has no field "foo"
+      SelectionError: SelectionError on "Query" at path "repository":
+
+          SelectionError: SelectionError on "Repository" at path "foo":
+
+              NoSuchField: field does not exist
 
 
 Installation
@@ -181,9 +185,9 @@ Improve schema API (consistent with docs)                          done
 SelectionSet.__str__                                               done
 default scalars                                                    done
 validation error messages                                          done
-Up-to-date documentation                                           v0.0.3
-download_schema                                                    v0.0.3
+Up-to-date documentation                                           done
 Examples working                                                   v0.0.3
+document making a module around a schema                           v0.0.3
 Deserialization                                                    v0.0.3
 
 proper scalars                                                     v0.0.4
