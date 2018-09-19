@@ -91,8 +91,11 @@ to easily write and validate queries.
 
 .. note::
 
-   For more information about creating and inspecting schemas,
-   see :ref:`here <schemas>`.
+   See the :ref:`advanced topics <advanced>` section for information about:
+   
+   * :ref:`Caching schemas<caching_schemas>`
+   * :ref:`Defining custom scalars<caching_schemas>`
+   * :ref:`Building modules with schemas <modules>`
 
 
 Constructing GraphQL
@@ -103,7 +106,7 @@ we can execute queries in text form.
 Using the :class:`~quiz.schema.Schema`, however,
 we can write GraphQL using python syntax.
 To do this, we use the :class:`~quiz.build.SELECTOR` object
-combined with python's :term:`slice` syntax.
+combined with python's slice syntax.
 
 The example below shows how we can recreate our original query in this syntax:
 
@@ -133,7 +136,6 @@ We can easily convert this to a GraphQL string:
 
 The main advantage of using python syntax is to catch mistakes
 before sending anything to the API.
-
 For example, what would happen if we added a non-existent field?
 
 .. code-block:: python3
@@ -147,7 +149,11 @@ For example, what would happen if we added a non-existent field?
    ...         .foo
    ...     ]
    ... ]
-   NoSuchField: Object "Repository" has no field "foo"
+   SelectionError: SelectionError on "Query" at path "repository":
+
+       SelectionError: SelectionError on "Repository" at path "foo":
+
+           NoSuchField: field does not exist
 
 Now we are confident with our query, we can use :func:`~quiz.execution.execute`
 to evaluate the result.

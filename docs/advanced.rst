@@ -108,7 +108,7 @@ Here is an example usage:
    :func:`~quiz.execution.async_executor` is also available
    with a similar API as :func:`~quiz.execution.executor`.
 
-.. _schemas:
+.. _caching_schemas:
 
 Caching schemas
 ---------------
@@ -130,3 +130,22 @@ Such a schema can be loaded with :func:`Schema.from_path() <quiz.schema.Schema.f
 .. code-block:: python3
 
    >>> schema = quiz.Schema.from_path(schema_path)
+
+.. _modules:
+
+Modules
+-------
+
+.. warning::
+
+   This section is work in progress.
+   See the :ref:`here <examples>` for practical examples.
+
+.. _scalars:
+
+Custom scalars
+--------------
+
+.. warning::
+
+   Custom scalars are not yet implemented. They will be, soon.

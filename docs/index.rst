@@ -13,6 +13,7 @@ Contents
 
    guide.rst
    advanced.rst
+   examples.rst
    api.rst
 
 
