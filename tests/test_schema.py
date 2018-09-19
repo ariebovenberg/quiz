@@ -285,6 +285,19 @@ class TestSchema:
         with pytest.raises(quiz.SelectionError):
             schema.query[_.foo]
 
+    def test_to_path(self, schema, tmpdir):
+
+        path = str(tmpdir / 'myschema.json')
+
+        class MyPath(object):
+
+            def __fspath__(self):
+                return path
+
+        schema.to_path(MyPath())
+        loaded = schema.from_path(MyPath(), module='mymodule')
+        assert loaded.classes.keys() == schema.classes.keys()
+
 
 class TestSchemaFromUrl:
 

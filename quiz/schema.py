@@ -194,6 +194,17 @@ class Schema(ValueObject):
             return cls.from_raw(json.load(rfile), module=module,
                                 scalars=scalars)
 
+    def to_path(self, path):
+        """Dump the schema as JSON to a path
+
+        Parameters
+        ----------
+        path: str or ~os.PathLike
+            The path to write the raw schema to
+        """
+        with open(fspath(path), 'w') as wfile:
+            json.dump(self.raw, wfile)
+
     @classmethod
     def from_raw(cls, raw_schema, module, scalars=None):
         """Create a :class:`Schema` from a raw JSON schema
