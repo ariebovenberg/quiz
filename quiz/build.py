@@ -361,6 +361,9 @@ class Operation(ValueObject):
         return '{} {}'.format(self.type.value,
                               gql(self.selection_set))
 
+    def __str__(self):
+        return self.__gql__()
+
 
 _ESCAPE_PATTERNS = {
     '\b': r'\b',
