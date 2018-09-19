@@ -10,9 +10,10 @@ from itertools import chain
 import six
 
 from . import types
+from .build import Query
 from .compat import fspath, map
 from .execution import execute
-from .types import query
+from .types import validate
 from .utils import JSON, FrozenDict, ValueObject, merge
 
 __all__ = [
@@ -123,7 +124,8 @@ class _QueryCreator(object):
         self.schema = schema
 
     def __getitem__(self, selection_set):
-        return query(selection_set, cls=self.schema.query_type)
+        cls = self.schema.query_type
+        return Query(cls, selections=validate(cls, selection_set))
 
 
 class Schema(ValueObject):
@@ -160,6 +162,22 @@ class Schema(ValueObject):
     # interim object to allow slice syntax: Schema.query[...]
     @property
     def query(self):
+        """Creator for a query operation
+
+        Example
+        -------
+
+        >>> from quiz import SELECTOR as _
+        >>> str(schema.query[
+        ...     _
+        ...     .field1
+        ...     .foo
+        ... ])
+        query {
+          field1
+          foo
+        }
+        """
         return _QueryCreator(self)
 
     @classmethod

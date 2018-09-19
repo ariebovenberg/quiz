@@ -186,14 +186,14 @@ SelectionSet.__str__                                               done
 default scalars                                                    done
 validation error messages                                          done
 Up-to-date documentation                                           done
-Examples working                                                   v0.0.3
-document making a module around a schema                           v0.0.3
 Deserialization                                                    v0.0.3
+Examples working                                                   v0.0.3
 
+executing selection sets directly                                  v0.0.4
 proper scalars                                                     v0.0.4
-Object/Interface as metaclass                                      v0.0.4
+improve Object/Interface API                                       v0.0.4
 value object docs                                                  v0.0.4
-Mutations                                                          v0.0.4
+Mutations & subscriptions                                          v0.0.4
 Input objects                                                      v0.0.4
 Inline fragments                                                   v0.0.4
 Fragments and fragment spreads                                     v0.0.5
@@ -204,7 +204,6 @@ Type inference (e.g. enum values)                                  planned
 Variables                                                          planned
 Directives                                                         planned
 Integer 32-bit limit                                               planned
-Parsing raw GraphQL                                                idea
 Pickling                                                           idea
 converting variables from camelcase to snake-case                  idea
 Autogenerate module .rst from schema                               idea

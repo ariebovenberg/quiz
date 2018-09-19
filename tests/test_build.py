@@ -258,18 +258,18 @@ class TestArgumentAsGql:
         assert quiz.argument_as_gql(MyEnum.BLA) == 'QUX'
 
 
-class TestOperation:
+class TestQuery:
 
     def test_gql(self):
-        op = quiz.Operation(
-            quiz.OperationType.QUERY,
+        op = quiz.Query(
+            Dog,
             quiz.SelectionSet(
-                Field('foo')
+                Field('name')
             )
         )
         assert quiz.gql(op) == dedent('''
         query {
-          foo
+          name
         }
         ''').strip()
 

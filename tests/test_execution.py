@@ -7,6 +7,7 @@ import snug
 
 import quiz
 
+from .example import Dog
 from .helpers import MockClient
 
 _ = quiz.SELECTOR
@@ -39,15 +40,16 @@ class TestExecute:
                                    'Content-Type': 'application/json'}
 
     def test_non_string(self):
-        client = MockClient(snug.Response(200, b'{"data": {"foo": 4}}'))
-        result = quiz.execute(_.foo, url='https://my.url/api', client=client)
-        assert result == {'foo': 4}
+        query = quiz.Query(Dog, quiz.SelectionSet(quiz.Field('name')))
+        client = MockClient(snug.Response(200, b'{"data": {"name": 4}}'))
+        result = quiz.execute(query, url='https://my.url/api', client=client)
+        assert result == {'name': 4}
 
         request = client.request
         assert request.url == 'https://my.url/api'
         assert request.method == 'POST'
         assert json.loads(request.content.decode()) == {
-            'query': quiz.gql(_.foo)}
+            'query': quiz.gql(query)}
         assert request.headers == {'Content-Type': 'application/json'}
 
     def test_errors(self):
@@ -86,16 +88,17 @@ class TestExecuteAsync:
                                    'Content-Type': 'application/json'}
 
     def test_non_string(self, event_loop):
-        client = MockClient(snug.Response(200, b'{"data": {"foo": 4}}'))
-        future = quiz.execute_async(_.foo,
+        query = quiz.Query(Dog, quiz.SelectionSet(quiz.Field('name')))
+        client = MockClient(snug.Response(200, b'{"data": {"name": 4}}'))
+        future = quiz.execute_async(query,
                                     url='https://my.url/api', client=client)
-        assert event_loop.run_until_complete(future) == {'foo': 4}
+        assert event_loop.run_until_complete(future) == {'name': 4}
 
         request = client.request
         assert request.url == 'https://my.url/api'
         assert request.method == 'POST'
         assert json.loads(request.content.decode()) == {
-            'query': quiz.gql(_.foo)}
+            'query': quiz.gql(query)}
         assert request.headers == {'Content-Type': 'application/json'}
 
     def test_errors(self, event_loop):

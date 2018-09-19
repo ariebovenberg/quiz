@@ -4,7 +4,7 @@ import typing as t
 
 import six
 
-from .build import InlineFragment, Operation, OperationType
+from .build import InlineFragment
 from .utils import FrozenDict, ValueObject
 
 __all__ = [
@@ -18,7 +18,6 @@ __all__ = [
     'Nullable',
     'FieldDefinition',
     'InputValue',
-    'query',
     # TODO: mutation
     # TODO: subscription
 
@@ -297,24 +296,6 @@ class SelectionsNotSupported(ValueObject, ValidationError):
 
     def __str__(self):
         return 'selections not supported on this object'
-
-
-def query(selection_set, cls):
-    """Create a query operation
-
-    Parameters
-    ----------
-    selection_set: selectionSet
-        The selection set
-    cls: type
-        The query type
-
-    Returns
-    -------
-    Operation
-        The query operation
-    """
-    return Operation(OperationType.QUERY, validate(cls, selection_set))
 
 
 class ID(str):

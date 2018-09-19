@@ -276,9 +276,9 @@ class TestSchema:
             _
             .license(key='MIT')
         ]
-        assert query == quiz.Operation(
-            type=quiz.OperationType.QUERY,
-            selection_set=quiz.SelectionSet(
+        assert query == quiz.Query(
+            cls=schema.Query,
+            selections=quiz.SelectionSet(
                 quiz.Field('license', {'key': 'MIT'}),
             )
         )

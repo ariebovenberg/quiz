@@ -14,8 +14,7 @@ __all__ = [
     'Field',
     'InlineFragment',
     'Raw',
-    'Operation',
-    'OperationType',
+    'Query',
     'SELECTOR',
 
     # render
@@ -339,27 +338,18 @@ class InlineFragment(ValueObject):
         )
 
 
-class OperationType(enum.Enum):
-    """Operation type, either ``QUERY``, ``MUTATION``, or ``SUBSCRIPTION``"""
-    QUERY = 'query'
-    MUTATION = 'mutation'
-    SUBSCRIPTION = 'subscription'
-
-
-class Operation(ValueObject):
+class Query(ValueObject):
     __fields__ = [
-        ('type', OperationType, 'Type of the operation'),
-        ('selection_set', SelectionSet, 'Fields selection'),
+        ('cls', type, 'The query class'),
+        ('selections', SelectionSet, 'Fields selection')
     ]
-    __defaults__ = (SelectionSet(), )
     # in the future:
     # - name (optional)
     # - variable_defs (optional)
     # - directives (optional)
 
     def __gql__(self):
-        return '{} {}'.format(self.type.value,
-                              gql(self.selection_set))
+        return 'query {}'.format(gql(self.selections))
 
     def __str__(self):
         return self.__gql__()

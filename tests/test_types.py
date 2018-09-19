@@ -110,28 +110,6 @@ class TestInlineFragment:
         ''').strip()
 
 
-class TestOperation:
-
-    def test_graphql(self):
-        operation = quiz.Operation(
-            quiz.OperationType.QUERY,
-            SelectionSet(
-                quiz.Field('foo'),
-                quiz.Field('qux', fdict({'buz': 99}), SelectionSet(
-                    quiz.Field('nested'),
-                ))
-            )
-        )
-        assert gql(operation) == dedent('''
-        query {
-          foo
-          qux(buz: 99) {
-            nested
-          }
-        }
-        ''').strip()
-
-
 def test_selection_error_str():
     exc = quiz.SelectionError(Dog, 'best_friend.foo',
                               quiz.NoSuchArgument('bla'))
@@ -275,36 +253,6 @@ class TestValidate:
     # TODO: check object types always have selection sets
 
     # TODO: list input type
-
-
-class TestQuery:
-
-    def test_valid(self):
-        selection_set = (
-            _
-            .dog[
-                _
-                .name
-                .is_housetrained
-            ]
-        )
-        query = quiz.query(selection_set, cls=Query)
-        assert isinstance(query, quiz.Operation)
-        assert query.type is quiz.OperationType.QUERY  # noqa
-        assert len(query.selection_set) == 1
-
-    def test_validates(self):
-        with pytest.raises(quiz.SelectionError):
-            quiz.query(
-                _
-                .dog[
-                    _
-                    .name
-                    .is_housetrained
-                    .foobar
-                ],
-                cls=Query,
-            )
 
 
 class TestFieldDefinition:
