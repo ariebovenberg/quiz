@@ -6,7 +6,7 @@ from functools import partial
 import snug
 from gentools import py2_compatible, return_
 
-from .build import Query, SelectionSet, gql
+from .build import Query, gql
 from .utils import JSON, ValueObject
 
 __all__ = [

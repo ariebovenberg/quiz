@@ -7,7 +7,7 @@ from quiz import SELECTOR as _
 from quiz.build import SelectionSet, gql
 from quiz.utils import FrozenDict as fdict
 
-from .example import Command, Dog, Hobby, Human, Query
+from .example import Command, Dog, Hobby, Human
 
 
 class TestUnion:
