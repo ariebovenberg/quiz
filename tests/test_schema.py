@@ -375,6 +375,8 @@ def test_end_to_end(raw_schema):
     class Issue(Node, Assignable, Closable, Comment, Updatable, \
 UpdatableComment, Labelable, Lockable, Reactable, RepositoryNode, \
 Subscribable, UniformResourceLocatable, quiz.types.Object)
+     |  Issue(**kwargs)
+     |
      |  An Issue is a place to discuss ideas, enhancements, tasks, and bugs \
 for a project.
      |
@@ -393,6 +395,7 @@ for a project.
      |      Subscribable
      |      UniformResourceLocatable
      |      quiz.types.Object
+     |      quiz.types.Namespace
      |      {}
      |
      |  Data descriptors defined here:
@@ -565,5 +568,22 @@ the subscribable entity.
      |
      |  __weakref__
      |      list of weak references to the object (if defined)
+     |
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from quiz.types.Namespace:
+     |
+     |  __eq__(self, other)
+     |      Return self==value.
+     |
+     |  __init__(__self__, **kwargs)
+     |      Initialize self.  See help(type(self)) for accurate signature.
+     |
+     |  __repr__(self)
+     |      Return repr(self).
+     |
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes inherited from quiz.types.Namespace:
+     |
+     |  __hash__ = None
     '''.format('{0.__module__}.{0.__name__}'.format(object))).strip()
     assert render_doc(schema.Issue).strip() == expect
