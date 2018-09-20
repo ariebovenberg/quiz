@@ -44,13 +44,17 @@ Quiz
 ====
 
 Capable GraphQL client.
-**Work in progress: many features are not available/stable/documented**.
 
 Features:
 
 * Sync/async compatible, pluggable HTTP clients.
 * Auto-generate typed and documented python APIs
 * ORM-like syntax to write GraphQL.
+
+Note that this project is in an early alpha stage.
+If you encounter a problem or have a feature request,
+be sure to open an issue in the `issue tracker <https://github.com/ariebovenberg/quiz/issues>`_.:
+
 
 Quickstart
 ----------

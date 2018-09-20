@@ -149,3 +149,13 @@ Custom scalars
 .. warning::
 
    Custom scalars are not yet implemented. They will be, soon.
+
+.. _selectionset:
+
+The ``SelectionSet`` API
+------------------------
+
+.. warning::
+
+   This section is work in progress.
+   See the :class:`~quiz.build.SelectionSet` API docs for now.

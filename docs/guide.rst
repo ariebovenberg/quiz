@@ -161,3 +161,9 @@ to evaluate the result.
 .. code-block:: python3
 
    >>> result = quiz.execute(query)
+
+.. seealso::
+
+   The :ref:`advanced topics <advanced>` section has more information about:
+
+   * :ref:`The selection API<selectionset>`

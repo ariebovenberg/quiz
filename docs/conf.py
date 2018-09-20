@@ -107,8 +107,6 @@ html_theme_options = {
 
     'note_bg': '#D5E8ED',
     'note_border': '#D5E8ED',
-    # 'seealso_bg': '#E6D5ED',
-    # 'seealso_border': '#E6D5ED',
     'seealso_bg': '#D5E8ED',
     'seealso_border': '#D5E8ED',
     'warn_bg': '#EDC7BE',
