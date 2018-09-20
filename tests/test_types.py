@@ -382,6 +382,58 @@ class TestLoad:
             )
         )
 
+    def test_nulls(self):
+        selection = (
+            _
+            .dog[
+                _
+                .name
+                ('knows_sit').knows_command(command=Command.SIT)
+                ('knows_roll').knows_command(command=Command.ROLL_OVER)
+                .is_housetrained
+                .owner[
+                    _
+                    .name
+                    .hobbies[
+                        _
+                        .name
+                        ('coolness').cool_factor
+                    ]
+                ]
+                .best_friend[
+                    _
+                    .name
+                ]
+                .age(on_date=u'2018-09-17T08:52:13.956621')
+                .birthday
+            ]
+        )
+        loaded = quiz.load(Query, selection, {
+            'dog': {
+                'name': 'Rufus',
+                'knows_sit': True,
+                'knows_roll': False,
+                'is_housetrained': True,
+                'owner': None,
+                'best_friend': None,
+                'age': 3,
+                'birthday': '2015-07-10T02:32:03.136623',
+            }
+        })
+        assert isinstance(loaded, Query)
+        assert loaded == Query(
+            dog=Dog(
+                name='Rufus',
+                knows_sit=True,
+                knows_roll=False,
+                is_housetrained=True,
+                owner=None,
+                best_friend=None,
+                age=3,
+                birthday='2015-07-10T02:32:03.136623',
+            )
+        )
+
 
 class TestFieldDefinition:
 
