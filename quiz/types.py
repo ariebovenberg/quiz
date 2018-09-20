@@ -30,6 +30,8 @@ __all__ = [
     'SelectionsNotSupported',
     'InvalidArgumentType',
     'MissingArgument',
+
+    'NoValueForField',
 ]
 
 
@@ -70,6 +72,10 @@ class Interface(HasFields):
     """metaclass for interfaces"""
 
 
+class NoValueForField(AttributeError):
+    """Indicates a value cannot be retrieved for the field"""
+
+
 class FieldDefinition(ValueObject):
     __fields__ = [
         ('name', str, 'Field name'),
@@ -84,11 +90,14 @@ class FieldDefinition(ValueObject):
     def __get__(self, obj, objtype=None):
         if obj is None:  # accessing on class
             return self
-        raise NotImplementedError()
+        try:
+            return obj.__dict__[self.name]
+        except KeyError:
+            raise NoValueForField()
 
     # descriptor interface is necessary to be displayed nicely in help()
     def __set__(self, obj, value):
-        raise NotImplementedError()
+        raise AttributeError("Can't set field value")
 
     # __doc__ allows descriptor to be displayed nicely in help()
     @property

@@ -264,6 +264,30 @@ class TestFieldDefinition:
             is_deprecated=False, deprecation_reason=None)
         assert '[str]' in schema.__doc__
 
+    def test_descriptor(self):
+
+        class Foo(object):
+            bla = quiz.FieldDefinition(
+                'bla', 'my description',
+                args=fdict.EMPTY,
+                type=quiz.List[int],
+                is_deprecated=False, deprecation_reason=None)
+
+        f = Foo()
+
+        with pytest.raises(quiz.NoValueForField) as exc:
+            f.bla
+
+        assert isinstance(exc.value, AttributeError)
+
+        f.__dict__.update({'bla': 9, 'qux': 'foo'})
+
+        assert f.bla == 9
+        assert f.qux == 'foo'
+
+        with pytest.raises(AttributeError, match='set'):
+            f.bla = 3
+
 
 class TestRaw:
 
