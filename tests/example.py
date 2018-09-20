@@ -24,7 +24,7 @@ class MyDateTime(q.GenericScalar):
 
 
 @six.add_metaclass(q.Interface)
-class Sentient(object):
+class Sentient(q.types.Namespace):
     name = mkfield('name', type=six.text_type)
 
 
@@ -82,6 +82,7 @@ class Dog(Sentient, q.Object):
             )
         })
     )
+    birthday = mkfield('birthday', type=MyDateTime)
 
 
 class Query(q.Object):

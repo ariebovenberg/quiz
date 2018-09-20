@@ -133,6 +133,7 @@ class TestInterfaceAsType:
                                       module='mymodule')
 
         assert isinstance(created, quiz.Interface)
+        assert issubclass(created, quiz.types.Namespace)
         assert created.__name__ == 'Foo'
         assert created.__doc__ == 'my interface!'
         assert created.__module__ == 'mymodule'
@@ -369,221 +370,23 @@ def test_end_to_end(raw_schema):
         'X509Certificate': str,
         'GitSSHRemote':    str,
     }, module='github')
-    expect = dedent('''
-    Python Library Documentation: class Issue
 
-    class Issue(Node, Assignable, Closable, Comment, Updatable, \
-UpdatableComment, Labelable, Lockable, Reactable, RepositoryNode, \
-Subscribable, UniformResourceLocatable, quiz.types.Object)
-     |  Issue(**kwargs)
-     |
-     |  An Issue is a place to discuss ideas, enhancements, tasks, and bugs \
-for a project.
-     |
-     |  Method resolution order:
-     |      Issue
-     |      Node
-     |      Assignable
-     |      Closable
-     |      Comment
-     |      Updatable
-     |      UpdatableComment
-     |      Labelable
-     |      Lockable
-     |      Reactable
-     |      RepositoryNode
-     |      Subscribable
-     |      UniformResourceLocatable
-     |      quiz.types.Object
-     |      quiz.types.Namespace
-     |      {}
-     |
-     |  Data descriptors defined here:
-     |
-     |  activeLockReason
-     |      : LockReason or None
-     |      Reason that the conversation was locked.
-     |
-     |  assignees
-     |      : UserConnection
-     |      A list of Users assigned to this object.
-     |
-     |  author
-     |      : Actor or None
-     |      The actor who authored the comment.
-     |
-     |  authorAssociation
-     |      : CommentAuthorAssociation
-     |      Author's association with the subject of the comment.
-     |
-     |  body
-     |      : str
-     |      Identifies the body of the issue.
-     |
-     |  bodyHTML
-     |      : str
-     |      Identifies the body of the issue rendered to HTML.
-     |
-     |  bodyText
-     |      : str
-     |      Identifies the body of the issue rendered to text.
-     |
-     |  closed
-     |      : bool
-     |      `true` if the object is closed (definition of closed may depend \
-on type)
-     |
-     |  closedAt
-     |      : datetime or None
-     |      Identifies the date and time when the object was closed.
-     |
-     |  comments
-     |      : IssueCommentConnection
-     |      A list of comments associated with the Issue.
-     |
-     |  createdAt
-     |      : datetime
-     |      Identifies the date and time when the object was created.
-     |
-     |  createdViaEmail
-     |      : bool
-     |      Check if this comment was created via an email reply.
-     |
-     |  databaseId
-     |      : int or None
-     |      Identifies the primary key from the database.
-     |
-     |  editor
-     |      : Actor or None
-     |      The actor who edited the comment.
-     |
-     |  id
-     |      : ID
-     |      None
-     |
-     |  labels
-     |      : LabelConnection or None
-     |      A list of labels associated with the object.
-     |
-     |  lastEditedAt
-     |      : datetime or None
-     |      The moment the editor made the last edit
-     |
-     |  locked
-     |      : bool
-     |      `true` if the object is locked
-     |
-     |  milestone
-     |      : Milestone or None
-     |      Identifies the milestone associated with the issue.
-     |
-     |  number
-     |      : int
-     |      Identifies the issue number.
-     |
-     |  participants
-     |      : UserConnection
-     |      A list of Users that are participating in the Issue conversation.
-     |
-     |  projectCards
-     |      : ProjectCardConnection
-     |      List of project cards associated with this issue.
-     |
-     |  publishedAt
-     |      : datetime or None
-     |      Identifies when the comment was published at.
-     |
-     |  reactionGroups
-     |      : [ReactionGroup] or None
-     |      A list of reactions grouped by content left on the subject.
-     |
-     |  reactions
-     |      : ReactionConnection
-     |      A list of Reactions left on the Issue.
-     |
-     |  repository
-     |      : Repository
-     |      The repository associated with this node.
-     |
-     |  resourcePath
-     |      : str
-     |      The HTTP path for this issue
-     |
-     |  state
-     |      : IssueState
-     |      Identifies the state of the issue.
-     |
-     |  timeline
-     |      : IssueTimelineConnection
-     |      A list of events, comments, commits, etc. associated with \
-the issue.
-     |
-     |  title
-     |      : str
-     |      Identifies the issue title.
-     |
-     |  updatedAt
-     |      : datetime
-     |      Identifies the date and time when the object was last updated.
-     |
-     |  url
-     |      : str
-     |      The HTTP URL for this issue
-     |
-     |  userContentEdits
-     |      : UserContentEditConnection or None
-     |      A list of edits to this content.
-     |
-     |  viewerCanReact
-     |      : bool
-     |      Can user react to this subject
-     |
-     |  viewerCanSubscribe
-     |      : bool
-     |      Check if the viewer is able to change their subscription status \
-for the repository.
-     |
-     |  viewerCanUpdate
-     |      : bool
-     |      Check if the current viewer can update this object.
-     |
-     |  viewerCannotUpdateReasons
-     |      : [CommentCannotUpdateReason]
-     |      Reasons why the current viewer can not update this comment.
-     |
-     |  viewerDidAuthor
-     |      : bool
-     |      Did the viewer author this comment.
-     |
-     |  viewerSubscription
-     |      : SubscriptionState
-     |      Identifies if the viewer is watching, not watching, or ignoring \
-the subscribable entity.
-     |
-     |  ----------------------------------------------------------------------
-     |  Data descriptors inherited from Node:
-     |
-     |  __dict__
-     |      dictionary for instance variables (if defined)
-     |
-     |  __weakref__
-     |      list of weak references to the object (if defined)
-     |
-     |  ----------------------------------------------------------------------
-     |  Methods inherited from quiz.types.Namespace:
-     |
-     |  __eq__(self, other)
-     |      Return self==value.
-     |
-     |  __init__(__self__, **kwargs)
-     |      Initialize self.  See help(type(self)) for accurate signature.
-     |
-     |  __repr__(self)
-     |      Return repr(self).
-     |
-     |  ----------------------------------------------------------------------
-     |  Data and other attributes inherited from quiz.types.Namespace:
-     |
-     |  __hash__ = None
-    '''.format('{0.__module__}.{0.__name__}'.format(object))).strip()
-    assert render_doc(schema.Issue).strip() == expect
+    doc = render_doc(schema.Issue)
+
+    assert '''\
+ |  viewerDidAuthor
+ |      : bool
+ |      Did the viewer author this comment.''' in doc
+    # assert render_doc(schema.Issue).strip() == expect
+    assert '''\
+ |  publishedAt
+ |      : datetime or None
+ |      Identifies when the comment was published at.''' in doc
+
+    assert '''\
+ |  viewerCannotUpdateReasons
+ |      : [CommentCannotUpdateReason]
+ |      Reasons why the current viewer can not update this comment.''' in doc
+
+    assert schema.Issue.__doc__ in doc
+    assert 'Labelable' in doc

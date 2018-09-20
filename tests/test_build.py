@@ -275,6 +275,24 @@ class TestQuery:
 
         assert quiz.gql(op) == str(op)
 
+    @pytest.mark.skip(reason='not yet implemented')
+    def test_iter(self):
+        selection_set = (
+            _
+            .dog[
+                _
+                .name
+                .is_housetrained(at_other_homes=True)
+                .bark_volume
+                .age
+            ]
+        )
+        query = quiz.Query(
+            Query,
+            selection_set
+        )
+        assert query
+
 
 class TestEscape:
 

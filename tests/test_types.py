@@ -7,7 +7,7 @@ from quiz import SELECTOR as _
 from quiz.build import SelectionSet, gql
 from quiz.utils import FrozenDict as fdict
 
-from .example import Command, Dog, Hobby, Human, Query
+from .example import Command, Dog, Hobby, Human, Query, Sentient
 from .helpers import AlwaysEquals, NeverEquals
 
 
@@ -87,7 +87,6 @@ class TestObject:
         d = Dog(name='rufus', foo=9)
         assert "name='rufus'" in repr(d)
         assert 'foo=9' in repr(d)
-        breakpoint()
         assert repr(d).startswith('Dog(')
 
     def test_equality(self):
@@ -301,6 +300,87 @@ class TestValidate:
     # TODO: check object types always have selection sets
 
     # TODO: list input type
+
+
+class TestLoad:
+
+    def test_empty(self):
+        selection = quiz.SelectionSet()
+        loaded = quiz.load(Query, selection, {})
+        assert isinstance(loaded, Query)
+
+    def test_full(self):
+        selection = (
+            _
+            .dog[
+                _
+                .name
+                ('knows_sit').knows_command(command=Command.SIT)
+                ('knows_roll').knows_command(command=Command.ROLL_OVER)
+                .is_housetrained
+                .owner[
+                    _
+                    .name
+                    .hobbies[
+                        _
+                        .name
+                        ('coolness').cool_factor
+                    ]
+                ]
+                .best_friend[
+                    _
+                    .name
+                ]
+                .age(on_date=u'2018-09-17T08:52:13.956621')
+                .birthday
+            ]
+        )
+        loaded = quiz.load(Query, selection, {
+            'dog': {
+                'name': 'Rufus',
+                'knows_sit': True,
+                'knows_roll': False,
+                'is_housetrained': True,
+                'owner': {
+                    'name': 'Fred',
+                    'hobbies': [
+                        {
+                            'name': 'stamp collecting',
+                            'coolness': 2,
+                        },
+                        {
+                            'name': 'snowboarding',
+                            'coolness': 8,
+                        }
+                    ]
+                },
+                'best_friend': {
+                    'name': 'Sally',
+                },
+                'age': 3,
+                'birthday': '2015-07-10T02:32:03.136623',
+            }
+        })
+        # TODO: include union types
+        assert isinstance(loaded, Query)
+        assert loaded == Query(
+            dog=Dog(
+                name='Rufus',
+                knows_sit=True,
+                knows_roll=False,
+                is_housetrained=True,
+                owner=Human(
+                    name='Fred',
+                    hobbies=[
+                        Hobby(name='stamp collecting', coolness=2),
+                        Hobby(name='snowboarding', coolness=8)
+                    ]
+                ),
+                best_friend=Sentient(name='Sally'),
+                age=3,
+                birthday='2015-07-10T02:32:03.136623',
+            )
+        )
 
 
 class TestFieldDefinition:

@@ -33,6 +33,7 @@ __all__ = [
     'MissingArgument',
 
     'NoValueForField',
+    'load',
 ]
 
 
@@ -53,9 +54,8 @@ class HasFields(type):
         return InlineFragment(self, validate(self, selection_set))
 
 
-@six.add_metaclass(HasFields)
-class Object(object):
-    """a graphQL object"""
+class Namespace(object):
+
     def __init__(__self__, **kwargs):
         __self__.__dict__.update(kwargs)
 
@@ -64,7 +64,7 @@ class Object(object):
             return self.__dict__ == other.__dict__
         return NotImplemented
 
-    if six.PY2:
+    if six.PY2:  # pragma: no cover
         def __ne__(self, other):
             equal = self.__eq__(other)
             return NotImplemented if equal is NotImplemented else not equal
@@ -74,6 +74,11 @@ class Object(object):
             getattr(self.__class__, '__qualname__' if six.PY3 else '__name__'),
             ', '.join(starmap('{}={!r}'.format, self.__dict__.items()))
         )
+
+
+@six.add_metaclass(HasFields)
+class Object(Namespace):
+    """a graphQL object"""
 
 
 # - InputObject: calling instantiates an instance,
@@ -257,6 +262,53 @@ def validate(cls, selection_set):
         except ValidationError as e:
             raise SelectionError(cls, field.name, e)
     return selection_set
+
+
+def _load(type_, field, value):
+    # type: (Type[T], JSON, Field) -> T
+    if issubclass(type_, Namespace):
+        assert isinstance(value, dict)
+        return load(type_, field.selection_set, value)
+    elif issubclass(type_, Nullable):
+        return None if value is None else _load(type_.__arg__, field, value)
+    elif issubclass(type_, List):
+        assert isinstance(value, list)
+        return [_load(type_.__arg__, field, v) for v in value]
+    elif issubclass(type_, _PRIMITIVE_TYPES):
+        assert isinstance(value, type_)
+        return value
+    elif issubclass(type_, GenericScalar):
+        assert isinstance(value, type_)
+        return value
+    else:
+        raise NotImplementedError()
+
+
+def load(cls, selection_set, response):
+    """Load a response for a selection set
+
+    Parameters
+    ----------
+    cls: Type[T]
+        The class to load against, an ``Object`` or ``Interface``
+    selection_set: SelectionSet
+        The selection set to validate
+    response: t.Dict[str, JSON]
+        The JSON response data
+
+    Returns
+    -------
+    T
+        An instance of ``cls``
+    """
+    return cls(**{
+        field.alias or field.name: _load(
+            getattr(cls, field.name).type,
+            field,
+            response[field.alias or field.name],
+        )
+        for field in selection_set
+    })
 
 
 class ValidationError(Exception):

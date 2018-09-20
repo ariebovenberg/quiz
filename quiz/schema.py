@@ -43,7 +43,7 @@ def interface_as_type(typ, module):
     # type: (Interface, str) -> type
     # we don't add the fields yet -- these types may not exist yet.
     return six.add_metaclass(types.Interface)(
-        type(str(typ.name), (),
+        type(str(typ.name), (types.Namespace, ),
              {"__doc__": typ.desc,
               '__raw__': typ,
               '__module__': module}))
