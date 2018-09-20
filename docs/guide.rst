@@ -28,10 +28,10 @@ Making a simple GraphQL query is easy. We'll use github's API v4 as an example.
 along with the target ``url`` and authentication credentials.
 Executing such a query returns the result as JSON.
 
-.. note::
+.. seealso::
 
-   See the :ref:`advanced topics <advanced>` section for information about:
-   
+   The :ref:`advanced topics <advanced>` section has more information about:
+
    * :ref:`Alternative authentication methods<custom-auth>`
    * :ref:`Using alternative HTTP clients <http-clients>`
      (e.g. ``requests``, ``aiohttp``)
@@ -89,10 +89,10 @@ These can be inspected with python's own :func:`help`:
 In the next section, we will see how this will allow us
 to easily write and validate queries.
 
-.. note::
+.. seealso::
 
-   See the :ref:`advanced topics <advanced>` section for information about:
-   
+   The :ref:`advanced topics <advanced>` section has more information about:
+
    * :ref:`Caching schemas<caching_schemas>`
    * :ref:`Defining custom scalars<caching_schemas>`
    * :ref:`Building modules with schemas <modules>`
@@ -100,7 +100,7 @@ to easily write and validate queries.
 
 Constructing GraphQL
 --------------------
-   
+
 As we've seen in the first section,
 we can execute queries in text form.
 Using the :class:`~quiz.schema.Schema`, however,
@@ -161,4 +161,3 @@ to evaluate the result.
 .. code-block:: python3
 
    >>> result = quiz.execute(query)
-

@@ -8,7 +8,7 @@ Advanced topics
 Custom authentication
 ---------------------
 
-The contents of :func:`~quiz.execution.execute`\'s ``auth`` parameter as passed to :func:`snug.execute <snug.query.execute>`.
+The contents of :func:`~quiz.execution.execute`\'s ``auth`` parameter as passed to :func:`snug.execute() <snug.query.execute>`.
 This means that aside from basic authentication, a callable is accepted.
 
 In most cases, you're just going to be adding a header, for which a convenient shortcut exists:
@@ -129,12 +129,12 @@ Such a schema can be loaded with :func:`Schema.from_path() <quiz.schema.Schema.f
 
 .. code-block:: python3
 
-   >>> schema = quiz.Schema.from_path(schema_path)
+   >>> schema = quiz.Schema.from_path('/path/to/schema.json')
 
 .. _modules:
 
-Modules
--------
+Creating python modules
+-----------------------
 
 .. warning::
 
