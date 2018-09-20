@@ -7,7 +7,8 @@ from quiz import SELECTOR as _
 from quiz.build import SelectionSet, gql
 from quiz.utils import FrozenDict as fdict
 
-from .example import Command, Dog, Hobby, Human
+from .example import Command, Dog, Hobby, Human, Query
+from .helpers import AlwaysEquals, NeverEquals
 
 
 class TestUnion:
@@ -81,6 +82,53 @@ class TestObject:
         def test_validates(self):
             with pytest.raises(quiz.SelectionError):
                 Dog[_.name.foo.knows_command(command=Command.SIT)]
+
+    def test_repr(self):
+        d = Dog(name='rufus', foo=9)
+        assert "name='rufus'" in repr(d)
+        assert 'foo=9' in repr(d)
+        breakpoint()
+        assert repr(d).startswith('Dog(')
+
+    def test_equality(self):
+        class Foo(quiz.Object):
+            pass
+
+        class Bar(quiz.Object):
+            pass
+
+        f1 = Foo(bla=9, qux=[])
+        assert f1 == Foo(bla=9, qux=[])
+        assert not f1 == Foo(bla=9, qux=[], t=.1)
+        assert not f1 == Bar(bla=9, qux=[])
+        assert f1 == AlwaysEquals()
+        assert not f1 == NeverEquals()
+
+        assert f1 != Foo(bla=9, qux=[], t=.1)
+        assert f1 != Bar(bla=9, qux=[])
+        assert not f1 != Foo(bla=9, qux=[])
+        assert f1 != NeverEquals()
+        assert not f1 != AlwaysEquals()
+
+    class TestInit:
+
+        def test_simple(self):
+            d = Dog(foo=4, name='Bello')
+            assert d.foo == 4
+            assert d.name == 'Bello'
+
+        def test_kwarg_named_self(self):
+            d = Dog(self='foo')
+            d.self == 'foo'
+
+        def test_positional_arg(self):
+            with pytest.raises(TypeError, match='argument'):
+                Dog('foo')
+
+        @pytest.mark.xfail(reason='not yet implemented')
+        def test_dunder(self):
+            with pytest.raises(TypeError, match='underscore'):
+                Dog(__foo__=9)
 
 
 class TestInlineFragment:
@@ -287,10 +335,3 @@ class TestFieldDefinition:
 
         with pytest.raises(AttributeError, match='set'):
             f.bla = 3
-
-
-class TestRaw:
-
-    def test_gql(self):
-        raw = quiz.Raw('my raw graphql')
-        assert gql(raw) == 'my raw graphql'

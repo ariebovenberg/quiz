@@ -1,6 +1,7 @@
 """Components for typed GraphQL interactions"""
 import enum
 import typing as t
+from itertools import starmap
 
 import six
 
@@ -55,6 +56,24 @@ class HasFields(type):
 @six.add_metaclass(HasFields)
 class Object(object):
     """a graphQL object"""
+    def __init__(__self__, **kwargs):
+        __self__.__dict__.update(kwargs)
+
+    def __eq__(self, other):
+        if type(self) == type(other):
+            return self.__dict__ == other.__dict__
+        return NotImplemented
+
+    if six.PY2:
+        def __ne__(self, other):
+            equal = self.__eq__(other)
+            return NotImplemented if equal is NotImplemented else not equal
+
+    def __repr__(self):
+        return '{}({})'.format(
+            getattr(self.__class__, '__qualname__' if six.PY3 else '__name__'),
+            ', '.join(starmap('{}={!r}'.format, self.__dict__.items()))
+        )
 
 
 # - InputObject: calling instantiates an instance,
@@ -217,7 +236,7 @@ def validate(cls, selection_set):
 
     Parameters
     ----------
-    cls: Type[Object, Interface]
+    cls: type
         The class to validate against, an ``Object`` or ``Interface``
     selection_set: SelectionSet
         The selection set to validate

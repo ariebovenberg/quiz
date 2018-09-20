@@ -12,7 +12,11 @@ mkfield = partial(q.FieldDefinition,
                   deprecation_reason=None)
 
 
-Command = q.Enum('Command', {'SIT': 'SIT', 'DOWN': 'DOWN'})
+Command = q.Enum('Command', {
+    'SIT': 'SIT',
+    'DOWN': 'DOWN',
+    'ROLL_OVER': 'ROLL_OVER',
+})
 
 
 class MyDateTime(q.GenericScalar):

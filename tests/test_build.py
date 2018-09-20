@@ -10,7 +10,7 @@ from quiz import SELECTOR as _
 from quiz import Field, InlineFragment, SelectionSet, gql
 from quiz.utils import FrozenDict as fdict
 
-from .example import Dog
+from .example import Dog, Query
 from .helpers import AlwaysEquals, NeverEquals
 
 
@@ -300,3 +300,10 @@ class TestEscape:
     @given(strategies.text())
     def test_fuzzing(self, value):
         assert isinstance(quiz.escape(value), six.text_type)
+
+
+class TestRaw:
+
+    def test_gql(self):
+        raw = quiz.Raw('my raw graphql')
+        assert gql(raw) == 'my raw graphql'
