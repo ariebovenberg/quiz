@@ -23,16 +23,17 @@ Executable = t.Union[str, Query]
 """Anything which can be executed as a GraphQL operation"""
 
 
+@py2_compatible
 def _exec(executable):
     # type: Executable -> Generator
     if isinstance(executable, str):
-        return (yield executable)
+        return_((yield executable))
     elif isinstance(executable, Query):
-        return load(
+        return_(load(
             executable.cls,
             executable.selections,
             (yield str(executable))
-        )
+        ))
     else:
         raise NotImplementedError('not executable: ' + repr(executable))
 

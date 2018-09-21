@@ -337,28 +337,28 @@ class TestLoad:
         )
         loaded = quiz.load(DogQuery, selection, {
             'dog': {
-                'name': 'Rufus',
+                'name': u'Rufus',
                 'knows_sit': True,
                 'knows_roll': False,
                 'is_housetrained': True,
                 'owner': {
-                    'name': 'Fred',
+                    'name': u'Fred',
                     'hobbies': [
                         {
-                            'name': 'stamp collecting',
+                            'name': u'stamp collecting',
                             'coolness': 2,
                         },
                         {
-                            'name': 'snowboarding',
+                            'name': u'snowboarding',
                             'coolness': 8,
                         }
                     ]
                 },
                 'best_friend': {
-                    'name': 'Sally',
+                    'name': u'Sally',
                 },
                 'age': 3,
-                'birthday': '2015-07-10T02:32:03.136623',
+                'birthday': u'2015-07-10T02:32:03.136623',
             }
         })
         # TODO: include union types
@@ -410,14 +410,14 @@ class TestLoad:
         )
         loaded = quiz.load(DogQuery, selection, {
             'dog': {
-                'name': 'Rufus',
+                'name': u'Rufus',
                 'knows_sit': True,
                 'knows_roll': False,
                 'is_housetrained': True,
                 'owner': None,
                 'best_friend': None,
                 'age': 3,
-                'birthday': '2015-07-10T02:32:03.136623',
+                'birthday': u'2015-07-10T02:32:03.136623',
             }
         })
         assert isinstance(loaded, DogQuery)
