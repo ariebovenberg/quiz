@@ -4,9 +4,10 @@ import typing as t
 from functools import partial
 
 import snug
-from gentools import py2_compatible, return_
+from gentools import irelay, py2_compatible, return_
 
-from .build import Query, gql
+from .build import Query
+from .types import load
 from .utils import JSON, ValueObject
 
 __all__ = [
@@ -22,19 +23,25 @@ Executable = t.Union[str, Query]
 """Anything which can be executed as a GraphQL operation"""
 
 
-def as_gql(obj):
-    # type: Executable -> str
-    if isinstance(obj, str):
-        return obj
-    assert isinstance(obj, Query)
-    return gql(obj)
+def _exec(executable):
+    # type: Executable -> Generator
+    if isinstance(executable, str):
+        return (yield executable)
+    elif isinstance(executable, Query):
+        return load(
+            executable.cls,
+            executable.selections,
+            (yield str(executable))
+        )
+    else:
+        raise NotImplementedError('not executable: ' + repr(executable))
 
 
 @py2_compatible
-def as_http(doc, url):
+def middleware(url, query_str):
     # type: (str, str) -> snug.Query[Dict[str, JSON]]
     response = yield snug.Request('POST', url, json.dumps({
-        'query': doc,
+        'query': query_str,
     }).encode('ascii'), headers={'Content-Type': 'application/json'})
     content = json.loads(response.content.decode())
     if 'errors' in content:
@@ -49,8 +56,7 @@ def execute(obj, url, **kwargs):
     ----------
     obj: :data:`~quiz.execution.Executable`
         The object to execute.
-        This may be raw GraphQL, a document, single operation,
-        or a query shorthand
+        This may be a raw string or a query
     url: str
         The URL of the target endpoint
     **kwargs
@@ -66,7 +72,8 @@ def execute(obj, url, **kwargs):
     ErrorResponse
         If errors are present in the response
     """
-    return snug.execute(as_http(as_gql(obj), url), **kwargs)
+    snug_query = irelay(_exec(obj), partial(middleware, url))
+    return snug.execute(snug_query, **kwargs)
 
 
 def executor(**kwargs):
@@ -106,8 +113,7 @@ def execute_async(obj, url, **kwargs):
     ----------
     obj: Executable
         The object to execute.
-        This may be raw GraphQL, a document, single operation,
-        or a query shorthand
+        This may be a raw string or a query
     url: str
         The URL of the target endpoint
     **kwargs
@@ -124,7 +130,8 @@ def execute_async(obj, url, **kwargs):
     ErrorResponse
         If errors are present in the response
     """
-    return snug.execute_async(as_http(as_gql(obj), url), **kwargs)
+    snug_query = irelay(_exec(obj), partial(middleware, url))
+    return snug.execute_async(snug_query, **kwargs)
 
 
 def async_executor(**kwargs):

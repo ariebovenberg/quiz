@@ -4,6 +4,8 @@ import re
 import typing as t
 from operator import attrgetter, methodcaller
 
+from gentools import py2_compatible
+
 from .compat import indent, singledispatch
 from .utils import FrozenDict, ValueObject, compose, init_last
 
@@ -349,7 +351,7 @@ class Query(ValueObject):
     # - directives (optional)
 
     def __gql__(self):
-        return 'query {}'.format(gql(self.selections))
+        return 'query ' + gql(self.selections)
 
     def __str__(self):
         return self.__gql__()

@@ -3,6 +3,7 @@ from textwrap import dedent
 
 import pytest
 import six
+from gentools import sendreturn
 from hypothesis import given, strategies
 
 import quiz
@@ -10,7 +11,7 @@ from quiz import SELECTOR as _
 from quiz import Field, InlineFragment, SelectionSet, gql
 from quiz.utils import FrozenDict as fdict
 
-from .example import Dog, Query
+from .example import Dog, DogQuery
 from .helpers import AlwaysEquals, NeverEquals
 
 
@@ -274,24 +275,6 @@ class TestQuery:
         ''').strip()
 
         assert quiz.gql(op) == str(op)
-
-    @pytest.mark.skip(reason='not yet implemented')
-    def test_iter(self):
-        selection_set = (
-            _
-            .dog[
-                _
-                .name
-                .is_housetrained(at_other_homes=True)
-                .bark_volume
-                .age
-            ]
-        )
-        query = quiz.Query(
-            Query,
-            selection_set
-        )
-        assert query
 
 
 class TestEscape:

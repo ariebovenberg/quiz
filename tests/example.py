@@ -85,7 +85,7 @@ class Dog(Sentient, q.Object):
     birthday = mkfield('birthday', type=MyDateTime)
 
 
-class Query(q.Object):
+class DogQuery(q.Object):
     dog = mkfield('dog', type=Dog)
 
 

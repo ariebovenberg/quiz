@@ -7,7 +7,7 @@ from quiz import SELECTOR as _
 from quiz.build import SelectionSet, gql
 from quiz.utils import FrozenDict as fdict
 
-from .example import Command, Dog, Hobby, Human, Query, Sentient
+from .example import Command, Dog, DogQuery, Hobby, Human, Sentient
 from .helpers import AlwaysEquals, NeverEquals
 
 
@@ -306,8 +306,8 @@ class TestLoad:
 
     def test_empty(self):
         selection = quiz.SelectionSet()
-        loaded = quiz.load(Query, selection, {})
-        assert isinstance(loaded, Query)
+        loaded = quiz.load(DogQuery, selection, {})
+        assert isinstance(loaded, DogQuery)
 
     def test_full(self):
         selection = (
@@ -335,7 +335,7 @@ class TestLoad:
                 .birthday
             ]
         )
-        loaded = quiz.load(Query, selection, {
+        loaded = quiz.load(DogQuery, selection, {
             'dog': {
                 'name': 'Rufus',
                 'knows_sit': True,
@@ -362,8 +362,8 @@ class TestLoad:
             }
         })
         # TODO: include union types
-        assert isinstance(loaded, Query)
-        assert loaded == Query(
+        assert isinstance(loaded, DogQuery)
+        assert loaded == DogQuery(
             dog=Dog(
                 name='Rufus',
                 knows_sit=True,
@@ -408,7 +408,7 @@ class TestLoad:
                 .birthday
             ]
         )
-        loaded = quiz.load(Query, selection, {
+        loaded = quiz.load(DogQuery, selection, {
             'dog': {
                 'name': 'Rufus',
                 'knows_sit': True,
@@ -420,8 +420,8 @@ class TestLoad:
                 'birthday': '2015-07-10T02:32:03.136623',
             }
         })
-        assert isinstance(loaded, Query)
-        assert loaded == Query(
+        assert isinstance(loaded, DogQuery)
+        assert loaded == DogQuery(
             dog=Dog(
                 name='Rufus',
                 knows_sit=True,

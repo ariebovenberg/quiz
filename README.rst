@@ -52,6 +52,7 @@ Features:
 * ORM-like syntax to write GraphQL.
 
 Note that this project is in an early alpha stage.
+Many features are not yet implemented (see the roadmap below).
 If you encounter a problem or have a feature request,
 be sure to open an issue in the `issue tracker <https://github.com/ariebovenberg/quiz/issues>`_.:
 
@@ -190,10 +191,11 @@ SelectionSet.__str__                                               done
 default scalars                                                    done
 validation error messages                                          done
 Up-to-date documentation                                           done
-Deserialization                                                    v0.0.3
+Deserialization                                                    done
 Examples working                                                   v0.0.3
 
 executing selection sets directly                                  v0.0.4
+introspection fields                                               v0.0.4
 proper scalars                                                     v0.0.4
 improve Object/Interface API                                       v0.0.4
 value object docs                                                  v0.0.4
