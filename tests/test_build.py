@@ -3,7 +3,6 @@ from textwrap import dedent
 
 import pytest
 import six
-from gentools import sendreturn
 from hypothesis import given, strategies
 
 import quiz
@@ -11,7 +10,7 @@ from quiz import SELECTOR as _
 from quiz import Field, InlineFragment, SelectionSet, gql
 from quiz.utils import FrozenDict as fdict
 
-from .example import Dog, DogQuery
+from .example import Dog
 from .helpers import AlwaysEquals, NeverEquals
 
 

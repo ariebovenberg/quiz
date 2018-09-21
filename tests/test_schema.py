@@ -4,7 +4,6 @@ import json
 import pydoc
 import sys
 import types
-from textwrap import dedent
 
 import pytest
 import six

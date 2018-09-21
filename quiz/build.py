@@ -4,8 +4,6 @@ import re
 import typing as t
 from operator import attrgetter, methodcaller
 
-from gentools import py2_compatible
-
 from .compat import indent, singledispatch
 from .utils import FrozenDict, ValueObject, compose, init_last
 
