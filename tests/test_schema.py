@@ -30,20 +30,7 @@ else:
 
 @pytest.fixture
 def schema(raw_schema):
-    return quiz.Schema.from_raw(raw_schema, module='mymodule',
-                                scalars=EXAMPLE_SCALARS)
-
-
-EXAMPLE_SCALARS = {
-    'URI':             str,
-    'DateTime':        datetime.datetime,
-    'HTML':            str,
-    'GitObjectID':     str,
-    'GitTimestamp':    str,
-    'Date':            datetime.date,
-    'X509Certificate': str,
-    'GitSSHRemote':    str,
-}
+    return quiz.Schema.from_raw(raw_schema, module='mymodule')
 
 
 class TestEnumAsType:
@@ -227,16 +214,11 @@ class TestSchemaFromRaw:
         with pytest.raises(Exception, match='DateTime'):
             quiz.Schema.from_raw(raw_schema, scalars={}, module='foo')
 
-    def test_no_scalars(self, raw_schema):
-        schema = quiz.Schema.from_raw(raw_schema, scalars=None, module='foo')
+    def test_defaults(self, raw_schema):
+        schema = quiz.Schema.from_raw(raw_schema, module='foo')
         assert isinstance(schema, quiz.Schema)
         assert issubclass(schema.DateTime, quiz.GenericScalar)
         assert schema.String is str
-
-    def test_valid(self, raw_schema):
-        schema = quiz.Schema.from_raw(raw_schema, scalars=EXAMPLE_SCALARS,
-                                      module='mymodule')
-        assert isinstance(schema, quiz.Schema)
         assert 'Query' in schema.classes
         assert schema.query_type == schema.classes['Query']
         assert schema.mutation_type == schema.classes['Mutation']
@@ -260,8 +242,7 @@ class TestSchema:
         mymodule = types.ModuleType('mymodule')
         mocker.patch.dict(sys.modules, {'mymodule': mymodule})
 
-        schema = quiz.Schema.from_raw(raw_schema, module='mymodule',
-                                      scalars=EXAMPLE_SCALARS)
+        schema = quiz.Schema.from_raw(raw_schema, module='mymodule')
 
         with pytest.raises(AttributeError, match='Repository'):
             mymodule.Repository
@@ -307,7 +288,6 @@ class TestSchemaFromUrl:
                 200,
                 json.dumps({'data': {'__schema': raw_schema}}).encode()))
         result = quiz.Schema.from_url('https://my.url/graphql',
-                                      scalars=EXAMPLE_SCALARS,
                                       client=client)
 
         assert client.request.url == 'https://my.url/graphql'
@@ -321,7 +301,6 @@ class TestSchemaFromUrl:
 
         with pytest.raises(quiz.ErrorResponse):
             quiz.Schema.from_url('https://my.url/graphql',
-                                 scalars=EXAMPLE_SCALARS,
                                  client=client)
 
 
@@ -346,40 +325,27 @@ class TestSchemaFromPath:
             def __fspath__(self):
                 return str(schema_file)
 
-        schema = quiz.Schema.from_path(MyPath(), module='mymodule',
-                                       scalars=EXAMPLE_SCALARS)
+        schema = quiz.Schema.from_path(MyPath(), module='mymodule')
         assert isinstance(schema, quiz.Schema)
 
     def test_does_not_exist(self, tmpdir):
         schema_file = tmpdir / 'does-not-exist.json'
 
         with pytest.raises(IOError):
-            quiz.Schema.from_path(str(schema_file), module='mymodule',
-                                  scalars=EXAMPLE_SCALARS)
+            quiz.Schema.from_path(str(schema_file), module='mymodule')
 
 
 def test_end_to_end(raw_schema):
-    schema = quiz.Schema.from_raw(raw_schema, scalars={
-        'URI':             str,
-        'DateTime':        datetime.datetime,
-        'HTML':            str,
-        'GitObjectID':     str,
-        'GitTimestamp':    str,
-        'Date':            datetime.date,
-        'X509Certificate': str,
-        'GitSSHRemote':    str,
-    }, module='github')
-
+    schema = quiz.Schema.from_raw(raw_schema, module='github')
     doc = render_doc(schema.Issue)
 
     assert '''\
  |  viewerDidAuthor
  |      : bool
  |      Did the viewer author this comment.''' in doc
-    # assert render_doc(schema.Issue).strip() == expect
     assert '''\
  |  publishedAt
- |      : datetime or None
+ |      : DateTime or None
  |      Identifies when the comment was published at.''' in doc
 
     assert '''\

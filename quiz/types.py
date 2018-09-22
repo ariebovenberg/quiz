@@ -378,17 +378,9 @@ class SelectionsNotSupported(ValueObject, ValidationError):
         return 'selections not supported on this object'
 
 
-class ID(str):
-    """Represents a unique identifier, often used to refetch an object
-    or as the key for a cache. The ID type is serialized in the same way
-    as a String; however, defining it as an ID signifies that it is not
-    intended to be human-readable"""
-
-
 BUILTIN_SCALARS = {
     "Boolean": bool,
     "String":  str,
-    "ID":      ID,
     "Float":   float,
     "Int":     int,
 }
