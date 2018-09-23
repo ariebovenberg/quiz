@@ -15,9 +15,10 @@
 import os
 import sys
 from collections import OrderedDict
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-import quiz  # noqa
+import quiz  # noqa isort:skip
 
 
 # -- Project information -----------------------------------------------------
@@ -66,9 +67,7 @@ master_doc = 'index'
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'manni'
-# pygments_style = 'sphinx'
-pygments_style = 'default'
+pygments_style = 'sphinx'
 
 # -- Options for HTML output ----------------------------------------------
 
@@ -88,7 +87,7 @@ html_theme_options = {
     'logo': 'quiz-logo.png',
     'logo_name': True,
     'logo_text_align': 'center',
-    "description": quiz.__doc__,
+    "description": quiz.__description__,
     'description_font_style': 'italic',
     "github_user": 'ariebovenberg',
     "github_repo": 'quiz',
@@ -104,11 +103,13 @@ html_theme_options = {
         ('Issue Tracker', 'http://github.com/ariebovenberg/quiz/issues'),
     ]),
 
-    'note_bg': '#DAF2ED',
-    'note_border': '#DAF2ED',
-    'warn_bg': '#FFE8E8',
-    'warn_border': '#FFE8E8',
-    'pre_bg': '#E8EDDF',
+    'note_bg': '#D5E8ED',
+    'note_border': '#D5E8ED',
+    'seealso_bg': '#D5E8ED',
+    'seealso_border': '#D5E8ED',
+    'warn_bg': '#EDC7BE',
+    'warn_border': '#EDC7BE',
+    'pre_bg': '#DCEDD5',
 }
 
 html_sidebars = {

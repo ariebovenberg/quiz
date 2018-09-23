@@ -7,14 +7,13 @@ import snug
 
 import quiz
 
+from .example import Dog, DogQuery
 from .helpers import MockClient
 
-_ = quiz.selector
+_ = quiz.SELECTOR
 
 py3 = pytest.mark.skipif(sys.version_info < (3, ), reason='python 3+ only')
 
-
-snug.send.register(MockClient, MockClient.send)
 
 if six.PY3:
     import asyncio
@@ -27,7 +26,7 @@ def token_auth(token):
 
 class TestExecute:
 
-    def test_success(self):
+    def test_simple_string(self):
         client = MockClient(snug.Response(200, b'{"data": {"foo": 4}}'))
         result = quiz.execute('my query', url='https://my.url/api',
                               client=client, auth=token_auth('foo'))
@@ -40,16 +39,37 @@ class TestExecute:
         assert request.headers == {'Authorization': 'token foo',
                                    'Content-Type': 'application/json'}
 
-    def test_non_string(self):
-        client = MockClient(snug.Response(200, b'{"data": {"foo": 4}}'))
-        result = quiz.execute(_.foo, url='https://my.url/api', client=client)
-        assert result == {'foo': 4}
+    def test_query(self):
+        query = quiz.Query(
+            DogQuery,
+            _
+            .dog[
+                _
+                .name
+                .bark_volume
+            ]
+        )
+        client = MockClient(snug.Response(200, json.dumps({
+            'data': {
+                'dog': {
+                    'name': 'Fred',
+                    'bark_volume': 8,
+                }
+            }
+        }).encode()))
+        result = quiz.execute(query, url='https://my.url/api', client=client)
+        assert result == DogQuery(
+            dog=Dog(
+                name='Fred',
+                bark_volume=8,
+            )
+        )
 
         request = client.request
         assert request.url == 'https://my.url/api'
         assert request.method == 'POST'
         assert json.loads(request.content.decode()) == {
-            'query': quiz.gql(_.foo)}
+            'query': quiz.gql(query)}
         assert request.headers == {'Content-Type': 'application/json'}
 
     def test_errors(self):
@@ -88,16 +108,39 @@ class TestExecuteAsync:
                                    'Content-Type': 'application/json'}
 
     def test_non_string(self, event_loop):
-        client = MockClient(snug.Response(200, b'{"data": {"foo": 4}}'))
-        future = quiz.execute_async(_.foo,
+        query = quiz.Query(
+            DogQuery,
+            _
+            .dog[
+                _
+                .name
+                .bark_volume
+            ]
+        )
+        client = MockClient(snug.Response(200, json.dumps({
+            'data': {
+                'dog': {
+                    'name': 'Fred',
+                    'bark_volume': 8,
+                }
+            }
+        }).encode()))
+
+        future = quiz.execute_async(query,
                                     url='https://my.url/api', client=client)
-        assert event_loop.run_until_complete(future) == {'foo': 4}
+        result = event_loop.run_until_complete(future)
+        assert result == DogQuery(
+            dog=Dog(
+                name='Fred',
+                bark_volume=8,
+            )
+        )
 
         request = client.request
         assert request.url == 'https://my.url/api'
         assert request.method == 'POST'
         assert json.loads(request.content.decode()) == {
-            'query': quiz.gql(_.foo)}
+            'query': quiz.gql(query)}
         assert request.headers == {'Content-Type': 'application/json'}
 
     def test_errors(self, event_loop):

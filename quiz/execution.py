@@ -1,36 +1,48 @@
-"""Components for executing GraphQL"""
+"""Components for executing GraphQL operations"""
 import json
 import typing as t
 from functools import partial
 
 import snug
-from gentools import py2_compatible, return_
+from gentools import irelay, py2_compatible, return_
 
-from .core import Document, ErrorResponse, Operation, SelectionSet, gql
+from .build import Query
+from .types import load
+from .utils import JSON, ValueObject
 
 __all__ = [
     'execute',
     'execute_async',
     'executor',
     'async_executor',
+    'ErrorResponse',
+    'Executable',
 ]
 
-Executable = t.Union[str, Document, Operation, SelectionSet]
-
-
-def as_gql(obj):
-    # type: Executable -> str
-    if isinstance(obj, str):
-        return obj
-    assert isinstance(obj, (Document, Operation, SelectionSet))
-    return gql(obj)
+Executable = t.Union[str, Query]
+"""Anything which can be executed as a GraphQL operation"""
 
 
 @py2_compatible
-def as_http(doc, url):
+def _exec(executable):
+    # type: Executable -> Generator
+    if isinstance(executable, str):
+        return_((yield executable))
+    elif isinstance(executable, Query):
+        return_(load(
+            executable.cls,
+            executable.selections,
+            (yield str(executable))
+        ))
+    else:
+        raise NotImplementedError('not executable: ' + repr(executable))
+
+
+@py2_compatible
+def middleware(url, query_str):
     # type: (str, str) -> snug.Query[Dict[str, JSON]]
     response = yield snug.Request('POST', url, json.dumps({
-        'query': doc,
+        'query': query_str,
     }).encode('ascii'), headers={'Content-Type': 'application/json'})
     content = json.loads(response.content.decode())
     if 'errors' in content:
@@ -43,10 +55,9 @@ def execute(obj, url, **kwargs):
 
     Parameters
     ----------
-    obj: str or Document or Operation or SelectionSet
+    obj: :data:`~quiz.execution.Executable`
         The object to execute.
-        This may be raw GraphQL, a document, single operation,
-        or a query shorthand
+        This may be a raw string or a query
     url: str
         The URL of the target endpoint
     **kwargs
@@ -62,7 +73,8 @@ def execute(obj, url, **kwargs):
     ErrorResponse
         If errors are present in the response
     """
-    return snug.execute(as_http(as_gql(obj), url), **kwargs)
+    snug_query = irelay(_exec(obj), partial(middleware, url))
+    return snug.execute(snug_query, **kwargs)
 
 
 def executor(**kwargs):
@@ -76,7 +88,7 @@ def executor(**kwargs):
 
     Returns
     -------
-    ~typing.Callable[[str or Document or Operation or SelectionSet], JSON]
+    ~typing.Callable[[Executable], JSON]
         A callable to execute GraphQL executables
 
     Example
@@ -100,10 +112,9 @@ def execute_async(obj, url, **kwargs):
 
     Parameters
     ----------
-    obj: str or Document or Operation or SelectionSet
+    obj: Executable
         The object to execute.
-        This may be raw GraphQL, a document, single operation,
-        or a query shorthand
+        This may be a raw string or a query
     url: str
         The URL of the target endpoint
     **kwargs
@@ -120,7 +131,8 @@ def execute_async(obj, url, **kwargs):
     ErrorResponse
         If errors are present in the response
     """
-    return snug.execute_async(as_http(as_gql(obj), url), **kwargs)
+    snug_query = irelay(_exec(obj), partial(middleware, url))
+    return snug.execute_async(snug_query, **kwargs)
 
 
 def async_executor(**kwargs):
@@ -134,8 +146,7 @@ def async_executor(**kwargs):
 
     Returns
     -------
-    ~typing.Callable[[str or Document or Operation or SelectionSet], \
-            ~typing.Awaitable[JSON]]
+    ~typing.Callable[[Executable], ~typing.Awaitable[JSON]]
         A callable to asynchronously execute GraphQL executables
 
     Example
@@ -149,6 +160,14 @@ def async_executor(**kwargs):
     ...       description
     ...     }
     ...   }
-    ... ''', client=aiohttp.ClientSession())
+    ... ''')
     """
     return partial(execute_async, **kwargs)
+
+
+class ErrorResponse(ValueObject, Exception):
+    __fields__ = [
+        ('data', t.Dict[str, JSON], 'Data returned in the response'),
+        ('errors', t.List[t.Dict[str, JSON]],
+         'Errors returned in the response'),
+    ]

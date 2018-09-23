@@ -7,8 +7,22 @@
 
    <br/>
 
+   <a href="https://travis-ci.org/ariebovenberg/quiz" class="reference external image-reference">
+         <img src="https://img.shields.io/travis/ariebovenberg/quiz.svg?style=flat-square" alt="Build status">
+   </a>
+
+   <a href="https://codecov.io/gh/ariebovenberg/quiz" class="reference external image-reference">
+         <img src="https://img.shields.io/codecov/c/github/ariebovenberg/quiz.svg?style=flat-square" alt="Test coverage">
+   </a>
+
+   <a href="http://quiz.readthedocs.io/" class="reference external image-reference">
+         <img src="https://img.shields.io/readthedocs/quiz.svg?style=flat-square" alt="Documentation status">
+   </a>
+
+   <br/>
+
    <a href="https://pypi.python.org/pypi/quiz" class="reference external image-reference">
-         <img src="https://img.shields.io/badge/status-Pre--Alpha-red.svg?style=flat-square" alt="Development status">
+         <img src="https://img.shields.io/badge/status-Alpha-orange.svg?style=flat-square" alt="Development status">
    </a>
 
    <a href="https://pypi.python.org/pypi/quiz" class="reference external image-reference">
@@ -23,20 +37,6 @@
          <img src="https://img.shields.io/pypi/pyversions/quiz.svg?style=flat-square" alt="Supported python versions">
    </a>
 
-   <br/>
-
-   <a href="https://travis-ci.org/ariebovenberg/quiz" class="reference external image-reference">
-         <img src="https://img.shields.io/travis/ariebovenberg/quiz.svg?style=flat-square" alt="Build status">
-   </a>
-
-   <a href="https://codecov.io/gh/ariebovenberg/quiz" class="reference external image-reference">
-         <img src="https://img.shields.io/codecov/c/github/ariebovenberg/quiz.svg?style=flat-square" alt="Test coverage">
-   </a>
-
-   <a href="http://quiz.readthedocs.io/" class="reference external image-reference">
-         <img src="https://img.shields.io/readthedocs/quiz.svg?style=flat-square" alt="Documentation status">
-   </a>
-
    </p>
 
 
@@ -44,13 +44,19 @@ Quiz
 ====
 
 Capable GraphQL client.
-**Work in progress: many features are not available/stable/documented**.
 
 Features:
 
 * Sync/async compatible, pluggable HTTP clients.
 * Auto-generate typed and documented python APIs
 * ORM-like syntax to write GraphQL.
+
+Note that this project is in an early alpha stage.
+Some features are not yet implemented (see the roadmap below),
+and it may be a little rough around the edges.
+If you encounter a problem or have a feature request,
+don't hesitate to open an issue in the `issue tracker <https://github.com/ariebovenberg/quiz/issues>`_.
+
 
 Quickstart
 ----------
@@ -62,24 +68,15 @@ A quick 'n dirty request to GitHub's new V4 API:
    >>> import quiz
    >>> query = '''
    ...   {
-   ...     my_repo: repository(owner: "octocat", name: "Hello-World") {
+   ...     repository(owner: "octocat", name: "Hello-World") {
    ...       createdAt
    ...       description
-   ...     }
-   ...     organization(login: "github") {
-   ...       location
-   ...       email
-   ...       avatarUrl(size: 50)
-   ...       project(number: 1) {
-   ...         name
-   ...         state
-   ...       }
    ...     }
    ...   }
    ... '''
    >>> quiz.execute(query, url='https://api.github.com/graphl',
    ...              auth=('me', 'password'))
-   {"my_repo": ..., "organization": ...}
+   {"repository": ...}
 
 
 Features
@@ -105,8 +102,8 @@ Features
 
    .. code-block:: python3
 
-      >>> schema = quiz.schema.get(url='https://api.github.com/graphql',
-      ...                          auth=('me', 'password'))
+      >>> schema = quiz.Schema.from_url('https://api.github.com/graphql',
+      ...                               auth=('me', 'password'))
       >>> help(schema.Repository)
       class Repository(Node, ProjectOwner, Subscribable, Starrable,
        UniformResourceLocatable, RepositoryInfo, quiz.types.Object)
@@ -127,52 +124,32 @@ Features
        ...
 
 
-3. **GraphQL ORM**. Write queries as you would with an ORM:
+3. **GraphQL "ORM"**. Write queries as you would with an ORM:
 
    .. code-block:: python3
 
       >>> _ = quiz.SELECTOR
-      >>> q = schema.query(
+      >>> query = schema.query[
       ...     _
-      ...     ('my_repo').repository(owner='octocat', name='Hello-World')[
+      ...     .repository(owner='octocat', name='Hello-World')[
       ...         _
       ...         .createdAt
       ...         .description
       ...     ]
-      ...     .organization(login='github')[
-      ...         _
-      ...         .location
-      ...         .email
-      ...         .avatarUrl(size=50)
-      ...         .project(number=1)[
-      ...             _
-      ...             .name
-      ...             .state
-      ...         ]
-      ...     ]
-      ... )
-      >>> print(q)
+      ... ]
+      >>> print(query)
       query {
-        my_repo: repository(owner: "octocat", name: "Hello-World") {
+        repository(owner: "octocat", name: "Hello-World") {
           createdAt
           description
         }
-        organization(login: "github") {
-          location
-          email
-          avatarUrl(size: 50)
-          project(number: 1) {
-            name
-            state
-          }
-        }
       }
 
-   Catch errors:
+4. **Offline query validation**. Use the schema to catch errors quickly:
 
    .. code-block:: python3
 
-      >>> schema.query(
+      >>> schema.query[
       ...     _
       ...     .repository(owner='octocat', name='Hello-World')[
       ...         _
@@ -180,12 +157,36 @@ Features
       ...         .foo
       ...         .description
       ...     ]
-      ... )
-      quiz.NoSuchField: "Repository" has no field "foo"
+      ... ]
+      SelectionError: SelectionError on "Query" at path "repository":
+
+          SelectionError: SelectionError on "Repository" at path "foo":
+
+              NoSuchField: field does not exist
+
+5. **Deserialization into python objects**. Responses are loaded into the schema's types.
+   Use ``.`` to access fields:
+
+   .. code-block:: python3
+
+      >>> r = quiz.execute(query, ...)
+      >>> r.repository.description
+      "My first repository on GitHub!"
+      >>> isinstance(r.repository, schema.Repository)
+      True
+
+   If you prefer the raw JSON response, you can always do:
+
+   .. code-block:: python3
+
+      >>> quiz.execute(str(query), ...)
+      {"repository": ...}
 
 
 Installation
 ------------
+
+``quiz`` and its dependencies are pure python. Installation is easy as:
 
 .. code-block:: bash
 
@@ -198,32 +199,28 @@ Preliminary roadmap
 ================================================================== ===========
 Feature                                                            status
 ================================================================== ===========
-Adaptable Execution                                                done
-Class autogeneration                                               done
-Python 2.7-3.7 support                                             done
-CI                                                                 done
-Test for help()                                                    done
-Text escaping                                                      done
-Floats                                                             done
 Examples working                                                   v0.0.3
-Up-to-date documentation                                           v0.0.3
-Improve schema API (consistent with docs)                          v0.0.3
-Aliases                                                            v0.0.3
-Mutations                                                          v0.0.4
+
 Input objects                                                      v0.0.4
+better query validation errors                                     v0.0.4
+more examples in docs                                              v0.0.4
+executing selection sets directly                                  v0.0.4
+introspection fields (i.e. ``__typename``)                         v0.0.4
+custom scalars                                                     v0.0.4
+improve Object/Interface API                                       v0.0.4
+value object docs                                                  v0.0.4
+Mutations & subscriptions                                          v0.0.4
 Inline fragments                                                   v0.0.4
 Fragments and fragment spreads                                     v0.0.5
-Custom primitives                                                  v0.0.5
+py2 unicode robustness                                             v0.0.5
 Mixing in raw GraphQL                                              planned
-Deserialization                                                    planned
 Module autogeneration                                              planned
 Type inference (e.g. enum values)                                  planned
 Variables                                                          planned
 Directives                                                         planned
 Integer 32-bit limit                                               planned
-Parsing raw GraphQL                                                idea
 Pickling                                                           idea
-converting variables from camelcase to snake-case                  idea
+converting names from camelcase to snake-case                      idea
 Autogenerate module .rst from schema                               idea
 Autogenerate module .py from schema                                idea
 Escaping python keywords                                           idea
@@ -231,4 +228,5 @@ Handling markdown in descriptions                                  idea
 Warnings when using deprecated fields                              idea
 Handle optional types descriptions in schema                       idea
 Returning multiple validation errors at the same time              idea
+Explicit ordering                                                  idea
 ================================================================== ===========

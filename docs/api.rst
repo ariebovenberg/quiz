@@ -4,15 +4,46 @@ API reference
 .. automodule:: quiz
 
 
-Execution
----------
+``quiz.build``
+--------------
+
+.. automodule:: quiz.build
+   :members:
+   :special-members:
+   :show-inheritance:
+   :exclude-members: __namedtuple_cls__, __hash__, __weakref__, __getnewargs__,
+      __new__, __repr__, __eq__, __ne__, __init__
+
+
+``quiz.types``
+--------------
+
+.. automodule:: quiz.types
+   :members:
+   :special-members:
+   :show-inheritance:
+   :exclude-members: __namedtuple_cls__, __hash__, __weakref__, __getnewargs__,
+      __new__, __repr__, __eq__, __ne__, __init__
+
+
+.. _execution-api:
+
+``quiz.execution``
+------------------
 
 .. automodule:: quiz.execution
    :members:
 
 
-Schema
-------
+``quiz.schema``
+---------------
 
 .. automodule:: quiz.schema
-   :members: get
+   :members:
+
+
+``quiz.utils``
+--------------
+
+.. automodule:: quiz.utils
+   :members:

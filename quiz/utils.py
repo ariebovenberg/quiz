@@ -1,6 +1,8 @@
+"""Common utilities and boilerplate"""
 import sys
 import typing as t
 from collections import namedtuple
+from functools import wraps
 from itertools import chain, starmap
 from operator import attrgetter
 
@@ -8,8 +10,17 @@ import six
 
 from .compat import PY2
 
+__all__ = [
+    'JSON',
+    'Empty',
+]
+
 T1 = t.TypeVar('T1')
 T2 = t.TypeVar('T2')
+
+
+JSON = t.Union[str, int, float, bool, None,
+               t.Dict[str, 'JSON'], t.List['JSON']]
 
 
 def identity(obj):
@@ -67,54 +78,55 @@ def init_last(items):
         raise Empty
 
 
-def replace(self, **kwargs):
-    new = type(self).__new__(type(self))
-    new._values = self._values._replace(**kwargs)
-    return new
+def _make_init_fn(ntuple):
+    @wraps(ntuple.__new__)
+    def __init__(self, *args, **kwargs):
+        self._values = ntuple(*args, **kwargs)
+    return __init__
 
 
-def __init__(self, *args, **kwargs):
-    self._values = self.__namedtuple_cls__(*args, **kwargs)
+class _ValueObjectMeta(type(t.Generic)):
+    """Metaclass for ``ValueObject``"""
+
+    # TODO: add parameters to __doc__
+    def __new__(self, name, bases, dct):
+        # skip the ``ValueObject`` class itself
+        if bases != (object, ):
+            fields = dct['__fields__']
+            fieldnames = [n for n, _, _ in dct['__fields__']]
+            assert 'replace' not in fieldnames
+            ntuple = namedtuple('_' + name, fieldnames)
+            ntuple.__new__.__defaults__ = dct.get('__defaults__', ())
+            dct.update({
+                '__namedtuple_cls__': ntuple,
+                '__slots__': '_values',
+                # For the signature to appear correctly in
+                # introspection and docs,
+                # we create the __init__ function for
+                # each ValueObject class individually
+                '__init__': _make_init_fn(ntuple)
+            })
+            dct.update(
+                (name, property(attrgetter('_values.' + name),
+                                doc=doc))
+                for name, _, doc in fields
+            )
+        return super(_ValueObjectMeta, self).__new__(self, name, bases, dct)
 
 
-def __eq__(self, other):
-    if isinstance(other, type(self)):
-        return self._values == other._values
-    return NotImplemented
-
-
-def __ne__(self, other):
-    equality = self.__eq__(other)
-    return NotImplemented if equality is NotImplemented else not equality
-
-
-def __repr__(self):
-    try:
-        return '{}({})'.format(
-            self.__class__.__name__ if PY2 else self.__class__.__qualname__,
-            ', '.join(starmap('{}={!r}'.format,
-                              zip(self._values._fields, self._values)))
-        )
-    except Exception:
-        return object.__repr__(self)
-
-
-def value_object(cls):
-    """Decorate a class to make it a namedtuple-like class.
-
-    Decorated classes get:
-    * a ``replace()`` method
-    * ``__repr__``, ``__eq__``, ``__ne__``, ``__init__``, ``__hash__``
+@six.add_metaclass(_ValueObjectMeta)
+class ValueObject(object):
+    """Base class for "value object"-like classes,
+    similar to frozen dataclasses in python 3.7+.
 
     Example
     -------
 
-    >>> @utils.value_object
-    ... class Foo(...):
+    >>> class Foo(ValueObject, ...):
     ...     __slots__ = '_values'  # optional
     ...     __fields__ = [
-    ...         ('foo', int),
-    ...         ('bla', str),
+    ...         ('foo', int, 'the foo'),
+    ...         ('bla', str, 'description for bla'),
     ...     ]
     ...
     >>> f = Foo(4, bla='foo')
@@ -122,24 +134,49 @@ def value_object(cls):
     Foo(foo=4, bla='foo')
 
     """
-    fieldnames = [n for n, _ in cls.__fields__]
-    assert 'replace' not in fieldnames
-    cls.__namedtuple_cls__ = namedtuple(
-        '_' + cls.__name__,
-        [n for n, _ in cls.__fields__],
-    )
-    cls.__namedtuple_cls__.__new__.__defaults__ = getattr(
-        cls, '__defaults__', ())
-    cls.__init__ = __init__
-    cls.__eq__ = __eq__
-    cls.__ne__ = __ne__
-    cls.__repr__ = __repr__
-    cls.__hash__ = property(attrgetter('_values.__hash__'))
-    cls.replace = replace
-    for name, _ in cls.__fields__:
-        setattr(cls, name, property(attrgetter('_values.' + name)))
+    __slots__ = ()
 
-    return cls
+    def replace(self, **kwargs):
+        """Create a new instance, with certain fields replaced with new values
+
+        Parameters
+        ----------
+        **kwargs
+            Updated field values
+
+        Example
+        -------
+        >>> my_object
+        MyObject(a=5, b="qux")
+        >>> my_object.replace(b="new!")
+        MyObject(a=5, b="new!")
+
+        """
+        new = type(self).__new__(type(self))
+        new._values = self._values._replace(**kwargs)
+        return new
+
+    def __eq__(self, other):
+        if type(self) is type(other):
+            return self._values == other._values
+        return NotImplemented
+
+    def __ne__(self, other):
+        if type(self) is type(other):
+            return self._values != other._values
+        return NotImplemented
+
+    def __repr__(self):
+        try:
+            return '{}({})'.format(
+                getattr(self.__class__, '__name__' if PY2 else '__qualname__'),
+                ', '.join(starmap('{}={!r}'.format,
+                                  zip(self._values._fields, self._values)))
+            )
+        except Exception:
+            return object.__repr__(self)
+
+    __hash__ = property(attrgetter('_values.__hash__'))
 
 
 class compose(object):

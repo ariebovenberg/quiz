@@ -1,5 +1,6 @@
 import os.path
-from setuptools import setup, find_packages
+
+from setuptools import find_packages, setup
 
 
 def read(fname):
@@ -15,7 +16,7 @@ exec(read('quiz/__about__.py'), metadata)
 setup(
     name='quiz',
     version=metadata['__version__'],
-    description=metadata['__doc__'],
+    description=metadata['__description__'],
     license=metadata['__license__'],
     long_description=read('README.rst') + '\n\n' + read('HISTORY.rst'),
     url='https://github.com/ariebovenberg/quiz',
@@ -24,7 +25,7 @@ setup(
     author_email='a.c.bovenberg@gmail.com',
 
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Apache Software License',
 
