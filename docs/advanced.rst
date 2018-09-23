@@ -158,4 +158,4 @@ The ``SelectionSet`` API
 .. warning::
 
    This section is work in progress.
-   See the :class:`~quiz.build.SelectionSet` API docs for now.
+   See the :class:`~quiz.build.SelectionSet` API docs and :ref:`examples` for now.

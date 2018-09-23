@@ -52,7 +52,7 @@ Features:
 * ORM-like syntax to write GraphQL.
 
 Note that this project is in an early alpha stage.
-Many features are not yet implemented (see the roadmap below),
+Some features are not yet implemented (see the roadmap below),
 and it may be a little rough around the edges.
 If you encounter a problem or have a feature request,
 don't hesitate to open an issue in the `issue tracker <https://github.com/ariebovenberg/quiz/issues>`_.
@@ -102,8 +102,8 @@ Features
 
    .. code-block:: python3
 
-      >>> schema = quiz.schema.get(url='https://api.github.com/graphql',
-      ...                          auth=('me', 'password'))
+      >>> schema = quiz.Schema.from_url('https://api.github.com/graphql',
+      ...                               auth=('me', 'password'))
       >>> help(schema.Repository)
       class Repository(Node, ProjectOwner, Subscribable, Starrable,
        UniformResourceLocatable, RepositoryInfo, quiz.types.Object)
@@ -145,7 +145,7 @@ Features
         }
       }
 
-   Catch errors quickly:
+4. **Offline query validation**. Use the schema to catch errors quickly:
 
    .. code-block:: python3
 
@@ -164,7 +164,8 @@ Features
 
               NoSuchField: field does not exist
 
-   Responses are serialized automatically to the schema's types.
+5. **Deserialization into python objects**. Responses are loaded into the schema's types.
+   Use ``.`` to access fields:
 
    .. code-block:: python3
 
@@ -174,9 +175,18 @@ Features
       >>> isinstance(r.repository, schema.Repository)
       True
 
+   If you prefer the raw JSON response, you can always do:
+
+   .. code-block:: python3
+
+      >>> quiz.execute(str(query), ...)
+      {"repository": ...}
+
 
 Installation
 ------------
+
+``quiz`` and its dependencies are pure python. Installation is easy as:
 
 .. code-block:: bash
 

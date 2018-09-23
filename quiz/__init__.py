@@ -1,9 +1,9 @@
 """Root of the quiz API.
 
-All items are available at root API level:
+The entire public API is available at root level:
 
    >>> import quiz
-   >>> quiz.Schema, quiz.execute, quiz.SelectionError
+   >>> quiz.Schema, quiz.execute, quiz.SelectionError, ...
 """
 from .__about__ import (__author__, __copyright__, __description__,  # noqa
                         __version__)
