@@ -199,8 +199,6 @@ Preliminary roadmap
 ================================================================== ===========
 Feature                                                            status
 ================================================================== ===========
-Examples working                                                   v0.0.3
-
 Input objects                                                      v0.0.4
 better query validation errors                                     v0.0.4
 more examples in docs                                              v0.0.4
