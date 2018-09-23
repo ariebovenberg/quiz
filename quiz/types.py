@@ -81,10 +81,8 @@ class Object(Namespace):
     """a graphQL object"""
 
 
-# - InputObject: calling instantiates an instance,
-#   results must be instances of the class
 class InputObject(object):
-    pass
+    """not yet implemented"""
 
 
 # separate class to distinguish graphql enums from normal Enums
@@ -110,7 +108,6 @@ class FieldDefinition(ValueObject):
         ('deprecation_reason', t.Optional[str], 'Reason for deprecation'),
     ]
 
-    # descriptor interface is necessary to be displayed nicely in help()
     def __get__(self, obj, objtype=None):
         if obj is None:  # accessing on class
             return self
@@ -119,7 +116,7 @@ class FieldDefinition(ValueObject):
         except KeyError:
             raise NoValueForField()
 
-    # descriptor interface is necessary to be displayed nicely in help()
+    # full descriptor interface is necessary to be displayed nicely in help()
     def __set__(self, obj, value):
         raise AttributeError("Can't set field value")
 
@@ -141,6 +138,8 @@ class ListMeta(type):
                 and all(isinstance(i, self.__arg__) for i in instance))
 
 
+# Q: why not typing.List?
+# A: it doesn't support __doc__, __name__, or isinstance()
 @six.add_metaclass(ListMeta)
 class List(object):
     __arg__ = object
@@ -157,6 +156,9 @@ class NullableMeta(type):
         return instance is None or isinstance(instance, self.__arg__)
 
 
+# Q: why not typing.Optional?
+# A: it is not easily distinguished from Union,
+#    and doesn't support __doc__, __name__, or isinstance()
 @six.add_metaclass(NullableMeta)
 class Nullable(object):
     __arg__ = object
@@ -264,8 +266,9 @@ def validate(cls, selection_set):
     return selection_set
 
 
+# TODO: refactor using singledispatch
 def _load(type_, field, value):
-    # type: (Type[T], JSON, Field) -> T
+    # type: (Type[T], Field, JSON) -> T
     if issubclass(type_, Namespace):
         assert isinstance(value, dict)
         return load(type_, field.selection_set, value)

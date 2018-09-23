@@ -52,9 +52,10 @@ Features:
 * ORM-like syntax to write GraphQL.
 
 Note that this project is in an early alpha stage.
-Many features are not yet implemented (see the roadmap below).
+Many features are not yet implemented (see the roadmap below),
+and it may be a little rough around the edges.
 If you encounter a problem or have a feature request,
-be sure to open an issue in the `issue tracker <https://github.com/ariebovenberg/quiz/issues>`_.:
+don't hesitate to open an issue in the `issue tracker <https://github.com/ariebovenberg/quiz/issues>`_.
 
 
 Quickstart
@@ -128,7 +129,7 @@ Features
    .. code-block:: python3
 
       >>> _ = quiz.SELECTOR
-      >>> q = schema.query[
+      >>> query = schema.query[
       ...     _
       ...     .repository(owner='octocat', name='Hello-World')[
       ...         _
@@ -136,7 +137,7 @@ Features
       ...         .description
       ...     ]
       ... ]
-      >>> print(q)
+      >>> print(query)
       query {
         repository(owner: "octocat", name: "Hello-World") {
           createdAt
@@ -144,11 +145,11 @@ Features
         }
       }
 
-   Catch errors:
+   Catch errors quickly:
 
    .. code-block:: python3
 
-      >>> schema.query(
+      >>> schema.query[
       ...     _
       ...     .repository(owner='octocat', name='Hello-World')[
       ...         _
@@ -156,12 +157,22 @@ Features
       ...         .foo
       ...         .description
       ...     ]
-      ... )
+      ... ]
       SelectionError: SelectionError on "Query" at path "repository":
 
           SelectionError: SelectionError on "Repository" at path "foo":
 
               NoSuchField: field does not exist
+
+   Responses are serialized automatically to the schema's types.
+
+   .. code-block:: python3
+
+      >>> r = quiz.execute(query, ...)
+      >>> r.repository.description
+      "My first repository on GitHub!"
+      >>> isinstance(r.repository, schema.Repository)
+      True
 
 
 Installation
@@ -178,29 +189,17 @@ Preliminary roadmap
 ================================================================== ===========
 Feature                                                            status
 ================================================================== ===========
-Adaptable Execution                                                done
-Class autogeneration                                               done
-Python 2.7-3.7 support                                             done
-CI                                                                 done
-Test for help()                                                    done
-Text escaping                                                      done
-Floats                                                             done
-Field aliases                                                      done
-Improve schema API (consistent with docs)                          done
-SelectionSet.__str__                                               done
-default scalars                                                    done
-validation error messages                                          done
-Up-to-date documentation                                           done
-Deserialization                                                    done
 Examples working                                                   v0.0.3
 
+Input objects                                                      v0.0.4
+better query validation errors                                     v0.0.4
+more examples in docs                                              v0.0.4
 executing selection sets directly                                  v0.0.4
-introspection fields                                               v0.0.4
-proper scalars                                                     v0.0.4
+introspection fields (i.e. ``__typename``)                         v0.0.4
+custom scalars                                                     v0.0.4
 improve Object/Interface API                                       v0.0.4
 value object docs                                                  v0.0.4
 Mutations & subscriptions                                          v0.0.4
-Input objects                                                      v0.0.4
 Inline fragments                                                   v0.0.4
 Fragments and fragment spreads                                     v0.0.5
 py2 unicode robustness                                             v0.0.5
@@ -211,7 +210,7 @@ Variables                                                          planned
 Directives                                                         planned
 Integer 32-bit limit                                               planned
 Pickling                                                           idea
-converting variables from camelcase to snake-case                  idea
+converting names from camelcase to snake-case                      idea
 Autogenerate module .rst from schema                               idea
 Autogenerate module .py from schema                                idea
 Escaping python keywords                                           idea

@@ -89,7 +89,7 @@ html_theme_options = {
     'logo': 'quiz-logo.png',
     'logo_name': True,
     'logo_text_align': 'center',
-    "description": quiz.__doc__,
+    "description": quiz.__description__,
     'description_font_style': 'italic',
     "github_user": 'ariebovenberg',
     "github_repo": 'quiz',
