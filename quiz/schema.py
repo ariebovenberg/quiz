@@ -267,8 +267,8 @@ class Schema(ValueObject):
             undefined_scalars = {
                 tp.name for tp in by_kind[Scalar]} - six.viewkeys(scalars_)
             if undefined_scalars:
-                raise Exception('Undefined scalars: {}'.format(', '.join(
-                    undefined_scalars)))
+                raise NotImplementedError('Undefined scalars: {}'.format(
+                    ', '.join(undefined_scalars)))
 
         interfaces = _namedict(map(
             partial(interface_as_type, module=module),
