@@ -1,14 +1,14 @@
 import enum
 import json
+import pickle
 import pydoc
 import sys
 import types
 
 import pytest
+import quiz
 import six
 import snug
-
-import quiz
 from quiz import SELECTOR as _
 from quiz import schema as s
 
@@ -249,6 +249,10 @@ class TestSchema:
         schema.populate_module()
 
         assert mymodule.Repository is schema.Repository
+
+        my_obj = mymodule.Repository(description='...', name='my repo')
+        loaded = pickle.loads(pickle.dumps(my_obj))
+        assert loaded == my_obj
 
     def test_query(self, schema):
 
