@@ -133,13 +133,38 @@ Such a schema can be loaded with :func:`Schema.from_path() <quiz.schema.Schema.f
 
 .. _modules:
 
-Creating python modules
------------------------
+Populating modules
+------------------
 
-.. warning::
+As we've seen, a :class:`~quiz.schema.Schema` contains generated classes.
+It can be useful to add these classes to a python module:
 
-   This section is work in progress.
-   See the :ref:`here <examples>` for practical examples.
+* It allows pickling of instances
+* A python module is the idiomatic format for exposing classes.
+
+In order to do this, provide the ``module`` argument
+in any of the schema constructors.
+Then, use :meth:`~quiz.schema.Schema.populate_module` to add the classes
+to this module.
+
+.. code-block:: python3
+
+   # my_module.py
+   import quiz
+   schema = quiz.Schema.from_url(..., module=__name__)
+   schema.populate_module()
+
+
+.. code-block:: python3
+
+   # my_code.py
+   import my_module
+   my_module.MyObject
+
+
+.. seealso::
+
+   The :ref:`examples <examples>` show some practical applications of this feature.
 
 .. _scalars:
 
@@ -152,8 +177,8 @@ Custom scalars
 
 .. _selectionset:
 
-The ``SelectionSet`` API
-------------------------
+The selection API
+-----------------
 
 .. warning::
 
