@@ -140,7 +140,8 @@ class Schema(ValueObject):
         ('mutation_type', t.Optional[type], 'The mutation type of the schema'),
         ('subscription_type', t.Optional[type],
          'The subscription type of the schema'),
-        ('module', str, 'The module to which the classes are namespaced'),
+        ('module', t.Optional[str],
+         'The module to which the classes are namespaced'),
         ('raw', RawSchema, 'The raw schema (JSON). To be deprecated'),
     ]
 
@@ -154,7 +155,20 @@ class Schema(ValueObject):
         return list(self.classes) + dir(super(Schema, self))
 
     def populate_module(self):
-        """populate the schema's module with the schema's classes"""
+        """Populate the schema's module with the schema's classes
+
+        Note
+        ----
+        The schema's ``module`` must be set (i.e. not ``None``)
+
+        Raises
+        ------
+        RuntimeError
+            If the schema module is not set
+        """
+        # TODO: this is a bit ugly
+        if self.module is None:
+            raise RuntimeError('schema.module is not set')
         module_obj = sys.modules[self.module]
         for name, cls in self.classes.items():
             setattr(module_obj, name, cls)
@@ -181,16 +195,16 @@ class Schema(ValueObject):
         return _QueryCreator(self)
 
     @classmethod
-    def from_path(cls, path, module='__main__', scalars=None):
+    def from_path(cls, path, module=None, scalars=None):
         """Create a :class:`Schema` from a JSON at a path
 
         Parameters
         ----------
         path: str or ~os.PathLike
             The path to the raw schema JSON file
-        module: str
+        module: ~typing.Optional[str], optional
             The name of the module to use when creating classes
-        scalars: ~typing.Optional[~typing.Mapping[str, type]]
+        scalars: ~typing.Optional[~typing.Mapping[str, type]], optional
             A mapping of scalars.
             If omitted or ``None``, generic scalars are used
 
@@ -224,7 +238,7 @@ class Schema(ValueObject):
             json.dump(self.raw, wfile)
 
     @classmethod
-    def from_raw(cls, raw_schema, module, scalars=None):
+    def from_raw(cls, raw_schema, module=None, scalars=None):
         """Create a :class:`Schema` from a raw JSON schema
 
         Parameters
@@ -232,9 +246,9 @@ class Schema(ValueObject):
         raw_schema: ~typing.List[~typing.Dict[str, JSON]]
             The raw GraphQL schema.
             I.e. the result of the :data:`INTROSPECTION_QUERY`
-        module: str
+        module: ~typing.Optional[str], optional
             The name of the module to use when creating classes
-        scalars: ~typing.Optional[~typing.Mapping[str, type]]
+        scalars: ~typing.Optional[~typing.Mapping[str, type]], optional
             A mapping of scalars.
             If omitted or ``None``, generic scalars are used
 
@@ -316,15 +330,14 @@ class Schema(ValueObject):
         )
 
     @classmethod
-    def from_url(cls, url, scalars=None, module='__main__',
-                 **kwargs):
+    def from_url(cls, url, scalars=None, module=None, **kwargs):
         """Build a GraphQL schema by introspecting an API
 
         Parameters
         ----------
         url: str
             URL of the target GraphQL API
-        scalars: ~typing.Optional[~typing.Mapping[str, type]]
+        scalars: ~typing.Optional[~typing.Mapping[str, type]], optional
             A mapping of scalars.
             If omitted or ``None``, generic scalars are used
 
@@ -332,7 +345,7 @@ class Schema(ValueObject):
             -------
             Scalars are not yet implemented
 
-        module: str
+        module: ~typing.Optional[str], optional
             The module name to set on the generated classes
         **kwargs
             ``auth`` or ``client``, passed to :func:`~quiz.execution.execute`.
