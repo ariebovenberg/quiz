@@ -373,9 +373,6 @@ INTROSPECTION_QUERY = """
       args {
         ...InputValue
       }
-      onOperation
-      onFragment
-      onField
     }
   }
 }
