@@ -1,14 +1,14 @@
 import enum
 import json
+import pickle
 import pydoc
 import sys
 import types
 
 import pytest
+import quiz
 import six
 import snug
-
-import quiz
 from quiz import SELECTOR as _
 from quiz import schema as s
 
@@ -250,6 +250,17 @@ class TestSchema:
 
         assert mymodule.Repository is schema.Repository
 
+        my_obj = mymodule.Repository(description='...', name='my repo')
+        loaded = pickle.loads(pickle.dumps(my_obj))
+        assert loaded == my_obj
+
+    def test_populate_module_no_module(self, raw_schema):
+        schema = quiz.Schema.from_raw(raw_schema)
+        assert schema.module is None
+
+        with pytest.raises(RuntimeError, match='module'):
+            schema.populate_module()
+
     def test_query(self, schema):
 
         query = schema.query[
@@ -311,7 +322,7 @@ class TestSchemaFromPath:
             json.dump(raw_schema, wfile)
 
         schema = quiz.Schema.from_path(schema_file)
-        assert schema.module == '__main__'
+        assert schema.module is None
 
     def test_success(self, raw_schema, tmpdir):
 

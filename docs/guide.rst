@@ -126,7 +126,7 @@ We can easily convert this to a GraphQL string:
 
 .. code-block:: python3
 
-   >>> print(query)
+   >>> str(query)
    query {
      repository(owner: "octocat", name: "Hello-World") {
        createdAt
@@ -161,6 +161,18 @@ to evaluate the result.
 .. code-block:: python3
 
    >>> result = quiz.execute(query)
+
+
+Because we've used the schema, the response is automatically loaded into
+the correct data types: we can use ``.`` to access fields on the results
+
+
+.. code-block:: python3
+
+  >>> result.repository.description
+  "My first repository on GitHub!"
+  >>> isinstance(result.repository, schema.Repository)
+  True
 
 .. seealso::
 
