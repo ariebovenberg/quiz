@@ -57,7 +57,7 @@ class TestGenericScalar:
             """foo"""
 
         with pytest.raises(NotImplementedError):
-            MyScalar.__serialized__()
+            MyScalar().__serialized__()
         MyScalar.add_serialization(lambda self: self.value.upper())
 
         assert isinstance(4, MyScalar)
