@@ -166,9 +166,10 @@ def test_selection_error_str():
         NoSuchArgument: argument "bla" does not exist''')
 
 
-def test_no_such_argument_str():
-    exc = quiz.NoSuchArgument('foo')
-    assert str(exc) == 'argument "foo" does not exist'
+@pytest.mark.parametrize('name', ['foo', 'bar'])
+def test_no_such_argument_str(name):
+    exc = quiz.NoSuchArgument(name)
+    assert str(exc) == 'argument "{}" does not exist'.format(name)
 
 
 def test_no_such_field_str():
@@ -176,15 +177,17 @@ def test_no_such_field_str():
     assert str(exc) == 'field does not exist'
 
 
-def test_invalid_arg_type_str():
-    exc = quiz.InvalidArgumentType('blabla', 5)
+@pytest.mark.parametrize('name', ['foo', 'bar'])
+def test_invalid_arg_type_str(name):
+    exc = quiz.InvalidArgumentType(name, 5)
     assert str(exc) == (
-        'invalid value "5" of type {} for argument "blabla"'.format(int))
+        'invalid value "5" of type {} for argument "{}"'.format(int, name))
 
 
-def test_missing_argument_str():
-    exc = quiz.MissingArgument('bla')
-    assert str(exc) == 'argument "bla" missing (required)'
+@pytest.mark.parametrize('name', ['foo', 'bar'])
+def test_missing_argument_str(name):
+    exc = quiz.MissingArgument(name)
+    assert str(exc) == 'argument "{}" missing (required)'.format(name)
 
 
 def test_selections_not_supported_str():
