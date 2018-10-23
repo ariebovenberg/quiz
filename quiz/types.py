@@ -187,7 +187,7 @@ class GenericScalarMeta(type):
 @six.add_metaclass(GenericScalarMeta)
 class GenericScalar(object):
 
-    def __init__(self, value):
+    def __init__(self, value=None):
         self.value = value
 
     def __serialized__(self):
