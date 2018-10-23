@@ -177,9 +177,9 @@ def test_no_such_field_str():
 
 
 def test_invalid_arg_type_str():
-    exc = quiz.InvalidArgumentType('foo', 5)
+    exc = quiz.InvalidArgumentType('blabla', 5)
     assert str(exc) == (
-        'invalid value "5" of type {} for argument "foo"'.format(int))
+        'invalid value "5" of type {} for argument "blabla"'.format(int))
 
 
 def test_missing_argument_str():
