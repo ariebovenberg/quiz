@@ -358,7 +358,7 @@ class InvalidArgumentType(ValueObject, ValidationError):
     ]
 
     def __str__(self):
-        return 'invalid value "{}" of type {} for argument "foo"'.format(
+        return 'invalid value "{}" of type {} for argument "{}"'.format(
             self.value,
             type(self.value),
             self.name,

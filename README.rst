@@ -199,18 +199,18 @@ Preliminary roadmap
 ================================================================== ===========
 Feature                                                            status
 ================================================================== ===========
-Input objects                                                      v0.0.4
-better query validation errors                                     v0.0.4
-more examples in docs                                              v0.0.4
-executing selection sets directly                                  v0.0.4
-introspection fields (i.e. ``__typename``)                         v0.0.4
-custom scalars                                                     v0.0.4
-improve Object/Interface API                                       v0.0.4
-value object docs                                                  v0.0.4
-Mutations & subscriptions                                          v0.0.4
-Inline fragments                                                   v0.0.4
-Fragments and fragment spreads                                     v0.0.5
-py2 unicode robustness                                             v0.0.5
+Input objects                                                      v0.0.5
+better query validation errors                                     v0.0.5
+more examples in docs                                              v0.0.5
+executing selection sets directly                                  v0.0.5
+introspection fields (i.e. ``__typename``)                         v0.0.5
+custom scalars                                                     v0.0.5
+improve Object/Interface API                                       v0.0.5
+value object docs                                                  v0.0.5
+Mutations & subscriptions                                          v0.0.5
+Inline fragments                                                   v0.0.5
+Fragments and fragment spreads                                     v0.0.6
+py2 unicode robustness                                             v0.0.6
 Mixing in raw GraphQL                                              planned
 Module autogeneration                                              planned
 Type inference (e.g. enum values)                                  planned
