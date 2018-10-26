@@ -15,8 +15,11 @@ __all__ = [
     'execute_async',
     'executor',
     'async_executor',
-    'ErrorResponse',
+
     'Executable',
+
+    'ErrorResponse',
+    'HTTPError',
 ]
 
 Executable = t.Union[str, Query]
@@ -41,9 +44,14 @@ def _exec(executable):
 @py2_compatible
 def middleware(url, query_str):
     # type: (str, str) -> snug.Query[Dict[str, JSON]]
-    response = yield snug.Request('POST', url, json.dumps({
-        'query': query_str,
-    }).encode('ascii'), headers={'Content-Type': 'application/json'})
+    response = yield snug.Request(
+        'POST',
+        url,
+        content=json.dumps({'query': query_str}).encode('ascii'),
+        headers={'Content-Type': 'application/json'}
+    )
+    if response.status_code >= 400:
+        raise HTTPError(response)
     content = json.loads(response.content.decode())
     if 'errors' in content:
         raise ErrorResponse(**content)
@@ -170,4 +178,10 @@ class ErrorResponse(ValueObject, Exception):
         ('data', t.Dict[str, JSON], 'Data returned in the response'),
         ('errors', t.List[t.Dict[str, JSON]],
          'Errors returned in the response'),
+    ]
+
+
+class HTTPError(ValueObject, Exception):
+    __fields__ = [
+        ('response', snug.Response, 'The response object'),
     ]
