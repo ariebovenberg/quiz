@@ -80,6 +80,8 @@ def execute(obj, url, **kwargs):
     ------
     ErrorResponse
         If errors are present in the response
+    HTTPError
+        If the response has a non 2xx response code
     """
     snug_query = irelay(_exec(obj), partial(middleware, url))
     return snug.execute(snug_query, **kwargs)
@@ -138,6 +140,8 @@ def execute_async(obj, url, **kwargs):
     ------
     ErrorResponse
         If errors are present in the response
+    HTTPError
+        If the response has a non 2xx response code
     """
     snug_query = irelay(_exec(obj), partial(middleware, url))
     return snug.execute_async(snug_query, **kwargs)
