@@ -28,5 +28,5 @@ def pytest_collection_modifyitems(config, items):
         return
     skip_live = pytest.mark.skip(reason="need --live option to run")
     for item in items:
-        if "slow" in item.keywords:
+        if "live" in item.keywords:
             item.add_marker(skip_live)
