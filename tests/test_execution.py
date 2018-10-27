@@ -170,3 +170,9 @@ def test_async_executor():
     executor = quiz.async_executor(url='https://my.url/graphql')
     assert executor.func is quiz.execute_async
     assert executor.keywords['url'] == 'https://my.url/graphql'
+
+
+def test_http_error():
+    err = quiz.HTTPError(snug.Response(404, content=b'not found!\x00'))
+    assert 'not found!\\x00' in str(err)
+    assert '404' in str(err)

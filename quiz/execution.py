@@ -189,3 +189,7 @@ class HTTPError(ValueObject, Exception):
     __fields__ = [
         ('response', snug.Response, 'The response object'),
     ]
+
+    def __str__(self):
+        return ('Response with status {0.status_code}, content: {0.content!r}'
+                .format(self.response))
