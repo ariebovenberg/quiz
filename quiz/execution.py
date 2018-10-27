@@ -52,7 +52,7 @@ def middleware(url, query_str):
     )
     if response.status_code >= 400:
         raise HTTPError(response)
-    content = json.loads(response.content.decode())
+    content = json.loads(response.content.decode('utf-8'))
     if 'errors' in content:
         raise ErrorResponse(**content)
     return_(content['data'])
