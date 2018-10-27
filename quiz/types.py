@@ -186,7 +186,16 @@ class GenericScalarMeta(type):
 
 @six.add_metaclass(GenericScalarMeta)
 class GenericScalar(object):
-    pass
+
+    def __init__(self, value=None):
+        self.value = value
+
+    def __serialized__(self):
+        raise NotImplementedError()
+
+    @classmethod
+    def add_serialization(cls, serialize_func):
+        cls.__serialized__ = serialize_func
 
 
 def _unwrap_list_or_nullable(type_):

@@ -390,6 +390,8 @@ def escape(txt):
 @singledispatch
 def argument_as_gql(obj):
     # type: object -> str
+    if hasattr(obj, '__serialized__'):
+        return obj.__serialized__()
     raise TypeError("cannot serialize to GraphQL: {}".format(type(obj)))
 
 
