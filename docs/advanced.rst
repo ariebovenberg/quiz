@@ -171,9 +171,46 @@ to this module.
 Custom scalars
 --------------
 
-.. warning::
+GraphQL APIs often use custom scalars to represent data such as dates, URLs, or IDs.
+By default, custom scalars in the schema
+are defined as :class:`~quiz.types.GenericScalar`,
+which accept any of the base scalar types
+(``str``, ``bool``, ``float``, ``int``, ``ID``).
 
-   Custom scalars are not yet implemented. They will be, soon.
+It is recommended to define scalars explicitly
+with a custom :class:`~quiz.types.Scalar` subclass.
+This class can specify the :meth:`~quiz.types.Scalar.__gql_dump__` method
+and/or the :meth:`~quiz.types.Scalar.__gql_load__` classmethod.
+
+Below shows an example of a ``URI`` scalar for GitHub's GraphQL API:
+
+.. code-block:: python3
+
+   import urllib
+
+   class URI(quiz.Scalar):
+       """A URI string"""
+       def __init__(self, url: str):
+           self.components = urllib.parse.urlparse(url)
+
+       # needed if converting TO GraphQL
+       def __gql_dump__(self) -> str:
+           return self.components.geturl()
+
+       # needed if loading FROM GraphQL responses
+       @classmethod
+       def __gql_load__(cls, data: str) -> URI:
+           return cls(data)
+
+
+To make sure this scalar is used in the schema,
+pass it to the schema constructor:
+
+.. code-block:: python3
+
+   # this also works with Schema.from_url()
+   schema = quiz.Schema.from_path(..., scalars=[URI, MyOtherScalar, ...])
+
 
 .. _selectionset:
 
