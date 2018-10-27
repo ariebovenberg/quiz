@@ -182,11 +182,12 @@ class Union(object):
 class Scalar(object):
     """Base class for scalars"""
 
-    def __gql_serialize__(self):
+    def __gql_dump__(self):
         """Serialize the scalar to a GraphQL primitive value"""
         raise NotImplementedError()
 
-    def __gql_deserialize__(self, data):
+    @classmethod
+    def __gql_load__(cls, data):
         """Load a scalar instance from GraphQL"""
         raise NotImplementedError()
 

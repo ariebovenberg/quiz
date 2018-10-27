@@ -264,7 +264,7 @@ class TestArgumentAsGql:
             def __init__(self, value):
                 self.value = value
 
-            def __gql_serialize__(self):
+            def __gql_dump__(self):
                 return self.value.upper()
 
         assert quiz.argument_as_gql(MyCustomScalar('Hello')) == 'HELLO'
