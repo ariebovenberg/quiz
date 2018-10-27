@@ -313,6 +313,12 @@ class TestSchemaFromUrl:
             quiz.Schema.from_url('https://my.url/graphql',
                                  client=client)
 
+    @pytest.mark.live
+    def test_live(self):
+        schema = quiz.Schema.from_url(
+            'https://api.graphcms.com/simple/v1/swapi')
+        assert schema.Starship
+
 
 class TestSchemaFromPath:
 
