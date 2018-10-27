@@ -258,10 +258,15 @@ class TestArgumentAsGql:
         assert quiz.argument_as_gql(MyEnum.BLA) == 'QUX'
 
     def test_custom_scalar(self):
-        class MyCustomScalar(quiz.GenericScalar):
-            """a custom scalar string"""
 
-        MyCustomScalar.add_serialization(lambda self: self.value.upper())
+        class MyCustomScalar(quiz.Scalar):
+            """a custom scalar string"""
+            def __init__(self, value):
+                self.value = value
+
+            def __gql_serialize__(self):
+                return self.value.upper()
+
         assert quiz.argument_as_gql(MyCustomScalar('Hello')) == 'HELLO'
 
 

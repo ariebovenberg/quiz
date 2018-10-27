@@ -13,6 +13,7 @@ __all__ = [
     'Enum',
     'Union',
     'GenericScalar',
+    'Scalar',
     'List',
     'Interface',
     'Object',
@@ -178,6 +179,18 @@ class Union(object):
     __args__ = ()
 
 
+class Scalar(object):
+    """Base class for scalars"""
+
+    def __gql_serialize__(self):
+        """Serialize the scalar to a GraphQL primitive value"""
+        raise NotImplementedError()
+
+    def __gql_deserialize__(self, data):
+        """Load a scalar instance from GraphQL"""
+        raise NotImplementedError()
+
+
 class GenericScalarMeta(type):
 
     def __instancecheck__(self, instance):
@@ -185,17 +198,8 @@ class GenericScalarMeta(type):
 
 
 @six.add_metaclass(GenericScalarMeta)
-class GenericScalar(object):
-
-    def __init__(self, value=None):
-        self.value = value
-
-    def __serialized__(self):
-        raise NotImplementedError()
-
-    @classmethod
-    def add_serialization(cls, serialize_func):
-        cls.__serialized__ = serialize_func
+class GenericScalar(Scalar):
+    """A generic scalar, accepting any primitive type"""
 
 
 def _unwrap_list_or_nullable(type_):

@@ -390,9 +390,13 @@ def escape(txt):
 @singledispatch
 def argument_as_gql(obj):
     # type: object -> str
-    if hasattr(obj, '__serialized__'):
-        return obj.__serialized__()
-    raise TypeError("cannot serialize to GraphQL: {}".format(type(obj)))
+    try:
+        # consistent with other dunder methods, we look it up on the class
+        serializer = type(obj).__gql_serialize__
+    except AttributeError:
+        raise TypeError("Cannot serialize to GraphQL: {}".format(type(obj)))
+    else:
+        return serializer(obj)
 
 
 argument_as_gql.register(str, compose('"{}"'.format, escape))
