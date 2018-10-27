@@ -380,13 +380,6 @@ INTROSPECTION_QUERY = """
     types {
       ...FullType
     }
-    directives {
-      name
-      description
-      args {
-        ...InputValue
-      }
-    }
   }
 }
 
