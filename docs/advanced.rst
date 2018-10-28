@@ -171,18 +171,18 @@ to this module.
 Custom scalars
 --------------
 
-GraphQL APIs often use custom scalars to represent data such as dates, URLs, or IDs.
+GraphQL APIs often use custom scalars to represent data such as dates or URLs.
 By default, custom scalars in the schema
 are defined as :class:`~quiz.types.GenericScalar`,
-which accept any of the base scalar types
+which accepts any of the base scalar types
 (``str``, ``bool``, ``float``, ``int``, ``ID``).
 
-It is recommended to define scalars explicitly
-with a custom :class:`~quiz.types.Scalar` subclass.
-This class can specify the :meth:`~quiz.types.Scalar.__gql_dump__` method
+It is recommended to define scalars explicitly.
+This can be done by implementing a :class:`~quiz.types.Scalar` subclass
+and specifying the :meth:`~quiz.types.Scalar.__gql_dump__` method
 and/or the :meth:`~quiz.types.Scalar.__gql_load__` classmethod.
 
-Below shows an example of a ``URI`` scalar for GitHub's GraphQL API:
+Below shows an example of a ``URI`` scalar for GitHub's v4 API:
 
 .. code-block:: python3
 

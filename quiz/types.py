@@ -184,12 +184,14 @@ class Scalar(object):
 
     def __gql_dump__(self):
         """Serialize the scalar to a GraphQL primitive value"""
-        raise NotImplementedError()
+        raise NotImplementedError(
+            'GraphQL serialization is not defined for this scalar')
 
     @classmethod
     def __gql_load__(cls, data):
         """Load a scalar instance from GraphQL"""
-        raise NotImplementedError()
+        raise NotImplementedError(
+            'GraphQL deserialization is not defined for this scalar')
 
 
 class GenericScalarMeta(type):
