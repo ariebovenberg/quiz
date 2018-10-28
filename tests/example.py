@@ -96,6 +96,7 @@ class Dog(Sentient, q.Object):
         })
     )
     birthday = mkfield('birthday', type=MyDateTime)
+    data = mkfield('data', type=q.GenericScalar)
 
 
 class DogQuery(q.Object):

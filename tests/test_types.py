@@ -314,6 +314,17 @@ class TestLoadField:
         assert isinstance(result, MyDateTime)
         assert result.dtime == datetime.fromtimestamp(12345)
 
+    @pytest.mark.parametrize('value', [
+        1,
+        'a string',
+        0.4,
+        True,
+    ])
+    def test_generic_scalar(self, value):
+        result = quiz.types.load_field(quiz.GenericScalar, Dog.data, value)
+        assert type(result) == type(value)  # noqa
+        assert result == value
+
 
 class TestLoad:
 
