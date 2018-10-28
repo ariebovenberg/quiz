@@ -204,7 +204,7 @@ better query validation errors                                     v0.2.0
 more examples in docs                                              v0.2.0
 executing selection sets directly                                  v0.2.0
 introspection fields (i.e. ``__typename``)                         v0.2.0
-custom scalars                                                     v0.2.0
+custom scalars for existing types (e.g. ``datetime``)              v0.2.0
 improve Object/Interface API                                       v0.2.0
 value object docs                                                  v0.2.0
 Mutations & subscriptions                                          v0.2.0

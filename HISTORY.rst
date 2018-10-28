@@ -9,6 +9,7 @@ development
 
 - Fixed handling of HTTP error status codes (#10)
 - Fix in validation exceptions (#11)
+- Implement custom scalars
 
 0.0.4 (2018-10-17)
 ++++++++++++++++++
