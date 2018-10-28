@@ -1,13 +1,13 @@
+from datetime import datetime
 from textwrap import dedent
 
 import pytest
-
 import quiz
 from quiz import SELECTOR as _
 from quiz.build import SelectionSet, gql
 from quiz.utils import FrozenDict as fdict
 
-from .example import Command, Dog, DogQuery, Hobby, Human, Sentient
+from .example import Command, Dog, DogQuery, Hobby, Human, MyDateTime, Sentient
 from .helpers import AlwaysEquals, NeverEquals
 
 
@@ -225,7 +225,7 @@ class TestValidate:
                 _
                 .name
             ]
-            .age(on_date=u'2018-09-17T08:52:13.956621')
+            .age(on_date=MyDateTime(datetime.now()))
         )
         assert quiz.validate(Dog, selection_set) == selection_set
 
@@ -307,6 +307,14 @@ class TestValidate:
     # TODO: list input type
 
 
+class TestLoadField:
+
+    def test_custom_scalar(self):
+        result = quiz.types.load_field(MyDateTime, Dog.birthday, 12345)
+        assert isinstance(result, MyDateTime)
+        assert result.dtime == datetime.fromtimestamp(12345)
+
+
 class TestLoad:
 
     def test_empty(self):
@@ -336,7 +344,7 @@ class TestLoad:
                     _
                     .name
                 ]
-                .age(on_date=u'2018-09-17T08:52:13.956621')
+                .age(on_date=MyDateTime(datetime.now()))
                 .birthday
             ]
         )
@@ -363,7 +371,7 @@ class TestLoad:
                     'name': u'Sally',
                 },
                 'age': 3,
-                'birthday': u'2015-07-10T02:32:03.136623',
+                'birthday': 1540731645,
             }
         })
         # TODO: include union types
@@ -383,7 +391,7 @@ class TestLoad:
                 ),
                 best_friend=Sentient(name='Sally'),
                 age=3,
-                birthday='2015-07-10T02:32:03.136623',
+                birthday=MyDateTime(datetime.fromtimestamp(1540731645)),
             )
         )
 
@@ -409,7 +417,7 @@ class TestLoad:
                     _
                     .name
                 ]
-                .age(on_date=u'2018-09-17T08:52:13.956621')
+                .age(on_date=MyDateTime(datetime.now()))
                 .birthday
             ]
         )
@@ -422,7 +430,7 @@ class TestLoad:
                 'owner': None,
                 'best_friend': None,
                 'age': 3,
-                'birthday': u'2015-07-10T02:32:03.136623',
+                'birthday': 1540731645,
             }
         })
         assert isinstance(loaded, DogQuery)
@@ -435,7 +443,7 @@ class TestLoad:
                 owner=None,
                 best_friend=None,
                 age=3,
-                birthday='2015-07-10T02:32:03.136623',
+                birthday=MyDateTime(datetime.fromtimestamp(1540731645)),
             )
         )
 

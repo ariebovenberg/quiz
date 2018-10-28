@@ -281,22 +281,25 @@ def validate(cls, selection_set):
 
 
 # TODO: refactor using singledispatch
-def _load(type_, field, value):
+def load_field(type_, field, value):
     # type: (Type[T], Field, JSON) -> T
     if issubclass(type_, Namespace):
         assert isinstance(value, dict)
         return load(type_, field.selection_set, value)
     elif issubclass(type_, Nullable):
-        return None if value is None else _load(type_.__arg__, field, value)
+        return None if value is None else load_field(
+            type_.__arg__, field, value)
     elif issubclass(type_, List):
         assert isinstance(value, list)
-        return [_load(type_.__arg__, field, v) for v in value]
+        return [load_field(type_.__arg__, field, v) for v in value]
     elif issubclass(type_, _PRIMITIVE_TYPES):
         assert isinstance(value, type_)
         return value
     elif issubclass(type_, GenericScalar):
         assert isinstance(value, type_)
         return value
+    elif issubclass(type_, Scalar):
+        return type_.__gql_load__(value)
     else:
         raise NotImplementedError()
 
@@ -319,7 +322,7 @@ def load(cls, selection_set, response):
         An instance of ``cls``
     """
     return cls(**{
-        field.alias or field.name: _load(
+        field.alias or field.name: load_field(
             getattr(cls, field.name).type,
             field,
             response[field.alias or field.name],
