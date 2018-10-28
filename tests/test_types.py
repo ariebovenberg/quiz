@@ -316,7 +316,7 @@ class TestLoadField:
 
     @pytest.mark.parametrize('value', [
         1,
-        'a string',
+        u'a string',
         0.4,
         True,
     ])
