@@ -209,9 +209,24 @@ class TestResolveTypeRef:
 
 class TestSchemaFromRaw:
 
-    def test_missing_scalars(self, raw_schema):
-        with pytest.raises(Exception, match='DateTime'):
-            quiz.Schema.from_raw(raw_schema, scalars={}, module='foo')
+    def test_scalars(self, raw_schema):
+
+        class URI(quiz.Scalar):
+            pass
+
+        schema = quiz.Schema.from_raw(raw_schema, scalars=[URI], module='foo')
+
+        # generic scalars
+        assert issubclass(schema.DateTime, quiz.GenericScalar)
+        assert schema.DateTime.__name__ == 'DateTime'
+        assert len(schema.__doc__) > 0
+
+        assert schema.Boolean is bool
+        assert schema.String is str
+        assert schema.Float is float
+        assert schema.Int is int
+
+        assert schema.URI is URI
 
     def test_defaults(self, raw_schema):
         schema = quiz.Schema.from_raw(raw_schema, module='foo')

@@ -195,22 +195,19 @@ class Schema(ValueObject):
         return _QueryCreator(self)
 
     @classmethod
-    def from_path(cls, path, module=None, scalars=None):
+    def from_path(cls, path, module=None, scalars=()):
         """Create a :class:`Schema` from a JSON at a path
 
         Parameters
         ----------
         path: str or ~os.PathLike
-            The path to the raw schema JSON file
+            The path to the raw schema JSON file.
         module: ~typing.Optional[str], optional
-            The name of the module to use when creating classes
-        scalars: ~typing.Optional[~typing.Mapping[str, type]], optional
-            A mapping of scalars.
-            If omitted or ``None``, generic scalars are used
-
-            Warning
-            -------
-            Scalars are not yet implemented
+            The name of the module to use when creating the schema's classes.
+        scalars: ~typing.Iterable[~typing.Type[Scalar]]
+            :class:`~quiz.types.Scalar` classes to use in the schema.
+            Scalars in the schema, but not in this sequence, will be defined as
+            :class:`~quiz.types.GenericScalar` subclasses.
 
         Returns
         -------
@@ -238,7 +235,7 @@ class Schema(ValueObject):
             json.dump(self.raw, wfile)
 
     @classmethod
-    def from_raw(cls, raw_schema, module=None, scalars=None):
+    def from_raw(cls, raw_schema, module=None, scalars=()):
         """Create a :class:`Schema` from a raw JSON schema
 
         Parameters
@@ -248,13 +245,10 @@ class Schema(ValueObject):
             I.e. the result of the :data:`INTROSPECTION_QUERY`
         module: ~typing.Optional[str], optional
             The name of the module to use when creating classes
-        scalars: ~typing.Optional[~typing.Mapping[str, type]], optional
-            A mapping of scalars.
-            If omitted or ``None``, generic scalars are used
-
-            Warning
-            -------
-            Scalars are not yet implemented
+        scalars: ~typing.Iterable[~typing.Type[Scalar]]
+            :class:`~quiz.types.Scalar` classes to use in the schema.
+            Scalars in the schema, but not in this sequence, will be defined as
+            :class:`~quiz.types.GenericScalar` subclasses.
 
         Returns
         -------
@@ -265,24 +259,14 @@ class Schema(ValueObject):
         for tp in _load_types(raw_schema):
             by_kind[tp.__class__].append(tp)
 
-        if scalars is None:
-            scalars_ = {
-                # TODO: this could be more efficient
-                tp.name: types.BUILTIN_SCALARS.get(
-                    tp.name,
-                    type(str(tp.name), (types.GenericScalar, ), {
-                        '__doc__': tp.desc
-                    })
-                )
-                for tp in by_kind[Scalar]
-            }
-        else:
-            scalars_ = merge(scalars, types.BUILTIN_SCALARS)
-            undefined_scalars = {
-                tp.name for tp in by_kind[Scalar]} - six.viewkeys(scalars_)
-            if undefined_scalars:
-                raise NotImplementedError('Undefined scalars: {}'.format(
-                    ', '.join(undefined_scalars)))
+        scalars_by_name = _namedict(scalars)
+        scalars_by_name.update(types.BUILTIN_SCALARS)
+        scalars_by_name.update(
+            (tp.name,
+             type(str(tp.name), (types.GenericScalar, ), {'__doc__': tp.desc}))
+            for tp in by_kind[Scalar]
+            if tp.name not in scalars_by_name
+        )
 
         interfaces = _namedict(map(
             partial(interface_as_type, module=module),
@@ -307,7 +291,7 @@ class Schema(ValueObject):
         ))
 
         classes = merge(
-            scalars_, interfaces, enums, objs, unions, input_objects
+            scalars_by_name, interfaces, enums, objs, unions, input_objects
         )
 
         # we can only add fields after all classes have been created.
@@ -330,20 +314,17 @@ class Schema(ValueObject):
         )
 
     @classmethod
-    def from_url(cls, url, scalars=None, module=None, **kwargs):
+    def from_url(cls, url, scalars=(), module=None, **kwargs):
         """Build a GraphQL schema by introspecting an API
 
         Parameters
         ----------
         url: str
             URL of the target GraphQL API
-        scalars: ~typing.Optional[~typing.Mapping[str, type]], optional
-            A mapping of scalars.
-            If omitted or ``None``, generic scalars are used
-
-            Warning
-            -------
-            Scalars are not yet implemented
+        scalars: ~typing.Iterable[~typing.Type[Scalar]]
+            :class:`~quiz.types.Scalar` classes to use in the schema.
+            Scalars in the schema, but not in this sequence, will be defined as
+            :class:`~quiz.types.GenericScalar` subclasses.
 
         module: ~typing.Optional[str], optional
             The module name to set on the generated classes
