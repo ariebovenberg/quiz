@@ -210,6 +210,7 @@ pass it to the schema constructor:
 
    # this also works with Schema.from_url()
    schema = quiz.Schema.from_path(..., scalars=[URI, MyOtherScalar, ...])
+   schema.URI is URI  # True
 
 
 .. _selectionset:
