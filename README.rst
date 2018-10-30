@@ -3,7 +3,7 @@
 
    <p align="center">
 
-   <img src="https://raw.githubusercontent.com/ariebovenberg/quiz/develop/docs/_static/quiz-logo.png" height="150">
+   <img src="https://raw.githubusercontent.com/ariebovenberg/quiz/master/docs/_static/quiz-logo.png" height="150">
 
    <br/>
 
@@ -15,7 +15,7 @@
          <img src="https://img.shields.io/codecov/c/github/ariebovenberg/quiz.svg?style=flat-square" alt="Test coverage">
    </a>
 
-   <img src="https://img.shields.io/badge/dependabot-enabled-brightgreen.svg?longCache=true&logo=dependabot" alt="Dependabot">
+   <img src="https://img.shields.io/badge/dependabot-enabled-brightgreen.svg?longCache=true&logo=dependabot&style=flat-square" alt="Dependabot">
 
    <a href="http://quiz.readthedocs.io/" class="reference external image-reference">
          <img src="https://img.shields.io/readthedocs/quiz.svg?style=flat-square" alt="Documentation status">
