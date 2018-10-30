@@ -283,6 +283,7 @@ def validate(cls, selection_set):
 
 
 # TODO: refactor using singledispatch
+# TODO: cleanup this API: ``field`` is often unneeded. unify with ``load``?
 def load_field(type_, field, value):
     # type: (Type[T], Field, JSON) -> T
     if issubclass(type_, Namespace):
@@ -304,7 +305,7 @@ def load_field(type_, field, value):
         return type_.__gql_load__(value)
     elif issubclass(type_, Enum):
         assert value, type_._members_names_
-        return value
+        return type_(value)
     else:
         raise NotImplementedError()
 

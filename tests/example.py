@@ -66,7 +66,7 @@ class Alien(Sentient, q.Object):
 class Dog(Sentient, q.Object):
     """An example type"""
     name = mkfield('name', type=six.text_type)
-    color = mkfield('color', type=Color)
+    color = mkfield('color', type=q.Nullable[Color])
     is_housetrained = mkfield(
         'is_housetrained',
         args=FrozenDict({

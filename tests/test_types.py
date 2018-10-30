@@ -7,7 +7,8 @@ from quiz import SELECTOR as _
 from quiz.build import SelectionSet, gql
 from quiz.utils import FrozenDict as fdict
 
-from .example import Command, Dog, DogQuery, Hobby, Human, MyDateTime, Sentient
+from .example import (Color, Command, Dog, DogQuery, Hobby, Human, MyDateTime,
+                      Sentient)
 from .helpers import AlwaysEquals, NeverEquals
 
 
@@ -310,7 +311,7 @@ class TestValidate:
 class TestLoadField:
 
     def test_custom_scalar(self):
-        result = quiz.types.load_field(MyDateTime, Dog.birthday, 12345)
+        result = quiz.types.load_field(MyDateTime, quiz.Field('foo'), 12345)
         assert isinstance(result, MyDateTime)
         assert result.dtime == datetime.fromtimestamp(12345)
 
@@ -321,9 +322,49 @@ class TestLoadField:
         True,
     ])
     def test_generic_scalar(self, value):
-        result = quiz.types.load_field(quiz.GenericScalar, Dog.data, value)
+        result = quiz.types.load_field(quiz.GenericScalar,
+                                       quiz.Field('data'), value)
         assert type(result) == type(value)  # noqa
         assert result == value
+
+    def test_namespace(self):
+        field = quiz.Field('dog', selection_set=(
+            _
+            .name
+            .color
+            ('hooman').owner
+        ))
+        result = quiz.types.load_field(Dog, field, {
+            'name': 'Fred',
+            'color': 'BROWN',
+            'hooman': None
+        })
+        assert isinstance(result, Dog)
+        assert result == Dog(name='Fred', color=Color.BROWN, hooman=None)
+
+    @pytest.mark.parametrize('value, expect', [
+        (None, None),
+        ('BLACK', Color.BLACK),
+    ])
+    def test_nullable(self, value, expect):
+        result = quiz.types.load_field(quiz.Nullable[Color],
+                                       quiz.Field('color'), value)
+        assert result is expect
+
+    @pytest.mark.parametrize('value, expect', [
+        ([], []),
+        ([{'name': 'sailing'}, {'name': 'bowling'}, None],
+         [Hobby(name='sailing'), Hobby(name='bowling'), None]),
+    ])
+    def test_list(self, value, expect):
+        field = quiz.Field('foo', selection_set=_.name)
+        result = quiz.types.load_field(quiz.List[quiz.Nullable[Hobby]],
+                                       field, value)
+        assert result == expect
+
+    def test_enum(self):
+        result = quiz.types.load_field(Color, quiz.Field('data'), 'BROWN')
+        assert result is Color.BROWN
 
 
 class TestLoad:
@@ -392,7 +433,7 @@ class TestLoad:
         assert loaded == DogQuery(
             dog=Dog(
                 name='Rufus',
-                color='GOLDEN',
+                color=Color.GOLDEN,
                 knows_sit=True,
                 knows_roll=False,
                 is_housetrained=True,
