@@ -335,16 +335,16 @@ class TestLoadField:
             ('hooman').owner
         ))
         result = quiz.types.load_field(Dog, field, {
-            'name': 'Fred',
-            'color': 'BROWN',
+            'name': u'Fred',
+            'color': u'BROWN',
             'hooman': None
         })
         assert isinstance(result, Dog)
-        assert result == Dog(name='Fred', color=Color.BROWN, hooman=None)
+        assert result == Dog(name=u'Fred', color=Color.BROWN, hooman=None)
 
     @pytest.mark.parametrize('value, expect', [
         (None, None),
-        ('BLACK', Color.BLACK),
+        (u'BLACK', Color.BLACK),
     ])
     def test_nullable(self, value, expect):
         result = quiz.types.load_field(quiz.Nullable[Color],
@@ -353,8 +353,8 @@ class TestLoadField:
 
     @pytest.mark.parametrize('value, expect', [
         ([], []),
-        ([{'name': 'sailing'}, {'name': 'bowling'}, None],
-         [Hobby(name='sailing'), Hobby(name='bowling'), None]),
+        ([{'name': u'sailing'}, {'name': u'bowling'}, None],
+         [Hobby(name=u'sailing'), Hobby(name=u'bowling'), None]),
     ])
     def test_list(self, value, expect):
         field = quiz.Field('foo', selection_set=_.name)
