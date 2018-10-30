@@ -366,6 +366,10 @@ class TestLoadField:
         result = quiz.types.load_field(Color, quiz.Field('data'), 'BROWN')
         assert result is Color.BROWN
 
+    def test_primitive_type(self):
+        result = quiz.types.load_field(int, quiz.Field('age'), 4)
+        assert result == 4
+
 
 class TestLoad:
 
