@@ -4,7 +4,7 @@ Release history
 development
 +++++++++++
 
-0.1.1 (2018-??-??)
+0.1.1 (2018-10-30)
 ++++++++++++++++++
 
 - Fixed deserialization of ``Enum`` values
