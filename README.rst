@@ -24,7 +24,7 @@
    <br/>
 
    <a href="https://pypi.python.org/pypi/quiz" class="reference external image-reference">
-         <img src="https://img.shields.io/badge/status-Alpha-orange.svg?style=flat-square&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAMAAADXqc3KAAABIFBMVEUAAAAAAAD///+AgID///+qqqr////////////V1dX///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////9biOZSAAAAX3RSTlMAAQECAgMDBAUGBggJCg4QERITFBceICQpLC0uMDM0QUJFRkdISktPUlNUXF5hbW5vcHZ7fYCBgoSGjI+Ql5iam6Cio6SlsLW5u73CxcjK1Nvd3+3z9Pb3+Pn6+/z9/ugrIWMAAAEFSURBVHgBZc7nUupgGEXhRQ4niVHArtgFFcTeiwKigtg7BkT2/d+FI6Lmmzwz+ZHsyZqXEMt8sadz2Uwmu5juNhaXCXXM4xl/9CxcaHtNt9kEUYJsNjWIikQwuexrfEBl3NCwq9G4znAwOex8DaehwWNPY706x8MQJf5c6488aRgHs3SiFUipyj/LCM3oiohLSUt4wdD/B41gWyReX/qwjVu3iNl2jGWVcP6+J3VNR1kpvJ8QN7o8KuYLhXzxuKLHrk7MY12+fr3pEBfAZqimZtOvt/nvH9IUTrtUUV0BDd2BhUtOjVaQfG3g4lBVvWVo6B5wWFXIwfddyblZQ3oSLNpPiMUn8+xFVjc7sxcAAAAASUVORK5CYII=&logoColor=white" alt="Development status">
+         <img src="https://img.shields.io/pypi/status/quiz.svg?style=flat-square&colorB=orange&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAMAAADXqc3KAAABIFBMVEUAAAAAAAD///+AgID///+qqqr////////////V1dX///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////9biOZSAAAAX3RSTlMAAQECAgMDBAUGBggJCg4QERITFBceICQpLC0uMDM0QUJFRkdISktPUlNUXF5hbW5vcHZ7fYCBgoSGjI+Ql5iam6Cio6SlsLW5u73CxcjK1Nvd3+3z9Pb3+Pn6+/z9/ugrIWMAAAEFSURBVHgBZc7nUupgGEXhRQ4niVHArtgFFcTeiwKigtg7BkT2/d+FI6Lmmzwz+ZHsyZqXEMt8sadz2Uwmu5juNhaXCXXM4xl/9CxcaHtNt9kEUYJsNjWIikQwuexrfEBl3NCwq9G4znAwOex8DaehwWNPY706x8MQJf5c6488aRgHs3SiFUipyj/LCM3oiohLSUt4wdD/B41gWyReX/qwjVu3iNl2jGWVcP6+J3VNR1kpvJ8QN7o8KuYLhXzxuKLHrk7MY12+fr3pEBfAZqimZtOvt/nvH9IUTrtUUV0BDd2BhUtOjVaQfG3g4lBVvWVo6B5wWFXIwfddyblZQ3oSLNpPiMUn8+xFVjc7sxcAAAAASUVORK5CYII=&logoColor=white" alt="Development status">
    </a>
 
    <a href="https://pypi.python.org/pypi/quiz" class="reference external image-reference">
@@ -32,7 +32,7 @@
    </a>
 
    <a href="https://pypi.python.org/pypi/quiz" class="reference external image-reference">
-         <img src="https://img.shields.io/pypi/l/quiz.svg?style=flat-square&logo=github&logoColor=white" alt="License">
+         <img src="https://img.shields.io/pypi/l/quiz.svg?style=flat-square&logo=github&logoColor=white&colorB=blue" alt="License">
    </a>
 
    <a href="https://pypi.python.org/pypi/quiz" class="reference external image-reference">
