@@ -339,6 +339,7 @@ class TestLoad:
             .dog[
                 _
                 .name
+                .color
                 ('knows_sit').knows_command(command=Command.SIT)
                 ('knows_roll').knows_command(command=Command.ROLL_OVER)
                 .is_housetrained
@@ -362,6 +363,7 @@ class TestLoad:
         loaded = quiz.load(DogQuery, selection, {
             'dog': {
                 'name': u'Rufus',
+                'color': u'GOLDEN',
                 'knows_sit': True,
                 'knows_roll': False,
                 'is_housetrained': True,
@@ -390,6 +392,7 @@ class TestLoad:
         assert loaded == DogQuery(
             dog=Dog(
                 name='Rufus',
+                color='GOLDEN',
                 knows_sit=True,
                 knows_roll=False,
                 is_housetrained=True,

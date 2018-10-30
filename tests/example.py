@@ -18,6 +18,12 @@ Command = q.Enum('Command', {
     'ROLL_OVER': 'ROLL_OVER',
 })
 
+Color = q.Enum('Color', {
+    'BROWN': 'BROWN',
+    'BLACK': 'BLACK',
+    'GOLDEN': 'GOLDEN',
+})
+
 
 class MyDateTime(q.Scalar):
     """an example datetime"""
@@ -60,6 +66,7 @@ class Alien(Sentient, q.Object):
 class Dog(Sentient, q.Object):
     """An example type"""
     name = mkfield('name', type=six.text_type)
+    color = mkfield('color', type=Color)
     is_housetrained = mkfield(
         'is_housetrained',
         args=FrozenDict({
