@@ -171,16 +171,270 @@ to this module.
 Custom scalars
 --------------
 
-.. warning::
+GraphQL APIs often use custom scalars to represent data such as dates or URLs.
+By default, custom scalars in the schema
+are defined as :class:`~quiz.types.GenericScalar`,
+which accepts any of the base scalar types
+(``str``, ``bool``, ``float``, ``int``, ``ID``).
 
-   Custom scalars are not yet implemented. They will be, soon.
+It is recommended to define scalars explicitly.
+This can be done by implementing a :class:`~quiz.types.Scalar` subclass
+and specifying the :meth:`~quiz.types.Scalar.__gql_dump__` method
+and/or the :meth:`~quiz.types.Scalar.__gql_load__` classmethod.
+
+Below shows an example of a ``URI`` scalar for GitHub's v4 API:
+
+.. code-block:: python3
+
+   import urllib
+
+   class URI(quiz.Scalar):
+       """A URI string"""
+       def __init__(self, url: str):
+           self.components = urllib.parse.urlparse(url)
+
+       # needed if converting TO GraphQL
+       def __gql_dump__(self) -> str:
+           return self.components.geturl()
+
+       # needed if loading FROM GraphQL responses
+       @classmethod
+       def __gql_load__(cls, data: str) -> URI:
+           return cls(data)
+
+
+To make sure this scalar is used in the schema,
+pass it to the schema constructor:
+
+.. code-block:: python3
+
+   # this also works with Schema.from_url()
+   schema = quiz.Schema.from_path(..., scalars=[URI, MyOtherScalar, ...])
+   schema.URI is URI  # True
+
 
 .. _selectionset:
 
-The selection API
------------------
+The ``SELECTOR`` API
+--------------------
 
-.. warning::
+The :class:`quiz.SELECTOR <quiz.build.SELECTOR>`
+object allows writing GraphQL in python syntax.
 
-   This section is work in progress.
-   See the :class:`~quiz.build.SelectionSet` API docs and :ref:`examples` for now.
+It is recommended to import this object as an easy-to-type variable name,
+such as ``_``.
+
+.. code-block:: python3
+
+   import quiz.SELECTOR as _
+
+Fields
+~~~~~~
+
+A selection with simple fields can be constructed by chaining attribute lookups.
+Below shows an example of a selection with 3 fields:
+
+.. code-block:: python3
+
+   selection = _.field1.field2.foo
+
+Note that we can write the same across multiple lines, using brackets.
+
+.. code-block:: python3
+
+   selection = (
+       _
+       .field1
+       .field2
+       .foo
+   )
+
+This makes the selection more readable. We will be using this style from now on.
+
+How does this look in GraphQL? Let's have a look:
+
+   >>> str(selection)
+   {
+     field1
+     field2
+     foo
+   }
+
+.. note::
+
+   Newlines between brackets are valid python syntax.
+   When chaining fields, **do not** add commas:
+
+   .. code-block:: python3
+
+      # THIS IS WRONG:
+      selection = (
+          _,
+          .field1,
+          .field2,
+          .foo,
+      )
+
+
+Arguments
+~~~~~~~~~
+
+To add arguments to a field, simply use python's function call syntax
+with keyword arguments:
+
+.. code-block:: python3
+
+   selection = (
+       _
+       .field1
+       .field2(my_arg=4, qux='my value')
+       .foo(bar=None)
+   )
+
+This converts to the following GraphQL:
+
+.. code-block:: python3
+
+   >>> str(selection)
+   {
+     field1
+     field2(my_arg: 4, qux: "my value")
+     foo(bar: null)
+   }
+
+
+Selections
+~~~~~~~~~~
+
+To add a selection to a field, use python's slicing syntax.
+Within the ``[]`` brackets, a new selection can be defined.
+
+.. code-block:: python3
+
+   selection = (
+       _
+       .field1
+       .field2[
+           _
+           .subfieldA
+           .subfieldB
+           .more[
+               _
+               .nested
+               .data
+           ]
+           .another_field
+       ]
+       .foo
+   )
+
+
+This converts to the following GraphQL:
+
+.. code-block:: python3
+
+   >>> str(selection)
+   {
+     field1
+     field2 {
+       subfieldA
+       subfieldB
+       more {
+         nested
+         data
+       }
+       another_field
+     }
+     foo
+   }
+
+Aliases
+~~~~~~~
+
+To add an alias to a field, add a function call before the field,
+specifying the field name:
+
+.. code-block:: python3
+
+   selection = (
+       _
+       .field1
+       ('my_alias').field2
+       .foo
+   )
+
+This converts to the following GraphQL:
+
+.. code-block:: python3
+
+   >>> str(selection)
+   {
+     field1
+     my_alias: field2
+     foo
+   }
+
+Fragments & Directives
+~~~~~~~~~~~~~~~~~~~~~~
+
+Fragments and directives are not yet supported.
+See the roadmap.
+
+Combinations
+~~~~~~~~~~~~
+
+The above features can be combined without restriction.
+Here is an example of a complex query to GitHub's v4 API:
+
+.. code-block:: python3
+
+   selection = (
+       _
+       .rateLimit[
+           _
+           .remaining
+           .resetAt
+       ]
+       ('hello_repo').repository(owner='octocat', name='hello-world')[
+           _
+           .createdAt
+       ]
+       .organization(login='github')[
+           _
+           .location
+           .members(first=10)[
+               _.edges[
+                   _.node[
+                       _.id
+                   ]
+               ]
+               ('count').totalCount
+           ]
+       ]
+   )
+
+This translates in to the following GraphQL:
+
+.. code-block:: python3
+
+   >>> str(selection)
+   {
+     rateLimit {
+       remaining
+       resetAt
+     }
+     hello_repo: repository(owner: "octocat", name: "hello-world") {
+       createdAt
+     }
+     organization(login: "github") {
+       location
+       members(first: 10) {
+         edges {
+           node {
+             id
+           }
+         }
+         count: totalCount
+       }
+     }
+   }

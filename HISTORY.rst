@@ -4,6 +4,14 @@ Release history
 development
 +++++++++++
 
+0.1.0 (2018-10-30)
+++++++++++++++++++
+
+- Fixed handling of HTTP error status codes (#10)
+- Fix in validation exceptions (#11)
+- Implement custom scalars
+- Improvements to documentation
+
 0.0.4 (2018-10-17)
 ++++++++++++++++++
 

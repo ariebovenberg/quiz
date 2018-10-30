@@ -1,13 +1,13 @@
+from datetime import datetime
 from textwrap import dedent
 
 import pytest
-
 import quiz
 from quiz import SELECTOR as _
 from quiz.build import SelectionSet, gql
 from quiz.utils import FrozenDict as fdict
 
-from .example import Command, Dog, DogQuery, Hobby, Human, Sentient
+from .example import Command, Dog, DogQuery, Hobby, Human, MyDateTime, Sentient
 from .helpers import AlwaysEquals, NeverEquals
 
 
@@ -55,6 +55,8 @@ class TestGenericScalar:
 
         class MyScalar(quiz.GenericScalar):
             """foo"""
+
+        assert issubclass(MyScalar, quiz.Scalar)
 
         assert isinstance(4, MyScalar)
         assert isinstance(u'foo', MyScalar)
@@ -166,9 +168,10 @@ def test_selection_error_str():
         NoSuchArgument: argument "bla" does not exist''')
 
 
-def test_no_such_argument_str():
-    exc = quiz.NoSuchArgument('foo')
-    assert str(exc) == 'argument "foo" does not exist'
+@pytest.mark.parametrize('name', ['foo', 'bar'])
+def test_no_such_argument_str(name):
+    exc = quiz.NoSuchArgument(name)
+    assert str(exc) == 'argument "{}" does not exist'.format(name)
 
 
 def test_no_such_field_str():
@@ -176,15 +179,17 @@ def test_no_such_field_str():
     assert str(exc) == 'field does not exist'
 
 
-def test_invalid_arg_type_str():
-    exc = quiz.InvalidArgumentType('foo', 5)
+@pytest.mark.parametrize('name', ['foo', 'bar'])
+def test_invalid_arg_type_str(name):
+    exc = quiz.InvalidArgumentType(name, 5)
     assert str(exc) == (
-        'invalid value "5" of type {} for argument "foo"'.format(int))
+        'invalid value "5" of type {} for argument "{}"'.format(int, name))
 
 
-def test_missing_argument_str():
-    exc = quiz.MissingArgument('bla')
-    assert str(exc) == 'argument "bla" missing (required)'
+@pytest.mark.parametrize('name', ['foo', 'bar'])
+def test_missing_argument_str(name):
+    exc = quiz.MissingArgument(name)
+    assert str(exc) == 'argument "{}" missing (required)'.format(name)
 
 
 def test_selections_not_supported_str():
@@ -220,7 +225,7 @@ class TestValidate:
                 _
                 .name
             ]
-            .age(on_date=u'2018-09-17T08:52:13.956621')
+            .age(on_date=MyDateTime(datetime.now()))
         )
         assert quiz.validate(Dog, selection_set) == selection_set
 
@@ -302,6 +307,25 @@ class TestValidate:
     # TODO: list input type
 
 
+class TestLoadField:
+
+    def test_custom_scalar(self):
+        result = quiz.types.load_field(MyDateTime, Dog.birthday, 12345)
+        assert isinstance(result, MyDateTime)
+        assert result.dtime == datetime.fromtimestamp(12345)
+
+    @pytest.mark.parametrize('value', [
+        1,
+        u'a string',
+        0.4,
+        True,
+    ])
+    def test_generic_scalar(self, value):
+        result = quiz.types.load_field(quiz.GenericScalar, Dog.data, value)
+        assert type(result) == type(value)  # noqa
+        assert result == value
+
+
 class TestLoad:
 
     def test_empty(self):
@@ -331,7 +355,7 @@ class TestLoad:
                     _
                     .name
                 ]
-                .age(on_date=u'2018-09-17T08:52:13.956621')
+                .age(on_date=MyDateTime(datetime.now()))
                 .birthday
             ]
         )
@@ -358,7 +382,7 @@ class TestLoad:
                     'name': u'Sally',
                 },
                 'age': 3,
-                'birthday': u'2015-07-10T02:32:03.136623',
+                'birthday': 1540731645,
             }
         })
         # TODO: include union types
@@ -378,7 +402,7 @@ class TestLoad:
                 ),
                 best_friend=Sentient(name='Sally'),
                 age=3,
-                birthday='2015-07-10T02:32:03.136623',
+                birthday=MyDateTime(datetime.fromtimestamp(1540731645)),
             )
         )
 
@@ -404,7 +428,7 @@ class TestLoad:
                     _
                     .name
                 ]
-                .age(on_date=u'2018-09-17T08:52:13.956621')
+                .age(on_date=MyDateTime(datetime.now()))
                 .birthday
             ]
         )
@@ -417,7 +441,7 @@ class TestLoad:
                 'owner': None,
                 'best_friend': None,
                 'age': 3,
-                'birthday': u'2015-07-10T02:32:03.136623',
+                'birthday': 1540731645,
             }
         })
         assert isinstance(loaded, DogQuery)
@@ -430,7 +454,7 @@ class TestLoad:
                 owner=None,
                 best_friend=None,
                 age=3,
-                birthday='2015-07-10T02:32:03.136623',
+                birthday=MyDateTime(datetime.fromtimestamp(1540731645)),
             )
         )
 

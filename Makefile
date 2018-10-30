@@ -6,11 +6,8 @@ init:
 test:
 	detox
 
-test-examples:
-	pytest examples/
-
 coverage:
-	pytest --cov=quiz --cov-report html --cov-report term --cov-fail-under 100
+	pytest --cov=quiz --cov-report html --cov-report term --cov-fail-under 100 --live
 
 publish: clean
 	rm -rf build dist .egg quiz.egg-info

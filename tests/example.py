@@ -1,8 +1,8 @@
+from datetime import datetime
 from functools import partial
 
-import six
-
 import quiz as q
+import six
 from quiz.utils import FrozenDict
 
 mkfield = partial(q.FieldDefinition,
@@ -19,8 +19,21 @@ Command = q.Enum('Command', {
 })
 
 
-class MyDateTime(q.GenericScalar):
-    """a datatime string"""
+class MyDateTime(q.Scalar):
+    """an example datetime"""
+    def __init__(self, dtime):
+        self.dtime = dtime
+
+    def __gql_dump__(self):
+        """The datetime as a timestamp"""
+        return (self.dtime - datetime(1970, 1, 1)).total_seconds()
+
+    @classmethod
+    def __gql_load__(cls, data):
+        return cls(datetime.fromtimestamp(data))
+
+    def __eq__(self, other):
+        return self.dtime == other.dtime
 
 
 @six.add_metaclass(q.Interface)
@@ -83,6 +96,7 @@ class Dog(Sentient, q.Object):
         })
     )
     birthday = mkfield('birthday', type=MyDateTime)
+    data = mkfield('data', type=q.GenericScalar)
 
 
 class DogQuery(q.Object):

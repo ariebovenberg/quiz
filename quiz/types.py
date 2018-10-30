@@ -13,6 +13,7 @@ __all__ = [
     'Enum',
     'Union',
     'GenericScalar',
+    'Scalar',
     'List',
     'Interface',
     'Object',
@@ -178,6 +179,21 @@ class Union(object):
     __args__ = ()
 
 
+class Scalar(object):
+    """Base class for scalars"""
+
+    def __gql_dump__(self):
+        """Serialize the scalar to a GraphQL primitive value"""
+        raise NotImplementedError(
+            'GraphQL serialization is not defined for this scalar')
+
+    @classmethod
+    def __gql_load__(cls, data):
+        """Load a scalar instance from GraphQL"""
+        raise NotImplementedError(
+            'GraphQL deserialization is not defined for this scalar')
+
+
 class GenericScalarMeta(type):
 
     def __instancecheck__(self, instance):
@@ -185,8 +201,8 @@ class GenericScalarMeta(type):
 
 
 @six.add_metaclass(GenericScalarMeta)
-class GenericScalar(object):
-    pass
+class GenericScalar(Scalar):
+    """A generic scalar, accepting any primitive type"""
 
 
 def _unwrap_list_or_nullable(type_):
@@ -267,22 +283,25 @@ def validate(cls, selection_set):
 
 
 # TODO: refactor using singledispatch
-def _load(type_, field, value):
+def load_field(type_, field, value):
     # type: (Type[T], Field, JSON) -> T
     if issubclass(type_, Namespace):
         assert isinstance(value, dict)
         return load(type_, field.selection_set, value)
     elif issubclass(type_, Nullable):
-        return None if value is None else _load(type_.__arg__, field, value)
+        return None if value is None else load_field(
+            type_.__arg__, field, value)
     elif issubclass(type_, List):
         assert isinstance(value, list)
-        return [_load(type_.__arg__, field, v) for v in value]
+        return [load_field(type_.__arg__, field, v) for v in value]
     elif issubclass(type_, _PRIMITIVE_TYPES):
         assert isinstance(value, type_)
         return value
     elif issubclass(type_, GenericScalar):
         assert isinstance(value, type_)
         return value
+    elif issubclass(type_, Scalar):
+        return type_.__gql_load__(value)
     else:
         raise NotImplementedError()
 
@@ -305,7 +324,7 @@ def load(cls, selection_set, response):
         An instance of ``cls``
     """
     return cls(**{
-        field.alias or field.name: _load(
+        field.alias or field.name: load_field(
             getattr(cls, field.name).type,
             field,
             response[field.alias or field.name],
@@ -358,7 +377,7 @@ class InvalidArgumentType(ValueObject, ValidationError):
     ]
 
     def __str__(self):
-        return 'invalid value "{}" of type {} for argument "foo"'.format(
+        return 'invalid value "{}" of type {} for argument "{}"'.format(
             self.value,
             type(self.value),
             self.name,
