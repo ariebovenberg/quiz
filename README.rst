@@ -8,7 +8,7 @@
    <br/>
 
    <a href="https://travis-ci.org/ariebovenberg/quiz" class="reference external image-reference">
-         <img src="https://img.shields.io/travis/ariebovenberg/quiz.svg?style=flat-square" alt="Build status">
+         <img src="https://img.shields.io/travis/ariebovenberg/quiz.svg?style=flat-square&logo=travis" alt="Build status">
    </a>
 
    <a href="https://codecov.io/gh/ariebovenberg/quiz" class="reference external image-reference">
@@ -18,7 +18,7 @@
    <img src="https://img.shields.io/badge/dependabot-enabled-brightgreen.svg?longCache=true&logo=dependabot&style=flat-square" alt="Dependabot">
 
    <a href="http://quiz.readthedocs.io/" class="reference external image-reference">
-         <img src="https://img.shields.io/readthedocs/quiz.svg?style=flat-square" alt="Documentation status">
+         <img src="https://img.shields.io/readthedocs/quiz.svg?style=flat-square&logo=read-the-docs&logoColor=white" alt="Documentation status">
    </a>
 
    <br/>
@@ -36,7 +36,7 @@
    </a>
 
    <a href="https://pypi.python.org/pypi/quiz" class="reference external image-reference">
-         <img src="https://img.shields.io/pypi/pyversions/quiz.svg?style=flat-square" alt="Supported python versions">
+         <img src="https://img.shields.io/pypi/pyversions/quiz.svg?style=flat-square&logo=python&logoColor=white" alt="Supported python versions">
    </a>
 
    </p>
