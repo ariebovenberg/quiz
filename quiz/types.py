@@ -302,6 +302,9 @@ def load_field(type_, field, value):
         return value
     elif issubclass(type_, Scalar):
         return type_.__gql_load__(value)
+    elif issubclass(type_, Enum):
+        assert value, type_._members_names_
+        return value
     else:
         raise NotImplementedError()
 
