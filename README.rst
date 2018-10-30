@@ -15,6 +15,8 @@
          <img src="https://img.shields.io/codecov/c/github/ariebovenberg/quiz.svg?style=flat-square" alt="Test coverage">
    </a>
 
+   <img src="https://img.shields.io/badge/dependabot-enabled-brightgreen.svg?longCache=true&logo=dependabot" alt="Dependabot">
+
    <a href="http://quiz.readthedocs.io/" class="reference external image-reference">
          <img src="https://img.shields.io/readthedocs/quiz.svg?style=flat-square" alt="Documentation status">
    </a>
@@ -191,6 +193,38 @@ Installation
 .. code-block:: bash
 
    pip install quiz
+
+
+Contributing
+------------
+
+After you've cloned the repo locally, set up the development environment
+with:
+
+.. code-block:: bash
+
+   make init
+
+For quick test runs, run:
+
+.. code-block:: bash
+
+   pytest
+
+To run all tests and checks on various python versions, run:
+
+.. code-block:: bash
+
+   make test
+
+Generate the docs with:
+
+.. code-block:: bash
+
+   make docs
+
+
+Pull requests welcome!
 
 
 Preliminary roadmap
