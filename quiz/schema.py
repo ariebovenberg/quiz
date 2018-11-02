@@ -540,7 +540,6 @@ Object = t.NamedTuple('Object', [
     ('name', str),
     ('desc', str),
     ('interfaces', t.List[TypeRef]),
-    ('input_fields', t.Optional[t.List[InputValue]]),
     ('fields', t.List[Field]),
 ])
 Scalar = t.NamedTuple('Scalar', [
@@ -574,7 +573,6 @@ def _cast_type(typ):
             name=typ.name,
             desc=typ.desc,
             interfaces=typ.interfaces,
-            input_fields=typ.input_fields,
             fields=typ.fields,
         )
     elif typ.kind is Kind.INTERFACE:

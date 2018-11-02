@@ -134,7 +134,6 @@ class TestObjectAsType:
                 s.TypeRef('Interface1', s.Kind.INTERFACE, None),
                 s.TypeRef('BlaInterface', s.Kind.INTERFACE, None),
             ],
-            input_fields=None,
             fields=[
                 s.Field(
                     'blabla',
