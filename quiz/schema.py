@@ -152,7 +152,11 @@ class Schema(ValueObject):
             raise AttributeError(name)
 
     def __dir__(self):
-        return list(self.classes) + dir(super(Schema, self))
+        return list(chain(
+            self.classes,
+            self._values._fields,
+            dir(super(Schema, self))
+        ))
 
     def populate_module(self):
         """Populate the schema's module with the schema's classes

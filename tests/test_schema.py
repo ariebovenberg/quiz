@@ -248,6 +248,7 @@ class TestSchema:
         assert issubclass(schema.classes['Repository'], quiz.Object)
         assert 'Repository' in dir(schema)
         assert '__class__' in dir(schema)
+        assert 'query_type' in dir(schema)
 
         with pytest.raises(AttributeError, match='foo'):
             schema.foo
