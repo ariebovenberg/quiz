@@ -32,6 +32,26 @@ def schema(raw_schema):
     return quiz.Schema.from_raw(raw_schema, module='mymodule')
 
 
+def test_inputobject_as_type():
+    obj_schema = s.InputObject(
+        'MyObject', 'a test input object', input_fields=[
+            s.InputValue('param1', 'the first param',
+                         s.TypeRef('MyType', s.Kind.OBJECT, of_type=None),
+                         default=None),
+            s.InputValue('param2', 'the second parameter',
+                         s.TypeRef('MyOtherType', s.Kind.OBJECT, of_type=None),
+                         default=3)
+        ]
+    )
+    created = s.inputobject_as_type(obj_schema, module='foo')
+    assert issubclass(created, quiz.InputObject)
+    assert created.__name__ == 'MyObject'
+    assert created.__doc__ == 'a test input object'
+    assert created.__module__ == 'foo'
+
+    assert created.__raw__ == obj_schema
+
+
 class TestEnumAsType:
 
     def test_simple(self):
@@ -161,6 +181,8 @@ class TestObjectAsType:
         assert created.__module__ == 'foo'
         assert issubclass(created, interfaces['Interface1'])
         assert issubclass(created, interfaces['BlaInterface'])
+
+        assert created.__raw__ == obj_schema
 
 
 class TestResolveTypeRef:
@@ -368,21 +390,22 @@ class TestSchemaFromPath:
 
 def test_end_to_end(raw_schema):
     schema = quiz.Schema.from_raw(raw_schema, module='github')
-    doc = render_doc(schema.Issue)
+    obj_doc = render_doc(schema.Issue)
 
     assert '''\
  |  viewerDidAuthor
  |      : bool
- |      Did the viewer author this comment.''' in doc
+ |      Did the viewer author this comment.''' in obj_doc
     assert '''\
  |  publishedAt
  |      : DateTime or None
- |      Identifies when the comment was published at.''' in doc
+ |      Identifies when the comment was published at.''' in obj_doc
 
     assert '''\
  |  viewerCannotUpdateReasons
  |      : [CommentCannotUpdateReason]
- |      Reasons why the current viewer can not update this comment.''' in doc
+ |      Reasons why the current viewer can not update this comment.''' in (
+     obj_doc)
 
-    assert schema.Issue.__doc__ in doc
-    assert 'Labelable' in doc
+    assert schema.Issue.__doc__ in obj_doc
+    assert 'Labelable' in obj_doc

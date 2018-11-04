@@ -73,9 +73,10 @@ def union_as_type(typ, objs):
     )
 
 
-def inputobject_as_type(typ):
-    # type InputObject -> type
-    return type(str(typ.name), (types.InputObject, ), {"__doc__": typ.desc})
+def inputobject_as_type(typ, module):
+    # type (InputObject, str) -> Type[types.InputObject]
+    return type(str(typ.name), (types.InputObject, ),
+                {"__doc__": typ.desc, "__raw__": typ, '__module__': module})
 
 
 def _add_fields(obj, classes):
@@ -290,7 +291,7 @@ class Schema(ValueObject):
             by_kind[Union]
         ))
         input_objects = _namedict(map(
-            inputobject_as_type,
+            partial(inputobject_as_type, module=module),
             by_kind[InputObject]
         ))
 
