@@ -18,7 +18,7 @@ else:  # pragma: no cover
     from itertools import imap as map
 
 
-def default_ne(self, other):
+def default_ne(self, other):  # pragma: no cover -- only for py2
     """a default __ne__ implementation, which is the complement of __eq__"""
     equal = self.__eq__(other)
     return NotImplemented if equal is NotImplemented else not equal
