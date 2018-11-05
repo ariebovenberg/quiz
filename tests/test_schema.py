@@ -36,7 +36,8 @@ def test_inputobject_as_type():
     obj_schema = s.InputObject(
         'MyObject', 'a test input object', input_fields=[
             s.InputValue('param1', 'the first param',
-                         s.TypeRef('MyType', s.Kind.OBJECT, of_type=None),
+                         s.TypeRef(None, s.Kind.LIST, of_type=s.TypeRef(
+                             'MyType', s.Kind.OBJECT, of_type=None)),
                          default=None),
             s.InputValue('param2', 'the second parameter',
                          s.TypeRef('MyOtherType', s.Kind.OBJECT, of_type=None),
@@ -50,6 +51,25 @@ def test_inputobject_as_type():
     assert created.__module__ == 'foo'
 
     assert created.__raw__ == obj_schema
+
+    # test adding the fields later
+    classes = {
+        'MyType': type('MyType', (), {}),
+        'MyOtherType': type('MyOtherType', (), {}),
+    }
+    s._add_input_fields(created, classes)
+
+    assert created.__input_fields__ == {
+        'param1': quiz.InputValue(
+            'param1', 'the first param',
+            type=quiz.Nullable[quiz.List[quiz.Nullable[classes['MyType']]]],
+        ),
+        'param2': quiz.InputValue(
+            'param2', 'the second parameter',
+            type=quiz.Nullable[classes['MyOtherType']]
+        ),
+    }
+    assert not hasattr(created, '__raw__')
 
 
 class TestEnumAsType:

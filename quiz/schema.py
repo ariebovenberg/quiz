@@ -104,6 +104,16 @@ def _add_fields(obj, classes):
     return obj
 
 
+def _add_input_fields(obj, classes):
+    obj.__input_fields__ = {
+        f.name: types.InputValue(f.name, f.desc,
+                                 type=resolve_typeref(f.type, classes))
+        for f in obj.__raw__.input_fields
+    }
+    del obj.__raw__
+    return obj
+
+
 def resolve_typeref(ref, classes):
     # type: (TypeRef, ClassDict) -> type
     if ref.kind is Kind.NON_NULL:
@@ -299,9 +309,11 @@ class Schema(ValueObject):
             scalars_by_name, interfaces, enums, objs, unions, input_objects
         )
 
-        # we can only add fields after all classes have been created.
+        # we can only add these after all classes have been created.
         for obj in chain(objs.values(), interfaces.values()):
             _add_fields(obj, classes)
+        for obj in input_objects.values():
+            _add_input_fields(obj, classes)
 
         return cls(
             classes,
