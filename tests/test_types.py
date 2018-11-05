@@ -2,6 +2,7 @@ from datetime import datetime
 from textwrap import dedent
 
 import pytest
+
 import quiz
 from quiz import SELECTOR as _
 from quiz.build import SelectionSet, gql
@@ -24,7 +25,7 @@ class TestUnion:
         assert not isinstance(1.3, MyUnion)
 
 
-class TestOptional:
+class TestNullable:
 
     def test_instancecheck(self):
 
@@ -34,6 +35,8 @@ class TestOptional:
         assert isinstance(5, MyOptional)
         assert isinstance(None, MyOptional)
         assert not isinstance(5.4, MyOptional)
+
+        assert MyOptional == quiz.Nullable[int]
 
 
 class TestList:
@@ -48,6 +51,8 @@ class TestList:
         assert not isinstance(['foo'], MyList)
         assert not isinstance([3, 'bla'], MyList)
         assert not isinstance((1, 2), MyList)
+
+        assert MyList == quiz.List[int]
 
 
 class TestGenericScalar:

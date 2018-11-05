@@ -18,6 +18,12 @@ else:  # pragma: no cover
     from itertools import imap as map
 
 
+def default_ne(self, other):
+    """a default __ne__ implementation, which is the complement of __eq__"""
+    equal = self.__eq__(other)
+    return NotImplemented if equal is NotImplemented else not equal
+
+
 if HAS_PEP519:
     from os import fspath
 else:  # pragma: no cover
