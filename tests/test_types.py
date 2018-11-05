@@ -27,7 +27,7 @@ class TestUnion:
 
 class TestNullable:
 
-    def test_instancecheck(self):
+    def test_instancecheck(self, mocker):
 
         class MyOptional(quiz.Nullable):
             __arg__ = int
@@ -37,11 +37,13 @@ class TestNullable:
         assert not isinstance(5.4, MyOptional)
 
         assert MyOptional == quiz.Nullable[int]
+        assert MyOptional == mocker.ANY
+        assert not MyOptional != mocker.ANY
 
 
 class TestList:
 
-    def test_isinstancecheck(self):
+    def test_isinstancecheck(self, mocker):
 
         class MyList(quiz.List):
             __arg__ = int
@@ -53,6 +55,8 @@ class TestList:
         assert not isinstance((1, 2), MyList)
 
         assert MyList == quiz.List[int]
+        assert MyList == mocker.ANY
+        assert not MyList != mocker.ANY
 
 
 class TestGenericScalar:
