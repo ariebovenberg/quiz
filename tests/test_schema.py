@@ -164,45 +164,58 @@ class TestInterfaceAsType:
         assert created.__module__ == 'mymodule'
 
 
-class TestObjectAsType:
+def test_object_as_type():
+    obj_schema = s.Object(
+        'Foo',
+        'the foo description!',
+        interfaces=[
+            s.TypeRef('Interface1', s.Kind.INTERFACE, None),
+            s.TypeRef('BlaInterface', s.Kind.INTERFACE, None),
+        ],
+        fields=[
+            s.Field(
+                'blabla',
+                type=s.TypeRef('MyObject', s.Kind.OBJECT, None),
+                args=[],
+                desc='my description',
+                is_deprecated=False,
+                deprecation_reason=None,
+            ),
+        ]
+    )
+    interfaces = {
+        'Interface1': type('Interface1', (quiz.Interface, ), {
+            '__module__': 'foo'}),
+        'BlaInterface': type('BlaInterface', (quiz.Interface, ), {
+            '__module__': 'foo'}),
+        'Qux': type('Qux', (quiz.Interface, ), {
+            '__module__': 'foo'}),
+    }
+    created = s.object_as_type(obj_schema, interfaces,
+                               module='foo')
+    assert issubclass(created, quiz.Object)
+    assert created.__name__ == 'Foo'
+    assert created.__doc__ == 'the foo description!'
+    assert created.__module__ == 'foo'
+    assert issubclass(created, interfaces['Interface1'])
+    assert issubclass(created, interfaces['BlaInterface'])
 
-    def test_simple(self):
-        obj_schema = s.Object(
-            'Foo',
-            'the foo description!',
-            interfaces=[
-                s.TypeRef('Interface1', s.Kind.INTERFACE, None),
-                s.TypeRef('BlaInterface', s.Kind.INTERFACE, None),
-            ],
-            fields=[
-                s.Field(
-                    'blabla',
-                    type=s.TypeRef('String', s.Kind.SCALAR, None),
-                    args=[],
-                    desc='my description',
-                    is_deprecated=False,
-                    deprecation_reason=None,
-                ),
-            ]
-        )
-        interfaces = {
-            'Interface1': type('Interface1', (quiz.Interface, ), {
-                '__module__': 'foo'}),
-            'BlaInterface': type('BlaInterface', (quiz.Interface, ), {
-                '__module__': 'foo'}),
-            'Qux': type('Qux', (quiz.Interface, ), {
-                '__module__': 'foo'}),
-        }
-        created = s.object_as_type(obj_schema, interfaces,
-                                   module='foo')
-        assert issubclass(created, quiz.Object)
-        assert created.__name__ == 'Foo'
-        assert created.__doc__ == 'the foo description!'
-        assert created.__module__ == 'foo'
-        assert issubclass(created, interfaces['Interface1'])
-        assert issubclass(created, interfaces['BlaInterface'])
+    assert created.__raw__ == obj_schema
 
-        assert created.__raw__ == obj_schema
+    # test adding the fields later
+    classes = {
+        'MyObject': type('MyObject', (), {}),
+    }
+    s._add_fields(created, classes)
+
+    assert created.blabla == quiz.FieldDefinition(
+        'blabla', 'my description',
+        type=quiz.Nullable[classes['MyObject']],
+        args={},
+        is_deprecated=False,
+        deprecation_reason=None,
+    )
+    assert not hasattr(created, '__raw__')
 
 
 class TestResolveTypeRef:
