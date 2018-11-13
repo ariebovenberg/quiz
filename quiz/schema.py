@@ -105,6 +105,7 @@ def _add_fields(obj, classes):
 
 
 def _add_input_fields(obj, classes):
+    # TODO: fix this duplication of data
     obj.__input_fields__ = {
         f.name: types.InputValue(f.name, f.desc,
                                  type=resolve_typeref(f.type, classes))
@@ -112,8 +113,8 @@ def _add_input_fields(obj, classes):
     }
     for f in obj.__raw__.input_fields:
         setattr(obj, f.name,
-            types.InputObjectFieldDescriptor(f)
-        )
+                types.InputObjectFieldDescriptor(obj.__input_fields__[f.name]))
+
     del obj.__raw__
     return obj
 

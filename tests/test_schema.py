@@ -69,6 +69,10 @@ def test_inputobject_as_type():
             type=quiz.Nullable[classes['MyOtherType']]
         ),
     }
+
+    assert isinstance(created.param1, quiz.InputObjectFieldDescriptor)
+    assert created.param1.value == created.__input_fields__['param1']
+
     assert not hasattr(created, '__raw__')
 
 
