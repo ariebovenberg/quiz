@@ -18,6 +18,7 @@ __all__ = [
     'List',
     'Interface',
     'InputObject',
+    'InputObjectFieldDescriptor',
     'Object',
     'Nullable',
     'FieldDefinition',
@@ -83,8 +84,42 @@ class Object(Namespace):
     """a graphQL object"""
 
 
+class InputObjectFieldDescriptor(ValueObject):
+    __fields__ = [
+        ('value', InputValue, 'The input value'),
+    ]
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:  # accessing on class
+            return self
+        try:
+            return obj.__dict__[self.value.name]
+        except KeyError:
+            raise NoValueForField()
+
+    # full descriptor interface is necessary to be displayed nicely in help()
+    def __set__(self, obj, value):
+        raise AttributeError("Can't set field value")
+
+    # TODO: instead of type.__name__, use something different
+    # __doc__ allows descriptor to be displayed nicely in help()
+    @property
+    def __doc__(self):
+        return ': {.__name__}\n    {}'.format(self.value.type, self.value.desc)
+
+
+# TODO: improve help() representation
 class InputObject(object):
-    """not yet implemented"""
+    """Base class for input objects"""
+    __input_fields__ = {}
+
+    # prevent `self` from potentially clobbering kwargs
+    def __init__(__self__, **kwargs):
+        invalid_args = kwargs.keys() - __self__.__input_fields__.keys()
+        if invalid_args:
+            raise TypeError('invalid arguments: {}'.format(
+                ', '.join(invalid_args)))
+        __self__.__dict__.update(kwargs)
 
 
 # separate class to distinguish graphql enums from normal Enums

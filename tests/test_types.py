@@ -9,7 +9,7 @@ from quiz.build import SelectionSet, gql
 from quiz.utils import FrozenDict as fdict
 
 from .example import (Color, Command, Dog, DogQuery, Hobby, Human, MyDateTime,
-                      Sentient)
+                      SearchFilters, Sentient, Order)
 from .helpers import AlwaysEquals, NeverEquals
 
 
@@ -140,6 +140,47 @@ class TestObject:
         def test_dunder(self):
             with pytest.raises(TypeError, match='underscore'):
                 Dog(__foo__=9)
+
+
+class TestInputObject:
+
+    def test_init_full(self):
+        search = SearchFilters(field='foo', order=Order.ASC)
+        assert search.field == 'foo'
+        assert search.order is Order.ASC
+
+        with pytest.raises(AttributeError):
+            search.order = 'foo'
+
+    def test_init_partial(self):
+        search = SearchFilters(field='foo')
+        assert search.field == 'foo'
+
+        with pytest.raises(quiz.NoValueForField):
+            assert search.order is None
+
+        assert not hasattr(search, 'order')
+
+    def test_kwargs_named_self(self):
+
+        class Foo(quiz.InputObject):
+            __input_fields__ = {
+                'self': quiz.InputValue(
+                    'self',
+                    'example field',
+                    type=int,
+                )
+            }
+            self = quiz.InputObjectFieldDescriptor(
+                quiz.InputValue(
+                    'self',
+                    'example field',
+                    type=int,
+                )
+            )
+
+        foo = Foo(self=4)
+        assert foo.self == 4
 
 
 class TestInlineFragment:

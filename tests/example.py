@@ -17,11 +17,14 @@ Command = q.Enum('Command', {
     'DOWN': 'DOWN',
     'ROLL_OVER': 'ROLL_OVER',
 })
-
 Color = q.Enum('Color', {
     'BROWN': 'BROWN',
     'BLACK': 'BLACK',
     'GOLDEN': 'GOLDEN',
+})
+Order = q.Enum('Order', {
+    'ASC': 'ASC',
+    'DESC': 'DESC',
 })
 
 
@@ -106,8 +109,48 @@ class Dog(Sentient, q.Object):
     data = mkfield('data', type=q.GenericScalar)
 
 
+class SearchFilters(q.InputObject):
+    __input_fields__ = {
+        'field': q.InputValue(
+            'field',
+            'the field to filter on',
+            type=str,
+        ),
+        'order': q.InputValue(
+            'order',
+            'the ordering',
+            type=q.Nullable[Order],
+        )
+    }
+
+    field = q.InputObjectFieldDescriptor(
+        q.InputValue(
+            'field',
+            'the field to filter on',
+            type=str,
+        )
+    )
+    order = q.InputObjectFieldDescriptor(
+        q.InputValue(
+            'order',
+            'the ordering',
+            type=q.Nullable[Order],
+        )
+    )
+
+
 class DogQuery(q.Object):
     dog = mkfield('dog', type=Dog)
+    search_dogs = mkfield(
+        'search_dogs',
+        args=FrozenDict({
+            'filters': q.InputValue(
+                'filters',
+                'the search filters',
+                type=SearchFilters
+            )
+        }),
+        type=Dog)
 
 
 class Person(q.Union):

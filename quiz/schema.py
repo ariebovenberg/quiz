@@ -110,6 +110,10 @@ def _add_input_fields(obj, classes):
                                  type=resolve_typeref(f.type, classes))
         for f in obj.__raw__.input_fields
     }
+    for f in obj.__raw__.input_fields:
+        setattr(obj, f.name,
+            types.InputObjectFieldDescriptor(f)
+        )
     del obj.__raw__
     return obj
 
