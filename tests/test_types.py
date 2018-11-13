@@ -162,6 +162,10 @@ class TestInputObject:
 
         assert not hasattr(search, 'order')
 
+    def test_init_invalid_kwarg(self):
+        with pytest.raises(TypeError, match='bla'):
+            SearchFilters(fields='foo', bla=4)
+
     def test_equality(self):
         obj = SearchFilters(field='foo')
         assert obj == SearchFilters(field='foo')
