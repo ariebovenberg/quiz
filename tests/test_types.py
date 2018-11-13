@@ -2,6 +2,7 @@ from datetime import datetime
 from textwrap import dedent
 
 import pytest
+import six
 
 import quiz
 from quiz import SELECTOR as _
@@ -160,6 +161,30 @@ class TestInputObject:
             assert search.order is None
 
         assert not hasattr(search, 'order')
+
+    def test_equality(self):
+        obj = SearchFilters(field='foo')
+        assert obj == SearchFilters(field='foo')
+        assert obj == AlwaysEquals()
+        assert not obj == SearchFilters(field='bla')
+        assert not obj == NeverEquals()
+
+        assert obj != SearchFilters(field='bla')
+        assert obj != NeverEquals()
+        assert not obj != SearchFilters(field='foo')
+        assert not obj != AlwaysEquals()
+
+    def test_repr(self):
+        search = SearchFilters(field='foo')
+        rep = repr(search)
+        assert 'SearchFilters' in rep
+
+        if six.PY3:
+            assert type(search).__qualname__ in rep
+
+        assert 'field=' in rep
+        assert repr('foo') in rep
+        assert 'order' not in rep
 
     def test_kwargs_named_self(self):
 

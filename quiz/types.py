@@ -121,6 +121,20 @@ class InputObject(object):
                 ', '.join(invalid_args)))
         __self__.__dict__.update(kwargs)
 
+    def __eq__(self, other):
+        if isinstance(other, InputObject):
+            return self.__dict__ == other.__dict__
+        return NotImplemented
+
+    if six.PY2:  # pragma: no cover
+        __ne__ = default_ne
+
+    def __repr__(self):
+        return '{}({})'.format(
+            getattr(self.__class__, '__qualname__' if six.PY3 else '__name__'),
+            ', '.join(starmap('{}={!r}'.format, self.__dict__.items()))
+        )
+
 
 # separate class to distinguish graphql enums from normal Enums
 class Enum(enum.Enum):
