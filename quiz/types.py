@@ -115,7 +115,8 @@ class InputObject(object):
 
     # prevent `self` from potentially clobbering kwargs
     def __init__(__self__, **kwargs):
-        invalid_args = kwargs.keys() - __self__.__input_fields__.keys()
+        invalid_args = (six.viewkeys(kwargs)
+                        - six.viewkeys(__self__.__input_fields__))
         if invalid_args:
             raise TypeError('invalid arguments: {}'.format(
                 ', '.join(invalid_args)))
