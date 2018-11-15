@@ -401,6 +401,7 @@ def argument_as_gql(obj):
 
 
 # see https://facebook.github.io/graphql/June2018/#sec-Input-Values
+# TODO: support list
 argument_as_gql.register(str, compose('"{}"'.format, escape))
 argument_as_gql.register(int, str)  # TODO: catch > 32bit integers
 argument_as_gql.register(type(None), 'null'.format)
