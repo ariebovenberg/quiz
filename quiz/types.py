@@ -108,7 +108,6 @@ class InputObjectFieldDescriptor(ValueObject):
         return ': {.__name__}\n    {}'.format(self.value.type, self.value.desc)
 
 
-# TODO: improve help() representation
 class InputObject(object):
     """Base class for input objects"""
     __input_fields__ = {}

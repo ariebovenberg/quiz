@@ -1,30 +1,16 @@
 import enum
 import json
 import pickle
-import pydoc
 import sys
 import types
 
 import pytest
 import quiz
-import six
 import snug
 from quiz import SELECTOR as _
 from quiz import schema as s
 
-from .helpers import MockClient
-
-
-def trim_whitespace(txt):
-    return ''.join(t.rstrip() + '\n' for t in txt.splitlines())
-
-
-if six.PY3:
-    def render_doc(obj):
-        return trim_whitespace(pydoc.render_doc(obj, renderer=pydoc.plaintext))
-else:
-    def render_doc(obj):
-        return trim_whitespace(pydoc.plain(pydoc.render_doc(obj)))
+from .helpers import MockClient, render_doc
 
 
 @pytest.fixture

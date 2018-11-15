@@ -11,7 +11,7 @@ from quiz.utils import FrozenDict as fdict
 
 from .example import (Color, Command, Dog, DogQuery, Hobby, Human, MyDateTime,
                       SearchFilters, Sentient, Order)
-from .helpers import AlwaysEquals, NeverEquals
+from .helpers import AlwaysEquals, NeverEquals, render_doc
 
 
 class TestUnion:
@@ -189,6 +189,17 @@ class TestInputObject:
         assert 'field=' in rep
         assert repr('foo') in rep
         assert 'order' not in rep
+
+    def test_help(self):
+        doc = render_doc(SearchFilters)
+
+        assert SearchFilters.__doc__ in doc
+        assert 'InputObject' in doc
+
+        assert '''\
+ |  order
+ |      : Order or None
+ |      the ordering''' in doc
 
     def test_kwargs_named_self(self):
 

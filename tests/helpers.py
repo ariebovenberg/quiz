@@ -1,3 +1,6 @@
+import pydoc
+
+import six
 import snug
 
 
@@ -32,3 +35,11 @@ class NeverEquals:
 
     def __ne__(self, other):
         return True
+
+
+if six.PY3:
+    def render_doc(obj):
+        return pydoc.render_doc(obj, renderer=pydoc.plaintext)
+else:
+    def render_doc(obj):
+        return pydoc.plain(pydoc.render_doc(obj))

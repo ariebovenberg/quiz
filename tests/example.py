@@ -1,3 +1,4 @@
+"""An example schema, defined in python types."""
 from datetime import datetime
 from functools import partial
 
@@ -110,6 +111,7 @@ class Dog(Sentient, q.Object):
 
 
 class SearchFilters(q.InputObject):
+    """filters for searching"""
     __input_fields__ = {
         'field': q.InputValue(
             'field',
