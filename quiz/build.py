@@ -387,6 +387,7 @@ def escape(txt):
     return _ESCAPE_RE.sub(_escape_match, txt)
 
 
+# TODO: rename "inputvalue as gql", following terminology in the spec
 @singledispatch
 def argument_as_gql(obj):
     # type: object -> str
@@ -399,11 +400,12 @@ def argument_as_gql(obj):
         return serializer(obj)
 
 
+# see https://facebook.github.io/graphql/June2018/#sec-Input-Values
 argument_as_gql.register(str, compose('"{}"'.format, escape))
-argument_as_gql.register(int, str)
+argument_as_gql.register(int, str)  # TODO: catch > 32bit integers
 argument_as_gql.register(type(None), 'null'.format)
 argument_as_gql.register(bool, {True: 'true', False: 'false'}.__getitem__)
-argument_as_gql.register(float, str)
+argument_as_gql.register(float, str)  # TODO: catch NaN, inf
 
 
 @argument_as_gql.register(enum.Enum)

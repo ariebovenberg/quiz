@@ -163,8 +163,12 @@ class TestInputObject:
         assert not hasattr(search, 'order')
 
     def test_init_invalid_kwarg(self):
-        with pytest.raises(TypeError, match='bla'):
-            SearchFilters(fields='foo', bla=4)
+        with pytest.raises(quiz.NoSuchArgument, match='bla'):
+            SearchFilters(field='foo', bla=4)
+
+    def test_missing_kwarg(self):
+        with pytest.raises(quiz.MissingArgument, match='field'):
+            SearchFilters(order=Order.DESC)
 
     def test_equality(self):
         obj = SearchFilters(field='foo')
@@ -221,6 +225,17 @@ class TestInputObject:
 
         foo = Foo(self=4)
         assert foo.self == 4
+
+    def test_graphql_dump(self):
+        assert quiz.argument_as_gql(SearchFilters(field='foo')) == (
+            '{field: "foo"}')
+
+        other = SearchFilters(field='bla', order=Order.ASC)
+        assert quiz.argument_as_gql(other) in (
+            # fields may be in any order
+            '{field: "bla" order: ASC}',
+            '{order: ASC field: "bla"}',
+        )
 
 
 class TestInlineFragment:

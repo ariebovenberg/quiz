@@ -5,7 +5,7 @@ from itertools import starmap
 
 import six
 
-from .build import InlineFragment
+from .build import InlineFragment, argument_as_gql
 from .compat import default_ne
 from .utils import FrozenDict, ValueObject
 
@@ -101,33 +101,55 @@ class InputObjectFieldDescriptor(ValueObject):
     def __set__(self, obj, value):
         raise AttributeError("Can't set field value")
 
-    # TODO: instead of type.__name__, use something different
+    # TODO: instead of type.__name__, use something different, explicit
     # __doc__ allows descriptor to be displayed nicely in help()
     @property
     def __doc__(self):
         return ': {.__name__}\n    {}'.format(self.value.type, self.value.desc)
 
 
+# TODO: slots?
+# TODO: validation?
+# TODO: coercing from dict?
+# TODO: prevent setting invalid attributes?
 class InputObject(object):
     """Base class for input objects"""
     __input_fields__ = {}
 
-    # prevent `self` from potentially clobbering kwargs
     def __init__(__self__, **kwargs):
-        invalid_args = (six.viewkeys(kwargs)
-                        - six.viewkeys(__self__.__input_fields__))
-        if invalid_args:
-            raise TypeError('invalid arguments: {}'.format(
-                ', '.join(invalid_args)))
-        __self__.__dict__.update(kwargs)
+        self = __self__  # prevents `self` from potentially clobbering kwargs
+        argnames_defined = six.viewkeys(self.__input_fields__)
+        argnames_required = {
+            name for name, obj in six.iteritems(self.__input_fields__)
+            if not issubclass(obj.type, Nullable)
+        }
+        argnames_given = six.viewkeys(kwargs)
+
+        invalid_argnames = argnames_given - argnames_defined
+        if invalid_argnames:
+            raise NoSuchArgument(
+                'invalid arguments: {}'.format(', '.join(invalid_argnames)))
+
+        missing_argnames = argnames_required - argnames_given
+        if missing_argnames:
+            raise MissingArgument(
+                'invalid arguments: {}'.format(', '.join(missing_argnames)))
+
+        self.__dict__.update(kwargs)
 
     def __eq__(self, other):
-        if isinstance(other, InputObject):
+        if type(self) == type(other):
             return self.__dict__ == other.__dict__
         return NotImplemented
 
     if six.PY2:  # pragma: no cover
         __ne__ = default_ne
+
+    def __gql_dump__(self):
+        return '{{{}}}'.format(' '.join(
+            '{}: {}'.format(name, argument_as_gql(value))
+            for name, value in self.__dict__.items()
+        ))
 
     def __repr__(self):
         return '{}({})'.format(
