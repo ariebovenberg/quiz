@@ -174,6 +174,9 @@ class Schema(ValueObject):
             dir(super(Schema, self))
         ))
 
+    def __repr__(self):
+        return 'quiz.Schema(module={})'.format(self.module)
+
     def populate_module(self):
         """Populate the schema's module with the schema's classes
 

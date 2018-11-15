@@ -349,6 +349,12 @@ class TestSchema:
         loaded = schema.from_path(MyPath(), module='mymodule')
         assert loaded.classes.keys() == schema.classes.keys()
 
+    def test_repr(self, schema):
+        rep = repr(schema)
+        assert len(rep) < 80
+        assert 'Schema' in rep
+        assert schema.module in rep
+
 
 class TestSchemaFromUrl:
 
