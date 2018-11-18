@@ -387,9 +387,9 @@ def escape(txt):
     return _ESCAPE_RE.sub(_escape_match, txt)
 
 
-# TODO: rename "inputvalue as gql", following terminology in the spec
 @singledispatch
 def dump_inputvalue(obj):
+    """Dumpy any input value to GraphQL"""
     # type: object -> str
     try:
         # consistent with other dunder methods, we look it up on the class
@@ -407,6 +407,11 @@ dump_inputvalue.register(int, str)  # TODO: catch > 32bit integers
 dump_inputvalue.register(type(None), 'null'.format)
 dump_inputvalue.register(bool, {True: 'true', False: 'false'}.__getitem__)
 dump_inputvalue.register(float, str)  # TODO: catch NaN, inf
+
+
+@dump_inputvalue.register(list)
+def _list_to_gql(lst):
+    return '[{}]'.format(' '.join(map(dump_inputvalue, lst)))
 
 
 @dump_inputvalue.register(enum.Enum)

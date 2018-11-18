@@ -233,7 +233,6 @@ Preliminary roadmap
 ================================================================== ===========
 Feature                                                            status
 ================================================================== ===========
-Input objects                                                      v0.2.0
 custom scalars for existing types (e.g. ``datetime``)              v0.2.0
 Mutations & subscriptions                                          v0.2.0
 Custom enum base class                                             v0.2.0

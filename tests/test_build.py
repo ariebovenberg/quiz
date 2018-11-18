@@ -257,6 +257,9 @@ class TestDumpInputvalue:
 
         assert quiz.dump_inputvalue(MyEnum.BLA) == 'QUX'
 
+    def test_list(self):
+        assert quiz.dump_inputvalue(['foo', 'bar']) == '["foo" "bar"]'
+
     def test_custom_scalar(self):
 
         class MyCustomScalar(quiz.Scalar):
