@@ -60,11 +60,14 @@ class TestList:
         assert not MyList != mocker.ANY
 
 
-class TestGenericScalar:
+class TestAnyScalar:
+
+    def test_mro(self):
+        assert issubclass(quiz.AnyScalar, quiz.Scalar)
 
     def test_isinstancecheck(self):
 
-        class MyScalar(quiz.GenericScalar):
+        class MyScalar(quiz.AnyScalar):
             """foo"""
 
         assert issubclass(MyScalar, quiz.Scalar)
@@ -427,7 +430,7 @@ class TestLoadField:
         True,
     ])
     def test_generic_scalar(self, value):
-        result = quiz.types.load_field(quiz.GenericScalar,
+        result = quiz.types.load_field(quiz.AnyScalar,
                                        quiz.Field('data'), value)
         assert type(result) == type(value)  # noqa
         assert result == value
@@ -647,6 +650,10 @@ class TestFieldDefinition:
 
 
 class TestFloat:
+
+    def test_mro(self):
+        assert issubclass(quiz.Float, quiz.InputValue)
+        assert issubclass(quiz.Float, quiz.Loader)
 
     class TestCoerce:
 

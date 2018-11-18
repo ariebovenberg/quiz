@@ -230,7 +230,7 @@ class Schema(ValueObject):
         scalars: ~typing.Iterable[~typing.Type[Scalar]]
             :class:`~quiz.types.Scalar` classes to use in the schema.
             Scalars in the schema, but not in this sequence, will be defined as
-            :class:`~quiz.types.GenericScalar` subclasses.
+            :class:`~quiz.types.AnyScalar` subclasses.
 
         Returns
         -------
@@ -271,7 +271,7 @@ class Schema(ValueObject):
         scalars: ~typing.Iterable[~typing.Type[Scalar]]
             :class:`~quiz.types.Scalar` classes to use in the schema.
             Scalars in the schema, but not in this sequence, will be defined as
-            :class:`~quiz.types.GenericScalar` subclasses.
+            :class:`~quiz.types.AnyScalar` subclasses.
 
         Returns
         -------
@@ -286,7 +286,7 @@ class Schema(ValueObject):
         scalars_by_name.update(types.BUILTIN_SCALARS)
         scalars_by_name.update(
             (tp.name,
-             type(str(tp.name), (types.GenericScalar, ), {'__doc__': tp.desc}))
+             type(str(tp.name), (types.AnyScalar, ), {'__doc__': tp.desc}))
             for tp in by_kind[Scalar]
             if tp.name not in scalars_by_name
         )
@@ -349,7 +349,7 @@ class Schema(ValueObject):
         scalars: ~typing.Iterable[~typing.Type[Scalar]]
             :class:`~quiz.types.Scalar` classes to use in the schema.
             Scalars in the schema, but not in this sequence, will be defined as
-            :class:`~quiz.types.GenericScalar` subclasses.
+            :class:`~quiz.types.AnyScalar` subclasses.
 
         module: ~typing.Optional[str], optional
             The module name to set on the generated classes

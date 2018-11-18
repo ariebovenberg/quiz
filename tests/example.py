@@ -107,7 +107,7 @@ class Dog(Sentient, q.Object):
         })
     )
     birthday = mkfield('birthday', type=MyDateTime)
-    data = mkfield('data', type=q.GenericScalar)
+    data = mkfield('data', type=q.AnyScalar)
 
 
 class SearchFilters(q.InputObject):

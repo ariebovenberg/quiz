@@ -9,6 +9,11 @@ development
 
 - small fixes
 
+**breaking changes**
+
+- ``InputValue`` has been renamed to ``InputValueDefinition``.
+- ``GenericScalar`` has been renamed to ``AnyScalar``.
+
 0.1.1 (2018-10-30)
 ++++++++++++++++++
 

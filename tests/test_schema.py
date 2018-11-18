@@ -261,7 +261,7 @@ class TestSchemaFromRaw:
         schema = quiz.Schema.from_raw(raw_schema, scalars=[URI], module='foo')
 
         # generic scalars
-        assert issubclass(schema.DateTime, quiz.GenericScalar)
+        assert issubclass(schema.DateTime, quiz.AnyScalar)
         assert schema.DateTime.__name__ == 'DateTime'
         assert len(schema.__doc__) > 0
 
@@ -275,7 +275,7 @@ class TestSchemaFromRaw:
     def test_defaults(self, raw_schema):
         schema = quiz.Schema.from_raw(raw_schema, module='foo')
         assert isinstance(schema, quiz.Schema)
-        assert issubclass(schema.DateTime, quiz.GenericScalar)
+        assert issubclass(schema.DateTime, quiz.AnyScalar)
         assert schema.String is str
         assert 'Query' in schema.classes
         assert schema.query_type == schema.classes['Query']

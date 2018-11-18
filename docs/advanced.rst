@@ -173,7 +173,7 @@ Custom scalars
 
 GraphQL APIs often use custom scalars to represent data such as dates or URLs.
 By default, custom scalars in the schema
-are defined as :class:`~quiz.types.GenericScalar`,
+are defined as :class:`~quiz.types.AnyScalar`,
 which accepts any of the base scalar types
 (``str``, ``bool``, ``float``, ``int``, ``ID``).
 

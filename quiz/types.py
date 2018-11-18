@@ -15,7 +15,7 @@ __all__ = [
     'Enum',
     'Union',
     'Float',
-    'GenericScalar',
+    'AnyScalar',
     'Scalar',
     'List',
     'Interface',
@@ -23,6 +23,8 @@ __all__ = [
     'InputObjectFieldDescriptor',
     'Object',
     'Nullable',
+    'InputValue',
+    'Loader',
     'FieldDefinition',
     'InputValueDefinition',
     # TODO: mutation
@@ -273,15 +275,31 @@ class Union(object):
     __args__ = ()
 
 
-# TODO: generic [T_in, T_out]?
-class Serializable(object):
-
+# TODO: make ABCMeta
+# TODO: make generic
+class InputValue(object):
+    """Base class for input value classes.
+    These values may be used in GraphQL queries (requests)"""
+    # TODO: make abstract
     def __gql_dump__(self):
         # type: () -> str
         """Serialize the object to a GraphQL primitive value"""
         raise NotImplementedError(
             'GraphQL serialization is not defined for this type')
 
+    # TODO: a sensible default implementation
+    @classmethod
+    def coerce(cls, value):
+        raise NotImplementedError()
+
+
+# TODO: make ABCMeta
+# TODO: make generic
+class Loader(object):
+    """Base class for loader classes.
+    These classes are used to load GraphQL responses into (python) types"""
+
+    # TODO: make abstract?
     @classmethod
     def __gql_load__(cls, data):
         """Load an instance from GraphQL"""
@@ -289,21 +307,29 @@ class Serializable(object):
             'GraphQL deserialization is not defined for this type')
 
 
-class Scalar(Serializable):
+class Scalar(InputValue, Loader):
     """Base class for scalars"""
 
-class GenericScalarMeta(type):
+class _AnyScalarMeta(type):
 
     def __instancecheck__(self, instance):
         return isinstance(instance, _PRIMITIVE_TYPES)
 
 
-@six.add_metaclass(GenericScalarMeta)
-class GenericScalar(Scalar):
+# TODO: test, add dump/load implementations
+# TODO: rename to AnyScalar?
+@six.add_metaclass(_AnyScalarMeta)
+class AnyScalar(Scalar):
     """A generic scalar, accepting any primitive type"""
+    def __init__(self, value):
+        self.value = value
+
+    @classmethod
+    def coerce(cls, data):
+        pass
 
 
-class Float(Serializable):
+class Float(InputValue, Loader):
     """A GraphQL float object. The main difference with :class:`float`
     is that it may not be infinite or NaN"""
 
@@ -422,7 +448,7 @@ def load_field(type_, field, value):
     elif issubclass(type_, _PRIMITIVE_TYPES):
         assert isinstance(value, type_)
         return value
-    elif issubclass(type_, GenericScalar):
+    elif issubclass(type_, AnyScalar):
         assert isinstance(value, type_)
         return value
     elif issubclass(type_, Scalar):
