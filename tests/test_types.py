@@ -227,11 +227,11 @@ class TestInputObject:
         assert foo.self == 4
 
     def test_graphql_dump(self):
-        assert quiz.argument_as_gql(SearchFilters(field='foo')) == (
+        assert quiz.dump_inputvalue(SearchFilters(field='foo')) == (
             '{field: "foo"}')
 
         other = SearchFilters(field='bla', order=Order.ASC)
-        assert quiz.argument_as_gql(other) in (
+        assert quiz.dump_inputvalue(other) in (
             # fields may be in any order
             '{field: "bla" order: ASC}',
             '{order: ASC field: "bla"}',

@@ -20,7 +20,7 @@ __all__ = [
     # render
     'gql',
     'escape',
-    'argument_as_gql',
+    'dump_inputvalue',
 ]
 
 INDENT = "  "
@@ -313,7 +313,7 @@ class Field(ValueObject):
     def __gql__(self):
         arguments = '({})'.format(
             ', '.join(
-                "{}: {}".format(k, argument_as_gql(v))
+                "{}: {}".format(k, dump_inputvalue(v))
                 for k, v in self.kwargs.items()
             )
         ) if self.kwargs else ''
@@ -389,7 +389,7 @@ def escape(txt):
 
 # TODO: rename "inputvalue as gql", following terminology in the spec
 @singledispatch
-def argument_as_gql(obj):
+def dump_inputvalue(obj):
     # type: object -> str
     try:
         # consistent with other dunder methods, we look it up on the class
@@ -402,14 +402,14 @@ def argument_as_gql(obj):
 
 # see https://facebook.github.io/graphql/June2018/#sec-Input-Values
 # TODO: support list
-argument_as_gql.register(str, compose('"{}"'.format, escape))
-argument_as_gql.register(int, str)  # TODO: catch > 32bit integers
-argument_as_gql.register(type(None), 'null'.format)
-argument_as_gql.register(bool, {True: 'true', False: 'false'}.__getitem__)
-argument_as_gql.register(float, str)  # TODO: catch NaN, inf
+dump_inputvalue.register(str, compose('"{}"'.format, escape))
+dump_inputvalue.register(int, str)  # TODO: catch > 32bit integers
+dump_inputvalue.register(type(None), 'null'.format)
+dump_inputvalue.register(bool, {True: 'true', False: 'false'}.__getitem__)
+dump_inputvalue.register(float, str)  # TODO: catch NaN, inf
 
 
-@argument_as_gql.register(enum.Enum)
+@dump_inputvalue.register(enum.Enum)
 def _enum_to_gql(obj):
     return obj.value
 

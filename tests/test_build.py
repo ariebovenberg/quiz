@@ -220,26 +220,26 @@ class TestSelectionSet:
         )
 
 
-class TestArgumentAsGql:
+class TestDumpInputvalue:
 
     def test_string(self):
-        assert quiz.argument_as_gql('foo\nb"ar') == '"foo\\nb\\"ar"'
+        assert quiz.dump_inputvalue('foo\nb"ar') == '"foo\\nb\\"ar"'
 
     def test_invalid(self):
         class MyClass(object):
             pass
         with pytest.raises(TypeError, match='MyClass'):
-            quiz.argument_as_gql(MyClass())
+            quiz.dump_inputvalue(MyClass())
 
     def test_int(self):
-        assert quiz.argument_as_gql(4) == '4'
+        assert quiz.dump_inputvalue(4) == '4'
 
     def test_none(self):
-        assert quiz.argument_as_gql(None) == 'null'
+        assert quiz.dump_inputvalue(None) == 'null'
 
     def test_bool(self):
-        assert quiz.argument_as_gql(True) == 'true'
-        assert quiz.argument_as_gql(False) == 'false'
+        assert quiz.dump_inputvalue(True) == 'true'
+        assert quiz.dump_inputvalue(False) == 'false'
 
     @pytest.mark.parametrize('value, expect', [
         (1.2, '1.2'),
@@ -247,7 +247,7 @@ class TestArgumentAsGql:
         (1.234e53, '1.234e+53'),
     ])
     def test_float(self, value, expect):
-        assert quiz.argument_as_gql(value) == expect
+        assert quiz.dump_inputvalue(value) == expect
 
     def test_enum(self):
 
@@ -255,7 +255,7 @@ class TestArgumentAsGql:
             FOO = 'FOOVALUE'
             BLA = 'QUX'
 
-        assert quiz.argument_as_gql(MyEnum.BLA) == 'QUX'
+        assert quiz.dump_inputvalue(MyEnum.BLA) == 'QUX'
 
     def test_custom_scalar(self):
 
@@ -267,7 +267,7 @@ class TestArgumentAsGql:
             def __gql_dump__(self):
                 return self.value.upper()
 
-        assert quiz.argument_as_gql(MyCustomScalar('Hello')) == 'HELLO'
+        assert quiz.dump_inputvalue(MyCustomScalar('Hello')) == 'HELLO'
 
 
 class TestQuery:

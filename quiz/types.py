@@ -5,7 +5,7 @@ from itertools import starmap
 
 import six
 
-from .build import InlineFragment, argument_as_gql
+from .build import InlineFragment, dump_inputvalue
 from .compat import default_ne
 from .utils import FrozenDict, ValueObject
 
@@ -147,7 +147,7 @@ class InputObject(object):
 
     def __gql_dump__(self):
         return '{{{}}}'.format(' '.join(
-            '{}: {}'.format(name, argument_as_gql(value))
+            '{}: {}'.format(name, dump_inputvalue(value))
             for name, value in self.__dict__.items()
         ))
 
