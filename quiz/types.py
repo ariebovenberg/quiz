@@ -10,11 +10,15 @@ from .build import InlineFragment, dump_inputvalue
 from .compat import default_ne
 from .utils import FrozenDict, ValueObject
 
+# TODO: cleanup order
 __all__ = [
     # types
     'Enum',
     'Union',
     'Float',
+    'Boolean',
+    'String',
+    'Int',
     'AnyScalar',
     'Scalar',
     'List',
@@ -24,7 +28,7 @@ __all__ = [
     'Object',
     'Nullable',
     'InputValue',
-    'Loader',
+    'ResponseType',
     'FieldDefinition',
     'InputValueDefinition',
     # TODO: mutation
@@ -43,6 +47,9 @@ __all__ = [
     'NoValueForField',
     'load',
 ]
+
+MIN_INT = -2 << 30
+MAX_INT = (2 << 30) - 1
 
 
 InputValueDefinition = t.NamedTuple('InputValueDefinition', [
@@ -280,6 +287,9 @@ class Union(object):
 class InputValue(object):
     """Base class for input value classes.
     These values may be used in GraphQL queries (requests)"""
+    def __init__(self, value):
+        self.value = value
+
     # TODO: make abstract
     def __gql_dump__(self):
         # type: () -> str
@@ -295,8 +305,9 @@ class InputValue(object):
 
 # TODO: make ABCMeta
 # TODO: make generic
-class Loader(object):
-    """Base class for loader classes.
+# TODO: rename to indicate it can be the parser, not the value itself?
+class ResponseType(object):
+    """Base class for response value classes.
     These classes are used to load GraphQL responses into (python) types"""
 
     # TODO: make abstract?
@@ -307,7 +318,7 @@ class Loader(object):
             'GraphQL deserialization is not defined for this type')
 
 
-class Scalar(InputValue, Loader):
+class Scalar(InputValue, ResponseType):
     """Base class for scalars"""
 
 class _AnyScalarMeta(type):
@@ -321,21 +332,14 @@ class _AnyScalarMeta(type):
 @six.add_metaclass(_AnyScalarMeta)
 class AnyScalar(Scalar):
     """A generic scalar, accepting any primitive type"""
-    def __init__(self, value):
-        self.value = value
-
     @classmethod
     def coerce(cls, data):
-        pass
+        return cls(Float.coerce(data))
 
 
-class Float(InputValue, Loader):
+class Float(InputValue, ResponseType):
     """A GraphQL float object. The main difference with :class:`float`
     is that it may not be infinite or NaN"""
-
-    def __init__(self, value):
-        self.value = value
-
     # TODO: consistent types of exceptions to raise
     @classmethod
     def coerce(cls, value):
@@ -343,7 +347,7 @@ class Float(InputValue, Loader):
         if not isinstance(value, (float, int)):
             raise ValueError('Invalid type, must be float or int')
         if math.isnan(value) or math.isinf(value):
-            raise ValueError('float value cannot be infinite or NaN')
+            raise ValueError('Float value cannot be infinite or NaN')
         return cls(float(value))
 
     def __gql_dump__(self):
@@ -353,6 +357,48 @@ class Float(InputValue, Loader):
     def __gql_load__(cls, data):
         # type: Union[float, int] -> float
         return float(data)
+
+
+class Int(InputValue, ResponseType):
+    """A GraphQL integer object. The main difference with :class:`int`
+    is that it may only represent integers up to 32 bits in size"""
+    @classmethod
+    def coerce(cls, value):
+        if not isinstance(value, six.integer_types):
+            raise ValueError('Invalid type, must be int')
+        if not MIN_INT < value < MAX_INT:
+            raise ValueError('{} is not representable by a 32-bit integer'
+                             .format(value))
+        return cls(int(value))
+
+    def __gql_dump__(self):
+        return str(self.value)
+
+    @classmethod
+    def __gql_load__(cls, data):
+        return data
+
+
+class Boolean(InputValue, ResponseType):
+    """A GraphQL boolean object"""
+    @classmethod
+    def coerce(cls, value):
+        if isinstance(value, bool):
+            return cls(value)
+        else:
+            raise ValueError('A boolean type is required'.format(value))
+
+    def __gql_dump__(self):
+        return 'true' if self.value else 'false'
+
+    # TODO: remove duplication
+    @classmethod
+    def __gql_load__(cls, data):
+        return data
+
+
+class String(InputValue, ResponseType):
+    """A GraphQL string"""
 
 
 def _unwrap_list_or_nullable(type_):

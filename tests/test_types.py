@@ -14,6 +14,10 @@ from .example import (Color, Command, Dog, DogQuery, Hobby, Human, MyDateTime,
 from .helpers import AlwaysEquals, NeverEquals, render_doc
 
 
+class FooScalar(quiz.AnyScalar):
+    """example AnyScalar subclass"""
+
+
 class TestUnion:
 
     def test_instancecheck(self):
@@ -79,6 +83,17 @@ class TestAnyScalar:
 
         assert not isinstance([], MyScalar)
         assert not isinstance(None, MyScalar)
+
+    class TestCoerce:
+
+        def test_float(self):
+            result = FooScalar.coerce(4.5)
+            assert isinstance(result, FooScalar)
+            assert isinstance(result.value, quiz.Float)
+            assert result.value.value == 4.5
+
+            with pytest.raises(ValueError, match='infinite'):
+                FooScalar.coerce(float('inf'))
 
 
 class TestObject:
@@ -653,7 +668,7 @@ class TestFloat:
 
     def test_mro(self):
         assert issubclass(quiz.Float, quiz.InputValue)
-        assert issubclass(quiz.Float, quiz.Loader)
+        assert issubclass(quiz.Float, quiz.ResponseType)
 
     class TestCoerce:
 
@@ -679,6 +694,7 @@ class TestFloat:
         (1.2, '1.2'),
         (1., '1.0'),
         (1.234e53, '1.234e+53'),
+        (.4, '0.4'),
     ])
     def test_gql_dump(self, value, expect):
         f = quiz.Float(value)
@@ -695,3 +711,96 @@ class TestFloat:
             result = quiz.Float.__gql_load__(2)
             assert result == 2.0
             assert isinstance(result, float)
+
+
+class TestInt:
+
+    def test_mro(self):
+        assert issubclass(quiz.Int, quiz.InputValue)
+        assert issubclass(quiz.Int, quiz.ResponseType)
+
+    class TestCoerce:
+
+        def test_valid_int(self):
+            result = quiz.Int.coerce(-4234)
+            assert isinstance(result, quiz.Int)
+            assert result.value == -4234
+
+        @pytest.mark.parametrize('value', [
+            2 << 30,
+            (-2 << 30) - 1,
+        ])
+        def test_invalid_int(self, value):
+            with pytest.raises(ValueError, match='32'):
+                quiz.Int.coerce(value)
+
+        @pytest.mark.skipif(six.PY3, reason='python 2 only')
+        def test_valid_long(self):
+            result = quiz.Int.coerce(long(4))
+            assert isinstance(result, int)
+
+        @pytest.mark.parametrize('value', [object(), "foo", 1.2])
+        def test_invalid_type(self, value):
+            with pytest.raises(ValueError, match='type'):
+                quiz.Int.coerce(value)
+
+    @pytest.mark.parametrize('value, expect', [
+        (1, '1'),
+        (0, '0'),
+        (-334, '-334'),
+    ])
+    def test_gql_dump(self, value, expect):
+        f = quiz.Int(value)
+        assert f.__gql_dump__() == expect
+
+    def test_gql_load(self):
+        assert quiz.Int.__gql_load__(3) == 3
+
+
+class TestBoolean:
+
+    def test_mro(self):
+        assert issubclass(quiz.Boolean, quiz.InputValue)
+        assert issubclass(quiz.Boolean, quiz.ResponseType)
+
+    class TestCoerce:
+
+        def test_bool(self):
+            result = quiz.Boolean.coerce(True)
+            assert isinstance(result, quiz.Boolean)
+            assert result.value is True
+
+        @pytest.mark.parametrize('value', [object(), "foo", 1.2, 1])
+        def test_invalid_type(self, value):
+            with pytest.raises(ValueError, match='type'):
+                quiz.Boolean.coerce(value)
+
+    @pytest.mark.parametrize('value, expect', [
+        (True, 'true'),
+        (False, 'false'),
+    ])
+    def test_gql_dump(self, value, expect):
+        assert quiz.Boolean(value).__gql_dump__() == expect
+
+    def test_gql_load(self):
+        assert quiz.Boolean.__gql_load__(True) is True
+
+
+class TestString:
+
+    def test_mro(self):
+        assert issubclass(quiz.String, quiz.InputValue)
+        assert issubclass(quiz.String, quiz.ResponseType)
+
+    @pytest.mark.skip(reason='work in progress')
+    class TestCoerce:
+
+        def test_valid_string(self):
+            result = quiz.String.coerce(u'my valid string')
+            assert isinstance(result, quiz.String)
+            assert result.value == u'my valid string'
+
+        @pytest.mark.parametrize('value', [object(), "foo", 1.2, 1])
+        def test_invalid_type(self, value):
+            with pytest.raises(ValueError, match='type'):
+                quiz.Boolean.coerce(value)
