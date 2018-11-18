@@ -209,14 +209,14 @@ class TestInputObject:
 
         class Foo(quiz.InputObject):
             __input_fields__ = {
-                'self': quiz.InputValue(
+                'self': quiz.InputValueDefinition(
                     'self',
                     'example field',
                     type=int,
                 )
             }
             self = quiz.InputObjectFieldDescriptor(
-                quiz.InputValue(
+                quiz.InputValueDefinition(
                     'self',
                     'example field',
                     type=int,
@@ -644,3 +644,47 @@ class TestFieldDefinition:
 
         with pytest.raises(AttributeError, match='set'):
             f.bla = 3
+
+
+class TestFloat:
+
+    class TestCoerce:
+
+        @pytest.mark.parametrize('value', [1, 3.4, -.1])
+        def test_float_or_int(self, value):
+            result = quiz.Float.coerce(value)
+            assert result.value == value
+            assert isinstance(result, quiz.Float)
+            assert isinstance(result.value, float)
+
+        @pytest.mark.parametrize('value', [float('inf'), float('nan'),
+                                           float('-inf')])
+        def test_invalid_float(self, value):
+            with pytest.raises(ValueError, match='infinite or NaN'):
+                quiz.Float.coerce(value)
+
+        @pytest.mark.parametrize('value', [object(), "foo", "1.2"])
+        def test_invalid_type(self, value):
+            with pytest.raises(ValueError, match='type'):
+                quiz.Float.coerce(value)
+
+    @pytest.mark.parametrize('value, expect', [
+        (1.2, '1.2'),
+        (1., '1.0'),
+        (1.234e53, '1.234e+53'),
+    ])
+    def test_gql_dump(self, value, expect):
+        f = quiz.Float(value)
+        assert f.__gql_dump__() == expect
+
+    class TestGqlLoad:
+
+        def test_float(self):
+            result = quiz.Float.__gql_load__(3.4)
+            assert result == 3.4
+            assert isinstance(result, float)
+
+        def test_int(self):
+            result = quiz.Float.__gql_load__(2)
+            assert result == 2.0
+            assert isinstance(result, float)

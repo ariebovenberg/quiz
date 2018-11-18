@@ -74,7 +74,7 @@ class Dog(Sentient, q.Object):
     is_housetrained = mkfield(
         'is_housetrained',
         args=FrozenDict({
-            'at_other_homes': q.InputValue(
+            'at_other_homes': q.InputValueDefinition(
                 'at_other_homes',
                 '',
                 type=q.Nullable[bool]
@@ -85,7 +85,7 @@ class Dog(Sentient, q.Object):
     knows_command = mkfield(
         'knows_command',
         args=FrozenDict({
-            'command': q.InputValue(
+            'command': q.InputValueDefinition(
                 'command',
                 'the command',
                 type=Command
@@ -99,7 +99,7 @@ class Dog(Sentient, q.Object):
         'age',
         type=int,
         args=FrozenDict({
-            'on_date': q.InputValue(
+            'on_date': q.InputValueDefinition(
                 'on_date',
                 '',
                 type=q.Nullable[MyDateTime]
@@ -113,12 +113,12 @@ class Dog(Sentient, q.Object):
 class SearchFilters(q.InputObject):
     """filters for searching"""
     __input_fields__ = {
-        'field': q.InputValue(
+        'field': q.InputValueDefinition(
             'field',
             'the field to filter on',
             type=str,
         ),
-        'order': q.InputValue(
+        'order': q.InputValueDefinition(
             'order',
             'the ordering',
             type=q.Nullable[Order],
@@ -126,14 +126,14 @@ class SearchFilters(q.InputObject):
     }
 
     field = q.InputObjectFieldDescriptor(
-        q.InputValue(
+        q.InputValueDefinition(
             'field',
             'the field to filter on',
             type=str,
         )
     )
     order = q.InputObjectFieldDescriptor(
-        q.InputValue(
+        q.InputValueDefinition(
             'order',
             'the ordering',
             type=q.Nullable[Order],
@@ -146,7 +146,7 @@ class DogQuery(q.Object):
     search_dogs = mkfield(
         'search_dogs',
         args=FrozenDict({
-            'filters': q.InputValue(
+            'filters': q.InputValueDefinition(
                 'filters',
                 'the search filters',
                 type=SearchFilters

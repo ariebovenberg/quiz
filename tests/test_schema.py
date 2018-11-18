@@ -46,11 +46,11 @@ def test_inputobject_as_type():
     s._add_input_fields(created, classes)
 
     assert created.__input_fields__ == {
-        'param1': quiz.InputValue(
+        'param1': quiz.InputValueDefinition(
             'param1', 'the first param',
             type=quiz.Nullable[quiz.List[quiz.Nullable[classes['MyType']]]],
         ),
-        'param2': quiz.InputValue(
+        'param2': quiz.InputValueDefinition(
             'param2', 'the second parameter',
             type=quiz.Nullable[classes['MyOtherType']]
         ),

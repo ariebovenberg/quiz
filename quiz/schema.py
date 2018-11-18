@@ -88,7 +88,7 @@ def _add_fields(obj, classes):
                 name=f.name,
                 desc=f.desc,
                 args=FrozenDict({
-                    i.name: types.InputValue(
+                    i.name: types.InputValueDefinition(
                         name=i.name,
                         desc=i.desc,
                         type=resolve_typeref(i.type, classes),
@@ -107,8 +107,8 @@ def _add_fields(obj, classes):
 def _add_input_fields(obj, classes):
     # TODO: fix this duplication of data
     obj.__input_fields__ = {
-        f.name: types.InputValue(f.name, f.desc,
-                                 type=resolve_typeref(f.type, classes))
+        f.name: types.InputValueDefinition(
+            f.name, f.desc, type=resolve_typeref(f.type, classes))
         for f in obj.__raw__.input_fields
     }
     for f in obj.__raw__.input_fields:

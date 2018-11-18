@@ -1,5 +1,6 @@
 """Components for typed GraphQL interactions"""
 import enum
+import math
 import typing as t
 from itertools import starmap
 
@@ -13,6 +14,7 @@ __all__ = [
     # types
     'Enum',
     'Union',
+    'Float',
     'GenericScalar',
     'Scalar',
     'List',
@@ -22,7 +24,7 @@ __all__ = [
     'Object',
     'Nullable',
     'FieldDefinition',
-    'InputValue',
+    'InputValueDefinition',
     # TODO: mutation
     # TODO: subscription
 
@@ -41,7 +43,7 @@ __all__ = [
 ]
 
 
-InputValue = t.NamedTuple('InputValue', [
+InputValueDefinition = t.NamedTuple('InputValueDefinition', [
     ('name', str),
     ('desc', str),
     ('type', type),
@@ -86,7 +88,7 @@ class Object(Namespace):
 
 class InputObjectFieldDescriptor(ValueObject):
     __fields__ = [
-        ('value', InputValue, 'The input value'),
+        ('value', InputValueDefinition, 'The input value'),
     ]
 
     def __get__(self, obj, objtype=None):
@@ -176,7 +178,8 @@ class FieldDefinition(ValueObject):
         ('name', str, 'Field name'),
         ('desc', str, 'Field description'),
         ('type', type, 'Field data type'),
-        ('args', FrozenDict[str, InputValue], 'Accepted field arguments'),
+        ('args', FrozenDict[str, InputValueDefinition],
+         'Accepted field arguments'),
         ('is_deprecated', bool, 'Whether the field is deprecated'),
         ('deprecation_reason', t.Optional[str], 'Reason for deprecation'),
     ]
@@ -270,20 +273,24 @@ class Union(object):
     __args__ = ()
 
 
-class Scalar(object):
-    """Base class for scalars"""
+# TODO: generic [T_in, T_out]?
+class Serializable(object):
 
     def __gql_dump__(self):
-        """Serialize the scalar to a GraphQL primitive value"""
+        # type: () -> str
+        """Serialize the object to a GraphQL primitive value"""
         raise NotImplementedError(
-            'GraphQL serialization is not defined for this scalar')
+            'GraphQL serialization is not defined for this type')
 
     @classmethod
     def __gql_load__(cls, data):
-        """Load a scalar instance from GraphQL"""
+        """Load an instance from GraphQL"""
         raise NotImplementedError(
-            'GraphQL deserialization is not defined for this scalar')
+            'GraphQL deserialization is not defined for this type')
 
+
+class Scalar(Serializable):
+    """Base class for scalars"""
 
 class GenericScalarMeta(type):
 
@@ -296,6 +303,32 @@ class GenericScalar(Scalar):
     """A generic scalar, accepting any primitive type"""
 
 
+class Float(Serializable):
+    """A GraphQL float object. The main difference with :class:`float`
+    is that it may not be infinite or NaN"""
+
+    def __init__(self, value):
+        self.value = value
+
+    # TODO: consistent types of exceptions to raise
+    @classmethod
+    def coerce(cls, value):
+        # type: Any -> Float
+        if not isinstance(value, (float, int)):
+            raise ValueError('Invalid type, must be float or int')
+        if math.isnan(value) or math.isinf(value):
+            raise ValueError('float value cannot be infinite or NaN')
+        return cls(float(value))
+
+    def __gql_dump__(self):
+        return str(self.value)
+
+    @classmethod
+    def __gql_load__(cls, data):
+        # type: Union[float, int] -> float
+        return float(data)
+
+
 def _unwrap_list_or_nullable(type_):
     # type: Type[Nullable, List, Scalar, Enum, InputObject]
     # -> Type[Scalar | Enum | InputObject]
@@ -305,7 +338,7 @@ def _unwrap_list_or_nullable(type_):
 
 
 def _validate_args(schema, actual):
-    # type: (Mapping[str, InputValue], Mapping[str, object])
+    # type: (Mapping[str, InputValueDefinition], Mapping[str, object])
     # -> Mapping[str, object]
     invalid_args = six.viewkeys(actual) - six.viewkeys(schema)
     if invalid_args:
