@@ -331,17 +331,17 @@ class Nullable(InputValue, ResponseType):
         return data if data is None else cls.__arg__.__gql_load__(data)
 
 
-# TODO: add __getitem__, similar to list and nullable
-class UnionMeta(type):
+# # TODO: add __getitem__, similar to list and nullable
+# class UnionMeta(type):
 
-    def __instancecheck__(self, instance):
-        return isinstance(instance, self.__args__)
+#     def __instancecheck__(self, instance):
+#         return isinstance(instance, self.__args__)
 
 
 # Q: why not typing.Union?
 # A: it isn't consistent across python versions,
 #    and doesn't support __doc__, __name__, or isinstance()
-@six.add_metaclass(UnionMeta)
+# @six.add_metaclass(UnionMeta)
 class Union(object):
     __args__ = ()
 
@@ -356,7 +356,6 @@ class _AnyScalarMeta(type):
         return isinstance(instance, _PRIMITIVE_TYPES)
 
 
-# TODO: test, add dump/load implementations
 @six.add_metaclass(_AnyScalarMeta)
 class AnyScalar(Scalar):
     """A generic scalar, accepting any primitive type"""

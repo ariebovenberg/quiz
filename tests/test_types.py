@@ -22,16 +22,16 @@ class FooString(quiz.StringLike):
     """example stringlike class"""
 
 
-class TestUnion:
+# class TestUnion:
 
-    def test_instancecheck(self):
+#     def test_instancecheck(self):
 
-        class MyUnion(quiz.Union):
-            __args__ = (str, int)
+#         class MyUnion(quiz.Union):
+#             __args__ = (str, int)
 
-        assert isinstance('foo', MyUnion)
-        assert isinstance(5, MyUnion)
-        assert not isinstance(1.3, MyUnion)
+#         assert isinstance('foo', MyUnion)
+#         assert isinstance(5, MyUnion)
+#         assert not isinstance(1.3, MyUnion)
 
 
 class TestNullable:
