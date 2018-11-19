@@ -349,13 +349,30 @@ class _AnyScalarMeta(type):
 
 
 # TODO: test, add dump/load implementations
-# TODO: rename to AnyScalar?
 @six.add_metaclass(_AnyScalarMeta)
 class AnyScalar(Scalar):
     """A generic scalar, accepting any primitive type"""
     @classmethod
     def coerce(cls, data):
-        return cls(Float.coerce(data))
+        if data is None or isinstance(data, Scalar):
+            return cls(data)
+        try:
+            gql_type = PY_TYPE_TO_GQL_TYPE[type(data)]
+        except KeyError:
+            raise ValueError('Invalid type, must be a scalar')
+        return cls(gql_type.coerce(data))
+
+    def __gql_dump__(self):
+        # type: () -> str
+        if self.value is None:
+            return 'null'
+        else:
+            return self.value.__gql_dump__()
+
+    @classmethod
+    def __gql_load__(cls, data):
+        # type: T -> T
+        return data
 
 
 class Float(InputValue, ResponseType):
@@ -655,3 +672,13 @@ BUILTIN_SCALARS = {
     "Float":   float,
     "Int":     int,
 }
+
+
+PY_TYPE_TO_GQL_TYPE = {
+    float: Float,
+    int: Int,
+    bool: Boolean,
+    six.text_type: String,
+}
+if six.PY2:  # pragma: no cover
+    PY_TYPE_TO_GQL_TYPE[str] = String

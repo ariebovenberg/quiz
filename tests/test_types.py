@@ -133,6 +133,65 @@ class TestAnyScalar:
             with pytest.raises(ValueError, match='infinite'):
                 FooScalar.coerce(float('inf'))
 
+        def test_int(self):
+            result = FooScalar.coerce(4)
+            assert isinstance(result, FooScalar)
+            assert isinstance(result.value, quiz.Int)
+            assert result.value.value == 4
+
+            with pytest.raises(ValueError, match='32'):
+                FooScalar.coerce(2 << 31)
+
+        def test_bool(self):
+            result = FooScalar.coerce(True)
+            assert isinstance(result, FooScalar)
+            assert isinstance(result.value, quiz.Boolean)
+            assert result.value.value is True
+
+        def test_string(self):
+            result = FooScalar.coerce(u'my string')
+            assert isinstance(result, FooScalar)
+            assert isinstance(result.value, quiz.String)
+            assert result.value.value == u'my string'
+
+        @pytest.mark.skipif(six.PY3, reason='py2 only')
+        def test_py2_bytes(self):
+            result = FooScalar.coerce(b'my string')
+            assert isinstance(result, FooScalar)
+            assert isinstance(result.value, quiz.String)
+            assert result.value.value == 'my string'
+            assert isinstance(result.value.value, six.text_type)
+
+        def test_other_scalar(self):
+            class MyScalar(quiz.Scalar):
+                """an example scalar"""
+                def __init__(self, value):
+                    self.value = value
+
+            value = MyScalar('foo')
+            result = FooScalar.coerce(value)
+            assert result.value == value
+
+        def test_null(self):
+            result = FooScalar.coerce(None)
+            assert isinstance(result, FooScalar)
+            assert result.value is None
+
+        def test_invalid_object(self):
+            with pytest.raises(ValueError, match='scalar'):
+                FooScalar.coerce(object())
+
+    @pytest.mark.parametrize('value, expect', [
+        (None, 'null'),
+        (quiz.String('foo'), '"foo"'),
+    ])
+    def test_gql_dump(self, value, expect):
+        f = FooScalar(value).__gql_dump__() == expect
+
+    @pytest.mark.parametrize('value', [None, 3.4, 'foo'])
+    def test_gql_load(self, value):
+        assert FooScalar.__gql_load__(value) == value
+
 
 class TestObject:
 
