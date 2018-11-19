@@ -34,7 +34,6 @@ class TestUnion:
         assert not isinstance(1.3, MyUnion)
 
 
-
 class TestNullable:
 
     def test_mro(self):
@@ -91,6 +90,14 @@ class TestNullable:
         assert isinstance(result, float)
         assert quiz.Nullable[quiz.Float].__gql_load__(None) is None
 
+    def test_equality(self, mocker):
+        assert quiz.Nullable[object] == quiz.Nullable[object]
+        assert not quiz.Nullable[object] != quiz.Nullable[object]
+        assert not quiz.Nullable[object] == quiz.Nullable[int]
+        assert quiz.Nullable[object] != quiz.Nullable[int]
+        assert quiz.Nullable[object] == mocker.ANY
+        assert not quiz.Nullable[int] != mocker.ANY
+
 
 class TestList:
 
@@ -142,6 +149,14 @@ class TestList:
         result = quiz.List[quiz.Float].__gql_load__([1])
         assert result == [1]
         assert isinstance(result[0], float)
+
+    def test_equality(self, mocker):
+        assert quiz.List[object] == quiz.List[object]
+        assert not quiz.List[object] != quiz.List[object]
+        assert not quiz.List[object] == quiz.List[int]
+        assert quiz.List[object] != quiz.List[int]
+        assert quiz.List[object] == mocker.ANY
+        assert not quiz.List[int] != mocker.ANY
 
 
 class TestAnyScalar:
@@ -230,7 +245,7 @@ class TestAnyScalar:
         (quiz.String('foo'), '"foo"'),
     ])
     def test_gql_dump(self, value, expect):
-        f = FooScalar(value).__gql_dump__() == expect
+        assert FooScalar(value).__gql_dump__() == expect
 
     @pytest.mark.parametrize('value', [None, 3.4, 'foo'])
     def test_gql_load(self, value):
