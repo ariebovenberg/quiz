@@ -18,6 +18,10 @@ class FooScalar(quiz.AnyScalar):
     """example AnyScalar subclass"""
 
 
+class FooString(quiz.StringLike):
+    """example stringlike class"""
+
+
 class TestUnion:
 
     def test_instancecheck(self):
@@ -736,8 +740,8 @@ class TestInt:
 
         @pytest.mark.skipif(six.PY3, reason='python 2 only')
         def test_valid_long(self):
-            result = quiz.Int.coerce(long(4))
-            assert isinstance(result, int)
+            result = quiz.Int.coerce(long(4))  # noqa
+            assert isinstance(result.value, int)
 
         @pytest.mark.parametrize('value', [object(), "foo", 1.2])
         def test_invalid_type(self, value):
@@ -786,21 +790,52 @@ class TestBoolean:
         assert quiz.Boolean.__gql_load__(True) is True
 
 
-class TestString:
+class TestStringLike:
 
     def test_mro(self):
-        assert issubclass(quiz.String, quiz.InputValue)
-        assert issubclass(quiz.String, quiz.ResponseType)
+        assert issubclass(quiz.StringLike, quiz.InputValue)
+        assert issubclass(quiz.StringLike, quiz.ResponseType)
 
-    @pytest.mark.skip(reason='work in progress')
     class TestCoerce:
 
         def test_valid_string(self):
-            result = quiz.String.coerce(u'my valid string')
-            assert isinstance(result, quiz.String)
+            result = FooString.coerce(u'my valid string')
+            assert isinstance(result, FooString)
             assert result.value == u'my valid string'
 
-        @pytest.mark.parametrize('value', [object(), "foo", 1.2, 1])
+        @pytest.mark.parametrize('value', [object(), None, 1.2, 1])
         def test_invalid_type(self, value):
             with pytest.raises(ValueError, match='type'):
-                quiz.Boolean.coerce(value)
+                FooString.coerce(value)
+
+        @pytest.mark.skipif(six.PY3, reason='py2 only')
+        def test_py2_accepts_bytes(self):
+            result = FooString.coerce(b'my value')
+            assert isinstance(result.value, six.text_type)
+            assert result.value == 'my value'
+
+        @pytest.mark.skipif(six.PY2, reason='py3 only')
+        def test_py3_does_not_accept_bytes(self):
+            with pytest.raises(ValueError, match='type'):
+                FooString.coerce(b'foo')
+
+    @pytest.mark.parametrize('value, expect', [
+        ('foo', '"foo"'),
+        ('foo\nbar', '"foo\\nbar"'),
+        ('"quoted" --', '"\\"quoted\\" --"'),
+    ])
+    def test_gql_dump(self, value, expect):
+        assert FooString(value).__gql_dump__() == expect
+
+    def test_gql_load(self):
+        result = FooString.__gql_load__(u'foo')
+        assert isinstance(result, six.text_type)
+        assert result == u'foo'
+
+
+def test_string():
+    assert issubclass(quiz.String, quiz.StringLike)
+
+
+def test_id():
+    assert issubclass(quiz.ID, quiz.StringLike)

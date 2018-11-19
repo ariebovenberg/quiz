@@ -6,31 +6,32 @@ from itertools import starmap
 
 import six
 
-from .build import InlineFragment, dump_inputvalue
+from .build import InlineFragment, dump_inputvalue, escape
 from .compat import default_ne
 from .utils import FrozenDict, ValueObject
 
-# TODO: cleanup order
 __all__ = [
     # types
-    'Enum',
-    'Union',
-    'Float',
-    'Boolean',
-    'String',
-    'Int',
     'AnyScalar',
-    'Scalar',
-    'List',
-    'Interface',
+    'Boolean',
+    'Enum',
+    'FieldDefinition',
+    'Float',
+    'ID',
     'InputObject',
     'InputObjectFieldDescriptor',
-    'Object',
-    'Nullable',
     'InputValue',
-    'ResponseType',
-    'FieldDefinition',
     'InputValueDefinition',
+    'Int',
+    'Interface',
+    'List',
+    'Nullable',
+    'Object',
+    'ResponseType',
+    'Scalar',
+    'String',
+    'StringLike',
+    'Union',
     # TODO: mutation
     # TODO: subscription
 
@@ -386,7 +387,7 @@ class Boolean(InputValue, ResponseType):
         if isinstance(value, bool):
             return cls(value)
         else:
-            raise ValueError('A boolean type is required'.format(value))
+            raise ValueError('A boolean type is required')
 
     def __gql_dump__(self):
         return 'true' if self.value else 'false'
@@ -397,8 +398,32 @@ class Boolean(InputValue, ResponseType):
         return data
 
 
-class String(InputValue, ResponseType):
-    """A GraphQL string"""
+class StringLike(InputValue, ResponseType):
+    """Base for string-like types"""
+    @classmethod
+    def coerce(cls, value):
+        if isinstance(value, six.text_type):
+            return cls(value)
+        elif six.PY2 and isinstance(value, bytes):
+            return cls(six.text_type(value))
+        else:
+            raise ValueError('A string type is required')
+
+    def __gql_dump__(self):
+        return '"{}"'.format(escape(self.value))
+
+    # TODO: remove duplication
+    @classmethod
+    def __gql_load__(cls, data):
+        return data
+
+
+class String(StringLike):
+    """GraphQL text type"""
+
+
+class ID(StringLike):
+    """A GraphQL ID. Serialized the same way as a string"""
 
 
 def _unwrap_list_or_nullable(type_):
