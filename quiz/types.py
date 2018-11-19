@@ -404,7 +404,7 @@ class StringLike(InputValue, ResponseType):
     def coerce(cls, value):
         if isinstance(value, six.text_type):
             return cls(value)
-        elif six.PY2 and isinstance(value, bytes):
+        elif six.PY2 and isinstance(value, bytes):  # pragma: no cover
             return cls(six.text_type(value))
         else:
             raise ValueError('A string type is required')
