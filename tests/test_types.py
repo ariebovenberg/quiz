@@ -71,6 +71,36 @@ class TestList:
         assert MyList == mocker.ANY
         assert not MyList != mocker.ANY
 
+    class TestCoerce:
+
+        def test_ok(self):
+            type_ = quiz.List[quiz.Float]
+            result = type_.coerce([1, 3.4, 8])
+            assert isinstance(result, type_)
+            assert isinstance(result.value, list)
+            assert result.value[1].value == 3.4
+
+        def test_propagates_error(self):
+            with pytest.raises(ValueError, match='infinite'):
+                quiz.List[quiz.Float].coerce([float('nan')])
+
+        @pytest.mark.parametrize('value', [object(), "foo", "1.2", (1, )])
+        def test_invalid_type(self, value):
+            with pytest.raises(ValueError, match='type'):
+                quiz.List[quiz.Float].coerce(value)
+
+    @pytest.mark.parametrize('value, expect', [
+        ([], '[]'),
+        ([quiz.String('foo\nbar'), quiz.String('bla')], '["foo\\nbar" "bla"]'),
+    ])
+    def test_gql_dump(self, value, expect):
+        assert quiz.List[quiz.String](value).__gql_dump__() == expect
+
+    def test_gql_load(self):
+        result = quiz.List[quiz.Float].__gql_load__([1])
+        assert result == [1]
+        assert isinstance(result[0], float)
+
 
 class TestAnyScalar:
 

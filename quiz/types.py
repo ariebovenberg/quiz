@@ -3,6 +3,7 @@ import enum
 import math
 import typing as t
 from itertools import starmap
+from operator import methodcaller
 
 import six
 
@@ -275,6 +276,23 @@ class ListMeta(type):
 @six.add_metaclass(ListMeta)
 class List(InputValue, ResponseType):
     __arg__ = object
+
+    @classmethod
+    def coerce(cls, data):
+        # type: object -> List
+        if isinstance(data, list):
+            return cls(list(map(cls.__arg__.coerce, data)))
+        else:
+            raise ValueError('Invalid type, must be a list')
+
+    def __gql_dump__(self):
+        # type: () -> str
+        return '[{}]'.format(' '.join(map(methodcaller('__gql_dump__'),
+                                          self.value)))
+
+    @classmethod
+    def __gql_load__(cls, data):
+        return list(map(cls.__arg__.__gql_load__, data))
 
 
 class NullableMeta(type):
