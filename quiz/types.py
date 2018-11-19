@@ -62,6 +62,42 @@ InputValueDefinition = t.NamedTuple('InputValueDefinition', [
 _PRIMITIVE_TYPES = (int, float, bool, six.text_type)
 
 
+# TODO: make ABCMeta
+# TODO: make generic
+class InputValue(object):
+    """Base class for input value classes.
+    These values may be used in GraphQL queries (requests)"""
+    def __init__(self, value):
+        self.value = value
+
+    # TODO: make abstract
+    def __gql_dump__(self):
+        # type: () -> str
+        """Serialize the object to a GraphQL primitive value"""
+        raise NotImplementedError(
+            'GraphQL serialization is not defined for this type')
+
+    # TODO: a sensible default implementation
+    @classmethod
+    def coerce(cls, value):
+        raise NotImplementedError()
+
+
+# TODO: make ABCMeta
+# TODO: make generic
+# TODO: rename to indicate it can be the parser, not the value itself?
+class ResponseType(object):
+    """Base class for response value classes.
+    These classes are used to load GraphQL responses into (python) types"""
+
+    # TODO: make abstract?
+    @classmethod
+    def __gql_load__(cls, data):
+        """Load an instance from GraphQL"""
+        raise NotImplementedError(
+            'GraphQL deserialization is not defined for this type')
+
+
 class HasFields(type):
     """metaclass for classes with GraphQL field definitions"""
 
@@ -235,8 +271,9 @@ class ListMeta(type):
 
 # Q: why not typing.List?
 # A: it doesn't support __doc__, __name__, or isinstance()
+# TODO: a separate class for input value lists?
 @six.add_metaclass(ListMeta)
-class List(object):
+class List(InputValue, ResponseType):
     __arg__ = object
 
 
@@ -283,44 +320,9 @@ class Union(object):
     __args__ = ()
 
 
-# TODO: make ABCMeta
-# TODO: make generic
-class InputValue(object):
-    """Base class for input value classes.
-    These values may be used in GraphQL queries (requests)"""
-    def __init__(self, value):
-        self.value = value
-
-    # TODO: make abstract
-    def __gql_dump__(self):
-        # type: () -> str
-        """Serialize the object to a GraphQL primitive value"""
-        raise NotImplementedError(
-            'GraphQL serialization is not defined for this type')
-
-    # TODO: a sensible default implementation
-    @classmethod
-    def coerce(cls, value):
-        raise NotImplementedError()
-
-
-# TODO: make ABCMeta
-# TODO: make generic
-# TODO: rename to indicate it can be the parser, not the value itself?
-class ResponseType(object):
-    """Base class for response value classes.
-    These classes are used to load GraphQL responses into (python) types"""
-
-    # TODO: make abstract?
-    @classmethod
-    def __gql_load__(cls, data):
-        """Load an instance from GraphQL"""
-        raise NotImplementedError(
-            'GraphQL deserialization is not defined for this type')
-
-
 class Scalar(InputValue, ResponseType):
     """Base class for scalars"""
+
 
 class _AnyScalarMeta(type):
 
@@ -344,7 +346,7 @@ class Float(InputValue, ResponseType):
     # TODO: consistent types of exceptions to raise
     @classmethod
     def coerce(cls, value):
-        # type: Any -> Float
+        # type: object -> Float
         if not isinstance(value, (float, int)):
             raise ValueError('Invalid type, must be float or int')
         if math.isnan(value) or math.isinf(value):
@@ -365,6 +367,7 @@ class Int(InputValue, ResponseType):
     is that it may only represent integers up to 32 bits in size"""
     @classmethod
     def coerce(cls, value):
+        # type: object -> Int
         if not isinstance(value, six.integer_types):
             raise ValueError('Invalid type, must be int')
         if not MIN_INT < value < MAX_INT:
@@ -377,6 +380,7 @@ class Int(InputValue, ResponseType):
 
     @classmethod
     def __gql_load__(cls, data):
+        # type: int -> int
         return data
 
 
@@ -384,6 +388,7 @@ class Boolean(InputValue, ResponseType):
     """A GraphQL boolean object"""
     @classmethod
     def coerce(cls, value):
+        # type: object -> Boolean
         if isinstance(value, bool):
             return cls(value)
         else:
@@ -392,9 +397,9 @@ class Boolean(InputValue, ResponseType):
     def __gql_dump__(self):
         return 'true' if self.value else 'false'
 
-    # TODO: remove duplication
     @classmethod
     def __gql_load__(cls, data):
+        # type: bool -> bool
         return data
 
 
@@ -402,6 +407,7 @@ class StringLike(InputValue, ResponseType):
     """Base for string-like types"""
     @classmethod
     def coerce(cls, value):
+        # type: object -> StringLike
         if isinstance(value, six.text_type):
             return cls(value)
         elif six.PY2 and isinstance(value, bytes):  # pragma: no cover
@@ -412,9 +418,9 @@ class StringLike(InputValue, ResponseType):
     def __gql_dump__(self):
         return '"{}"'.format(escape(self.value))
 
-    # TODO: remove duplication
     @classmethod
     def __gql_load__(cls, data):
+        # type: str -> str
         return data
 
 

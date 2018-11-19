@@ -249,7 +249,7 @@ Module autogeneration                                              planned
 Type inference (e.g. enum values)                                  planned
 Variables                                                          planned
 Directives                                                         planned
-Integer 32-bit limit                                               planned
+Non-JSON responses (e.g. XML)                                      planned
 converting names from camelcase to snake-case                      idea
 Autogenerate module .rst from schema                               idea
 Autogenerate module .py from schema                                idea

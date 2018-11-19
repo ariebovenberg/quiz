@@ -52,6 +52,10 @@ class TestNullable:
 
 class TestList:
 
+    def test_mro(self):
+        assert issubclass(quiz.List, quiz.InputValue)
+        assert issubclass(quiz.List, quiz.ResponseType)
+
     def test_isinstancecheck(self, mocker):
 
         class MyList(quiz.List):
