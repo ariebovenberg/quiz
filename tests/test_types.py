@@ -34,7 +34,12 @@ class TestUnion:
         assert not isinstance(1.3, MyUnion)
 
 
+
 class TestNullable:
+
+    def test_mro(self):
+        assert issubclass(quiz.Nullable, quiz.InputValue)
+        assert issubclass(quiz.Nullable, quiz.ResponseType)
 
     def test_instancecheck(self, mocker):
 
@@ -48,6 +53,43 @@ class TestNullable:
         assert MyOptional == quiz.Nullable[int]
         assert MyOptional == mocker.ANY
         assert not MyOptional != mocker.ANY
+
+    class TestCoerce:
+
+        def test_none(self):
+            type_ = quiz.Nullable[quiz.Float]
+            result = type_.coerce(None)
+            assert isinstance(result, type_)
+            assert result.value is None
+
+        def test_not_none(self):
+            type_ = quiz.Nullable[quiz.Float]
+            result = type_.coerce(3.4)
+            assert isinstance(result, type_)
+            assert isinstance(result.value, quiz.Float)
+            assert result.value.value == 3.4
+
+        def test_propagates_error(self):
+            with pytest.raises(ValueError, match='infinite'):
+                quiz.Nullable[quiz.Float].coerce(float('nan'))
+
+        @pytest.mark.parametrize('value', [object(), "foo", "1.2", (1, )])
+        def test_invalid_type(self, value):
+            with pytest.raises(ValueError, match='type'):
+                quiz.Nullable[quiz.Float].coerce(value)
+
+    @pytest.mark.parametrize('value, expect', [
+        (None, 'null'),
+        (quiz.String('foo\nbar'), '"foo\\nbar"'),
+    ])
+    def test_gql_dump(self, value, expect):
+        assert quiz.Nullable[quiz.String](value).__gql_dump__() == expect
+
+    def test_gql_load(self):
+        result = quiz.Nullable[quiz.Float].__gql_load__(1)
+        assert result == 1
+        assert isinstance(result, float)
+        assert quiz.Nullable[quiz.Float].__gql_load__(None) is None
 
 
 class TestList:
@@ -106,6 +148,8 @@ class TestAnyScalar:
 
     def test_mro(self):
         assert issubclass(quiz.AnyScalar, quiz.Scalar)
+        assert issubclass(quiz.AnyScalar, quiz.InputValue)
+        assert issubclass(quiz.AnyScalar, quiz.ResponseType)
 
     def test_isinstancecheck(self):
 

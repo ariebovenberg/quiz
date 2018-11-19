@@ -319,8 +319,21 @@ class NullableMeta(type):
 # A: it is not easily distinguished from Union,
 #    and doesn't support __doc__, __name__, or isinstance()
 @six.add_metaclass(NullableMeta)
-class Nullable(object):
+class Nullable(InputValue, ResponseType):
     __arg__ = object
+
+    @classmethod
+    def coerce(cls, data):
+        # type: object -> Nullable
+        return cls(data if data is None else cls.__arg__.coerce(data))
+
+    def __gql_dump__(self):
+        # type: () -> str
+        return 'null' if self.value is None else self.value.__gql_dump__()
+
+    @classmethod
+    def __gql_load__(cls, data):
+        return data if data is None else cls.__arg__.__gql_load__(data)
 
 
 # TODO: add __getitem__, similar to list and nullable
