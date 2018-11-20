@@ -10,7 +10,7 @@ from quiz.build import SelectionSet, gql
 from quiz.utils import FrozenDict as fdict
 
 from .example import (Color, Command, Dog, DogQuery, Hobby, Human, MyDateTime,
-                      SearchFilters, Sentient, Order, Person)
+                      SearchFilters, Sentient, Order)
 from .helpers import AlwaysEquals, NeverEquals, render_doc
 
 
