@@ -68,8 +68,6 @@ _PRIMITIVE_TYPES = (int, float, bool, six.text_type)
 class InputValue(object):
     """Base class for input value classes.
     These values may be used in GraphQL queries (requests)"""
-    def __init__(self, value):
-        self.value = value
 
     # TODO: make abstract
     def __gql_dump__(self):
@@ -207,9 +205,21 @@ class InputObject(object):
         )
 
 
-# separate class to distinguish graphql enums from normal Enums
-class Enum(enum.Enum):
-    pass
+class Enum(InputValue, ResponseType, enum.Enum):
+    """A GraphQL enum value. Accepts strings as inputs"""
+
+    @classmethod
+    def coerce(cls, value):
+        # type: object -> Enum
+        return cls(value)
+
+    def __gql_dump__(self):
+        # type: () -> str
+        return self.value
+
+    @classmethod
+    def __gql_load__(cls, data):
+        return cls(data)
 
 
 class Interface(HasFields):
@@ -280,6 +290,9 @@ class _ListMeta(_Generic):
 class List(InputValue, ResponseType):
     __arg__ = object
 
+    def __init__(self, value):
+        self.value = value
+
     @classmethod
     def coerce(cls, data):
         # type: object -> List
@@ -317,6 +330,9 @@ class _NullableMeta(_Generic):
 class Nullable(InputValue, ResponseType):
     __arg__ = object
 
+    def __init__(self, value):
+        self.value = value
+
     @classmethod
     def coerce(cls, data):
         # type: object -> Nullable
@@ -331,17 +347,15 @@ class Nullable(InputValue, ResponseType):
         return data if data is None else cls.__arg__.__gql_load__(data)
 
 
-# # TODO: add __getitem__, similar to list and nullable
-# class UnionMeta(type):
-
-#     def __instancecheck__(self, instance):
-#         return isinstance(instance, self.__args__)
+# TODO: add __getitem__, similar to list and nullable
+class UnionMeta(type):
+    pass
 
 
 # Q: why not typing.Union?
 # A: it isn't consistent across python versions,
 #    and doesn't support __doc__, __name__, or isinstance()
-# @six.add_metaclass(UnionMeta)
+@six.add_metaclass(UnionMeta)
 class Union(object):
     __args__ = ()
 
@@ -359,6 +373,10 @@ class _AnyScalarMeta(type):
 @six.add_metaclass(_AnyScalarMeta)
 class AnyScalar(Scalar):
     """A generic scalar, accepting any primitive type"""
+
+    def __init__(self, value):
+        self.value = value
+
     @classmethod
     def coerce(cls, data):
         if data is None or isinstance(data, Scalar):
@@ -385,6 +403,9 @@ class AnyScalar(Scalar):
 class Float(InputValue, ResponseType):
     """A GraphQL float object. The main difference with :class:`float`
     is that it may not be infinite or NaN"""
+    def __init__(self, value):
+        self.value = value
+
     # TODO: consistent types of exceptions to raise
     @classmethod
     def coerce(cls, value):
@@ -407,6 +428,9 @@ class Float(InputValue, ResponseType):
 class Int(InputValue, ResponseType):
     """A GraphQL integer object. The main difference with :class:`int`
     is that it may only represent integers up to 32 bits in size"""
+    def __init__(self, value):
+        self.value = value
+
     @classmethod
     def coerce(cls, value):
         # type: object -> Int
@@ -428,6 +452,9 @@ class Int(InputValue, ResponseType):
 
 class Boolean(InputValue, ResponseType):
     """A GraphQL boolean object"""
+    def __init__(self, value):
+        self.value = value
+
     @classmethod
     def coerce(cls, value):
         # type: object -> Boolean
@@ -447,6 +474,9 @@ class Boolean(InputValue, ResponseType):
 
 class StringLike(InputValue, ResponseType):
     """Base for string-like types"""
+    def __init__(self, value):
+        self.value = value
+
     @classmethod
     def coerce(cls, value):
         # type: object -> StringLike

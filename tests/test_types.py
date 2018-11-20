@@ -10,7 +10,7 @@ from quiz.build import SelectionSet, gql
 from quiz.utils import FrozenDict as fdict
 
 from .example import (Color, Command, Dog, DogQuery, Hobby, Human, MyDateTime,
-                      SearchFilters, Sentient, Order)
+                      SearchFilters, Sentient, Order, Person)
 from .helpers import AlwaysEquals, NeverEquals, render_doc
 
 
@@ -22,16 +22,36 @@ class FooString(quiz.StringLike):
     """example stringlike class"""
 
 
-# class TestUnion:
+class TestUnion:
+    pass
 
-#     def test_instancecheck(self):
 
-#         class MyUnion(quiz.Union):
-#             __args__ = (str, int)
+class TestEnum:
 
-#         assert isinstance('foo', MyUnion)
-#         assert isinstance(5, MyUnion)
-#         assert not isinstance(1.3, MyUnion)
+    def test_mro(self):
+        assert issubclass(quiz.Enum, quiz.InputValue)
+        assert issubclass(quiz.Enum, quiz.ResponseType)
+
+    class TestCoerce:
+
+        def test_valid_string(self):
+            result = Command.coerce('SIT')
+            assert result is Command.SIT
+
+        def test_invalid_string(self):
+            with pytest.raises(ValueError, match='FOO'):
+                Command.coerce('FOO')
+
+        @pytest.mark.parametrize('value', [object(), None, 1.4, 0])
+        def test_invalid_object(self, value):
+            with pytest.raises(ValueError, match='Command'):
+                Command.coerce(value)
+
+    def test_gql_dump(self):
+        assert Command.SIT.__gql_dump__() == 'SIT'
+
+    def test_gql_load(self):
+        assert Command.__gql_load__('SIT') is Command.SIT
 
 
 class TestNullable:
