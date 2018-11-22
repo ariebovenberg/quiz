@@ -22,6 +22,11 @@ class FooString(quiz.StringLike):
     """example stringlike class"""
 
 
+class MyEnum(quiz.Enum):
+    OPT1 = 'OPT1'
+    OPT2 = 'OPT2'
+
+
 class TestUnion:
     pass
 
@@ -170,13 +175,26 @@ class TestList:
         assert result == [1]
         assert isinstance(result[0], float)
 
-    def test_equality(self, mocker):
+    def test_class_equality(self, mocker):
         assert quiz.List[object] == quiz.List[object]
         assert not quiz.List[object] != quiz.List[object]
         assert not quiz.List[object] == quiz.List[int]
         assert quiz.List[object] != quiz.List[int]
         assert quiz.List[object] == mocker.ANY
         assert not quiz.List[int] != mocker.ANY
+
+    def test_instance_equality(self, mocker):
+        assert quiz.List[int]([]) == quiz.List[int]([])
+        assert not quiz.List[float]([]) == quiz.List[int]([])
+        assert quiz.List[int]([1, 2]) == quiz.List[int]([1, 2])
+        assert not quiz.List[int]([1, 2]) == quiz.List[int]([1, 2, 3])
+        assert quiz.List[int]([1]) == mocker.ANY
+
+        assert not quiz.List[int]([]) != quiz.List[int]([])
+        assert quiz.List[float]([]) != quiz.List[int]([])
+        assert not quiz.List[int]([1, 2]) != quiz.List[int]([1, 2])
+        assert quiz.List[int]([1, 2]) != quiz.List[int]([1, 2, 3])
+        assert not quiz.List[int]([1]) != mocker.ANY
 
 
 class TestAnyScalar:
@@ -394,9 +412,10 @@ class TestInputObject:
         assert SearchFilters.__doc__ in doc
         assert 'InputObject' in doc
 
+        # TODO: `Order or None` instead of `Nullable[Order]`
         assert '''\
  |  order
- |      : Order or None
+ |      : Nullable[Order]
  |      the ordering''' in doc
 
     def test_kwargs_named_self(self):
@@ -495,6 +514,48 @@ def test_missing_argument_str(name):
 def test_selections_not_supported_str():
     exc = quiz.SelectionsNotSupported()
     assert str(exc) == 'selections not supported on this object'
+
+
+class TestValidateArgs:
+
+    @pytest.mark.parametrize('value, expect', [
+        ({'foo': 3, 'frobs': []},
+         {'foo': quiz.Int(3),
+          'frobs': quiz.List[quiz.Nullable[quiz.Float]]([])}),
+        ({'foo': 3, 'frobs': [None, 3.4], 'qux': None},
+         {'foo': quiz.Int(3),
+          'frobs': quiz.List[quiz.Nullable[quiz.Float]]([
+              quiz.Nullable[quiz.Float](None),
+              quiz.Nullable[quiz.Float](quiz.Float(3.4)),
+          ]),
+          'qux': quiz.Nullable[quiz.String](None)}),
+        ({'foo': 5, 'frobs': [], 'bar': 'OPT1'},
+         {'foo': quiz.Int(5),
+          'frobs': quiz.List[quiz.Nullable[quiz.Float]]([]),
+          'bar': quiz.Nullable[MyEnum](MyEnum.OPT1)})
+    ])
+    def test_ok(self, value, expect):
+        schema = {
+            'foo': quiz.InputValueDefinition('foo', 'the foo',
+                                             type=quiz.Int),
+            'bar': quiz.InputValueDefinition(
+                'bar',
+                'blabla',
+                type=quiz.Nullable[MyEnum],
+            ),
+            'qux': quiz.InputValueDefinition(
+                'qux',
+                'blablabla',
+                type=quiz.Nullable[quiz.String],
+            ),
+            'frobs': quiz.InputValueDefinition(
+                'frobs',
+                '',
+                type=quiz.List[quiz.Nullable[quiz.Float]]
+            ),
+        }
+        result = quiz.types.validate_args(schema, value)
+        assert result == expect
 
 
 class TestValidate:

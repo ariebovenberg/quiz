@@ -427,12 +427,12 @@ def test_end_to_end(raw_schema):
  |      Did the viewer author this comment.''' in obj_doc
     assert '''\
  |  publishedAt
- |      : DateTime or None
+ |      : Nullable[DateTime]
  |      Identifies when the comment was published at.''' in obj_doc
 
     assert '''\
  |  viewerCannotUpdateReasons
- |      : [CommentCannotUpdateReason]
+ |      : List[CommentCannotUpdateReason]
  |      Reasons why the current viewer can not update this comment.''' in (
      obj_doc)
 
