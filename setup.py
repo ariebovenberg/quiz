@@ -42,6 +42,7 @@ setup(
         'enum34~=1.1.6; python_version<"3.4"',
         'gentools~=1.1.0',
         'six~=1.11.0',
+        'attrs~=18.2.0',
         'snug~=1.3.4',
         'typing>=3.6.6; python_version<"3.5"',
     ],
