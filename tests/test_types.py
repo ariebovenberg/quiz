@@ -64,12 +64,12 @@ class TestEnum:
             assert result is Command.SIT
 
         def test_invalid_string(self):
-            with pytest.raises(ValueError, match='FOO'):
+            with pytest.raises(quiz.CouldNotCoerce, match='FOO'):
                 Command.coerce('FOO')
 
         @pytest.mark.parametrize('value', [object(), None, 1.4, 0])
         def test_invalid_object(self, value):
-            with pytest.raises(ValueError, match='Command'):
+            with pytest.raises(quiz.CouldNotCoerce, match='Command'):
                 Command.coerce(value)
 
     def test_gql_dump(self):
@@ -114,12 +114,12 @@ class TestNullable:
             assert result.value.value == 3.4
 
         def test_propagates_error(self):
-            with pytest.raises(ValueError, match='infinite'):
+            with pytest.raises(quiz.CouldNotCoerce, match='infinite'):
                 quiz.Nullable[quiz.Float].coerce(float('nan'))
 
         @pytest.mark.parametrize('value', [object(), "foo", "1.2", (1, )])
         def test_invalid_type(self, value):
-            with pytest.raises(ValueError, match='type'):
+            with pytest.raises(quiz.CouldNotCoerce, match='type'):
                 quiz.Nullable[quiz.Float].coerce(value)
 
     @pytest.mark.parametrize('value, expect', [
@@ -175,12 +175,12 @@ class TestList:
             assert result.value[1].value == 3.4
 
         def test_propagates_error(self):
-            with pytest.raises(ValueError, match='infinite'):
+            with pytest.raises(quiz.CouldNotCoerce, match='infinite'):
                 quiz.List[quiz.Float].coerce([float('nan')])
 
         @pytest.mark.parametrize('value', [object(), "foo", "1.2", (1, )])
         def test_invalid_type(self, value):
-            with pytest.raises(ValueError, match='type'):
+            with pytest.raises(quiz.CouldNotCoerce, match='type'):
                 quiz.List[quiz.Float].coerce(value)
 
     @pytest.mark.parametrize('value, expect', [
@@ -247,7 +247,7 @@ class TestAnyScalar:
             assert isinstance(result.value, quiz.Float)
             assert result.value.value == 4.5
 
-            with pytest.raises(ValueError, match='infinite'):
+            with pytest.raises(quiz.CouldNotCoerce, match='infinite'):
                 FooScalar.coerce(float('inf'))
 
         def test_int(self):
@@ -256,7 +256,7 @@ class TestAnyScalar:
             assert isinstance(result.value, quiz.Int)
             assert result.value.value == 4
 
-            with pytest.raises(ValueError, match='32'):
+            with pytest.raises(quiz.CouldNotCoerce, match='32'):
                 FooScalar.coerce(2 << 31)
 
         def test_bool(self):
@@ -295,7 +295,7 @@ class TestAnyScalar:
             assert result.value is None
 
         def test_invalid_object(self):
-            with pytest.raises(ValueError, match='scalar'):
+            with pytest.raises(quiz.CouldNotCoerce, match='scalar'):
                 FooScalar.coerce(object())
 
     @pytest.mark.parametrize('value, expect', [
@@ -935,12 +935,12 @@ class TestFloat:
         @pytest.mark.parametrize('value', [float('inf'), float('nan'),
                                            float('-inf')])
         def test_invalid_float(self, value):
-            with pytest.raises(ValueError, match='infinite or NaN'):
+            with pytest.raises(quiz.CouldNotCoerce, match='infinite or NaN'):
                 quiz.Float.coerce(value)
 
         @pytest.mark.parametrize('value', [object(), "foo", "1.2"])
         def test_invalid_type(self, value):
-            with pytest.raises(ValueError, match='type'):
+            with pytest.raises(quiz.CouldNotCoerce, match='type'):
                 quiz.Float.coerce(value)
 
     @pytest.mark.parametrize('value, expect', [
@@ -984,7 +984,7 @@ class TestInt:
             (-2 << 30) - 1,
         ])
         def test_invalid_int(self, value):
-            with pytest.raises(ValueError, match='32'):
+            with pytest.raises(quiz.CouldNotCoerce, match='32'):
                 quiz.Int.coerce(value)
 
         @pytest.mark.skipif(six.PY3, reason='python 2 only')
@@ -994,7 +994,7 @@ class TestInt:
 
         @pytest.mark.parametrize('value', [object(), "foo", 1.2])
         def test_invalid_type(self, value):
-            with pytest.raises(ValueError, match='type'):
+            with pytest.raises(quiz.CouldNotCoerce, match='type'):
                 quiz.Int.coerce(value)
 
     @pytest.mark.parametrize('value, expect', [
@@ -1025,7 +1025,7 @@ class TestBoolean:
 
         @pytest.mark.parametrize('value', [object(), "foo", 1.2, 1])
         def test_invalid_type(self, value):
-            with pytest.raises(ValueError, match='type'):
+            with pytest.raises(quiz.CouldNotCoerce, match='type'):
                 quiz.Boolean.coerce(value)
 
     @pytest.mark.parametrize('value, expect', [
@@ -1054,7 +1054,7 @@ class TestStringLike:
 
         @pytest.mark.parametrize('value', [object(), None, 1.2, 1])
         def test_invalid_type(self, value):
-            with pytest.raises(ValueError, match='type'):
+            with pytest.raises(quiz.CouldNotCoerce, match='type'):
                 FooString.coerce(value)
 
         @pytest.mark.skipif(six.PY3, reason='py2 only')
@@ -1065,7 +1065,7 @@ class TestStringLike:
 
         @pytest.mark.skipif(six.PY2, reason='py3 only')
         def test_py3_does_not_accept_bytes(self):
-            with pytest.raises(ValueError, match='type'):
+            with pytest.raises(quiz.CouldNotCoerce, match='type'):
                 FooString.coerce(b'foo')
 
     @pytest.mark.parametrize('value, expect', [

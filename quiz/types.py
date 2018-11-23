@@ -47,6 +47,7 @@ __all__ = [
     'InvalidArgumentType',
     'InvalidArgumentValue',
     'MissingArgument',
+    'CouldNotCoerce',
 
     'NoValueForField',
     'load',
@@ -231,7 +232,11 @@ class Enum(InputValue, ResponseType, enum.Enum):
     @classmethod
     def coerce(cls, value):
         # type: object -> Enum
-        return cls(value)
+        try:
+            return cls(value)
+        except ValueError:
+            raise CouldNotCoerce('{!r} is not a valid {.__name__}'.format(
+                value, cls))
 
     def __gql_dump__(self):
         # type: () -> str
