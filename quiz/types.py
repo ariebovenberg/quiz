@@ -2,14 +2,15 @@
 import enum
 import math
 import typing as t
-from itertools import starmap
+from itertools import chain, starmap
 from operator import methodcaller
 
+import attr
 import six
 
 from .build import InlineFragment, dump_inputvalue, escape
 from .compat import default_ne
-from .utils import FrozenDict, ValueObject
+from .utils import FrozenDict, ValueObject, dataclass, field
 
 __all__ = [
     # types
@@ -44,6 +45,7 @@ __all__ = [
     'NoSuchArgument',
     'SelectionsNotSupported',
     'InvalidArgumentType',
+    'InvalidArgumentValue',
     'MissingArgument',
 
     'NoValueForField',
@@ -248,6 +250,12 @@ class NoValueForField(AttributeError):
     """Indicates a value cannot be retrieved for the field"""
 
 
+@dataclass
+class CouldNotCoerce(ValueError):
+    """Could not coerce a value"""
+    reason = field('The reason coercion failed', type=str)
+
+
 class FieldDefinition(ValueObject):
     __fields__ = [
         ('name', str, 'Field name'),
@@ -314,7 +322,7 @@ class List(InputWrapper, ResponseType):
         if isinstance(data, list):
             return cls(list(map(cls.__arg__.coerce, data)))
         else:
-            raise ValueError('Invalid type, must be a list')
+            raise CouldNotCoerce('Invalid type, must be a list')
 
     def __gql_dump__(self):
         # type: () -> str
@@ -396,7 +404,7 @@ class AnyScalar(Scalar):
         try:
             gql_type = PY_TYPE_TO_GQL_TYPE[type(data)]
         except KeyError:
-            raise ValueError('Invalid type, must be a scalar')
+            raise CouldNotCoerce('Invalid type, must be a scalar')
         return cls(gql_type.coerce(data))
 
     def __gql_dump__(self):
@@ -420,9 +428,9 @@ class Float(InputWrapper, ResponseType):
     def coerce(cls, value):
         # type: object -> Float
         if not isinstance(value, (float, int)):
-            raise ValueError('Invalid type, must be float or int')
+            raise CouldNotCoerce('Invalid type, must be float or int')
         if math.isnan(value) or math.isinf(value):
-            raise ValueError('Float value cannot be infinite or NaN')
+            raise CouldNotCoerce('Float value cannot be infinite or NaN')
         return cls(float(value))
 
     def __gql_dump__(self):
@@ -441,10 +449,10 @@ class Int(InputWrapper, ResponseType):
     def coerce(cls, value):
         # type: object -> Int
         if not isinstance(value, six.integer_types):
-            raise ValueError('Invalid type, must be int')
+            raise CouldNotCoerce('Invalid type, must be int')
         if not MIN_INT < value < MAX_INT:
-            raise ValueError('{} is not representable by a 32-bit integer'
-                             .format(value))
+            raise CouldNotCoerce('{} is not representable by a 32-bit integer'
+                                 .format(value))
         return cls(int(value))
 
     def __gql_dump__(self):
@@ -464,7 +472,7 @@ class Boolean(InputWrapper, ResponseType):
         if isinstance(value, bool):
             return cls(value)
         else:
-            raise ValueError('A boolean type is required')
+            raise CouldNotCoerce('A boolean type is required')
 
     def __gql_dump__(self):
         return 'true' if self.value else 'false'
@@ -485,7 +493,7 @@ class StringLike(InputWrapper, ResponseType):
         elif six.PY2 and isinstance(value, bytes):  # pragma: no cover
             return cls(six.text_type(value))
         else:
-            raise ValueError('A string type is required')
+            raise CouldNotCoerce('A string type is required')
 
     def __gql_dump__(self):
         return '"{}"'.format(escape(self.value))
@@ -512,45 +520,52 @@ def _unwrap_list_or_nullable(type_):
     return type_
 
 
-def validate_value(typ, value):
-    # type: (Type[InputValue], object) -> InputValue
+def validate_value(name, typ, value):
+    # type: (Type[InputValue], object) -> InputValue | InvalidArgumentValue
     # TODO: proper isinstance
     if type(value) == typ:
         return value
     else:
-        return typ.coerce(value)
+        try:
+            return typ.coerce(value)
+        except CouldNotCoerce as e:
+            return InvalidArgumentValue(name, value, e.reason)
+
+
+# TODO: make generic
+class ValidationResult(object):
+    pass
+
+
+@dataclass
+class Errors(ValidationResult):
+    items = attr.ib(type=t.Set['ValidationError'])
+
+
+# TODO: typing
+@dataclass
+class Valid(ValidationResult):
+    value = attr.ib()
 
 
 def validate_args(schema, actual):
     # type: (Mapping[str, InputValueDefinition], Mapping[str, object])
-    # -> Mapping[str, object]
-    invalid_args = six.viewkeys(actual) - six.viewkeys(schema)
-    if invalid_args:
-        raise NoSuchArgument(invalid_args.pop())
-    required_args = {
-        name for name, defin in six.iteritems(schema)
-        if not issubclass(defin.type, Nullable)
-    }
-    missing_args = required_args - six.viewkeys(actual)
-    if missing_args:
-        # TODO: return all missing args
-        raise MissingArgument(missing_args.pop())
-
-    return {
-        name: validate_value(schema[name].type, value)
+    # -> ValidationResult[Mapping[str, object]]
+    # TODO: cleanup this logic
+    required_args = {name for name, defin in six.iteritems(schema)
+                     if not issubclass(defin.type, Nullable)}
+    errors = set(chain(
+        map(NoSuchArgument, six.viewkeys(actual) - six.viewkeys(schema)),
+        map(MissingArgument, required_args - six.viewkeys(actual)),
+    ))
+    coerced = {
+        name: validate_value(name, schema[name].type, value)
         for name, value in six.iteritems(actual)
+        if name in schema
     }
-
-    for input_value in schema.values():
-        try:
-            value = actual[input_value.name]
-        except KeyError:
-            continue  # arguments of nullable type may be omitted
-
-        if not isinstance(value, input_value.type):
-            raise InvalidArgumentType(input_value.name, value)
-
-    return actual
+    errors.update(v for v in coerced.values()
+                  if isinstance(v, InvalidArgumentValue))
+    return Errors(errors) if errors else Valid(coerced)
 
 
 def _validate_args(schema, actual):
@@ -619,11 +634,11 @@ def validate(cls, selection_set):
     SelectionError
         If the selection set is not valid
     """
-    for field in selection_set:
+    for _field in selection_set:
         try:
-            _validate_field(getattr(cls, field.name, None), field)
+            _validate_field(getattr(cls, _field.name, None), _field)
         except ValidationError as e:
-            raise SelectionError(cls, field.name, e)
+            raise SelectionError(cls, _field.name, e)
     return selection_set
 
 
@@ -717,6 +732,13 @@ class NoSuchArgument(ValueObject, ValidationError):
 
     def __str__(self):
         return 'argument "{}" does not exist'.format(self.name)
+
+
+@dataclass
+class InvalidArgumentValue(ValidationError):
+    name = field('name of the argument', type=str)
+    value = field('value of the argument', type=object)
+    message = field('error message', type=str)
 
 
 class InvalidArgumentType(ValueObject, ValidationError):

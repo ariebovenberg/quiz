@@ -10,7 +10,7 @@ from quiz.build import SelectionSet, gql
 from quiz.utils import FrozenDict as fdict
 
 from .example import (Color, Command, Dog, DogQuery, Hobby, Human, MyDateTime,
-                      SearchFilters, Sentient, Order)
+                      Order, SearchFilters, Sentient)
 from .helpers import AlwaysEquals, NeverEquals, render_doc
 
 
@@ -25,6 +25,26 @@ class FooString(quiz.StringLike):
 class MyEnum(quiz.Enum):
     OPT1 = 'OPT1'
     OPT2 = 'OPT2'
+
+
+EXAMPLE_ARG_SCHEMA = {
+    'foo': quiz.InputValueDefinition('foo', 'the foo', type=quiz.Int),
+    'bar': quiz.InputValueDefinition(
+        'bar',
+        'blabla',
+        type=quiz.Nullable[MyEnum],
+    ),
+    'qux': quiz.InputValueDefinition(
+        'qux',
+        'blablabla',
+        type=quiz.Nullable[quiz.String],
+    ),
+    'frobs': quiz.InputValueDefinition(
+        'frobs',
+        '',
+        type=quiz.List[quiz.Nullable[quiz.Float]]
+    ),
+}
 
 
 class TestUnion:
@@ -535,27 +555,23 @@ class TestValidateArgs:
           'bar': quiz.Nullable[MyEnum](MyEnum.OPT1)})
     ])
     def test_ok(self, value, expect):
-        schema = {
-            'foo': quiz.InputValueDefinition('foo', 'the foo',
-                                             type=quiz.Int),
-            'bar': quiz.InputValueDefinition(
-                'bar',
-                'blabla',
-                type=quiz.Nullable[MyEnum],
-            ),
-            'qux': quiz.InputValueDefinition(
-                'qux',
-                'blablabla',
-                type=quiz.Nullable[quiz.String],
-            ),
-            'frobs': quiz.InputValueDefinition(
-                'frobs',
-                '',
-                type=quiz.List[quiz.Nullable[quiz.Float]]
-            ),
-        }
-        result = quiz.types.validate_args(schema, value)
-        assert result == expect
+        result = quiz.types.validate_args(EXAMPLE_ARG_SCHEMA, value)
+        assert result == quiz.types.Valid(expect)
+
+    @pytest.mark.parametrize('value, expect', [
+        ({'bar': MyEnum.OPT1},
+         {quiz.MissingArgument('foo'), quiz.MissingArgument('frobs')}),
+        ({'bar': MyEnum.OPT2, 'frobs': 3.4, 'blabla': None},
+         {quiz.MissingArgument('foo'),
+          quiz.InvalidArgumentValue('frobs', 3.4,
+                                    'Invalid type, must be a list'),
+          quiz.NoSuchArgument('blabla')}),
+        ({'foo': 3, 'frobs': [1], 'woop': 4.5, 'bloop': 'foo'},
+         {quiz.NoSuchArgument('woop'), quiz.NoSuchArgument('bloop')})
+    ])
+    def test_errors(self, value, expect):
+        result = quiz.types.validate_args(EXAMPLE_ARG_SCHEMA, value)
+        assert result == quiz.types.Errors(expect)
 
 
 class TestValidate:

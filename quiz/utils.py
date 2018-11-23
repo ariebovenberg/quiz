@@ -2,10 +2,11 @@
 import sys
 import typing as t
 from collections import namedtuple
-from functools import wraps
+from functools import partial, wraps
 from itertools import chain, starmap
 from operator import attrgetter
 
+import attr
 import six
 
 from .compat import PY2
@@ -201,3 +202,10 @@ class compose(object):
         for func in reversed(tail):
             value = func(value)
         return value
+
+
+dataclass = partial(attr.s, frozen=True, slots=True)
+
+
+def field(doc, **kwargs):
+    return attr.ib(**kwargs, metadata={'doc': doc})
