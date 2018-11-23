@@ -1,3 +1,4 @@
+"""Python2/3 compatibility helpers"""
 import sys
 
 PY3 = sys.version_info > (3, )
@@ -20,7 +21,7 @@ else:  # pragma: no cover
 
 def default_ne(self, other):  # pragma: no cover -- only for py2
     """a default __ne__ implementation, which is the complement of __eq__"""
-    equal = self.__eq__(other)
+    equal = type(self).__eq__(self, other)
     return NotImplemented if equal is NotImplemented else not equal
 
 

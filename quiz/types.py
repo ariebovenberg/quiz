@@ -260,6 +260,10 @@ class CouldNotCoerce(ValueError):
     """Could not coerce a value"""
     reason = field('The reason coercion failed', type=str)
 
+    if six.PY2:
+        def __str__(self):
+            return self.reason
+
 
 class FieldDefinition(ValueObject):
     __fields__ = [

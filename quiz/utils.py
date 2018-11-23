@@ -208,4 +208,4 @@ dataclass = partial(attr.s, frozen=True, slots=True)
 
 
 def field(doc, **kwargs):
-    return attr.ib(**kwargs, metadata={'doc': doc})
+    return attr.ib(metadata={'doc': doc}, **kwargs)
