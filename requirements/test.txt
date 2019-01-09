@@ -1,4 +1,4 @@
 pytest~=4.0.2
 pytest-cov~=2.6.0
-hypothesis~=3.85.2
+hypothesis~=3.86.8
 pytest-mock~=1.10.0
