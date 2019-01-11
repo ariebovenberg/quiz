@@ -54,6 +54,7 @@ def middleware(url, query_str):
         raise HTTPError(response)
     content = json.loads(response.content.decode('utf-8'))
     if 'errors' in content:
+        content.setdefault('data', {})
         raise ErrorResponse(**content)
     return_(content['data'])
 
@@ -178,6 +179,8 @@ def async_executor(**kwargs):
 
 
 class ErrorResponse(ValueObject, Exception):
+    """A response containing errors"""
+
     __fields__ = [
         ('data', t.Dict[str, JSON], 'Data returned in the response'),
         ('errors', t.List[t.Dict[str, JSON]],
