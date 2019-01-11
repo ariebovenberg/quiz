@@ -4,6 +4,11 @@ Release history
 development
 +++++++++++
 
+0.1.2 (2019-01-11)
+++++++++++++++++++
+
+- Handle error responses without ``data`` correctly
+
 0.1.1 (2018-10-30)
 ++++++++++++++++++
 
