@@ -54,8 +54,7 @@ def middleware(url, query_str):
         raise HTTPError(response)
     content = json.loads(response.content.decode('utf-8'))
     if 'errors' in content:
-        if 'data' not in content:
-            content['data'] = {}
+        content.setdefault('data', {})
         raise ErrorResponse(**content)
     return_(content['data'])
 
