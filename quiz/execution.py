@@ -179,6 +179,8 @@ def async_executor(**kwargs):
 
 
 class ErrorResponse(ValueObject, Exception):
+    """A response containing errors"""
+
     __fields__ = [
         ('data', t.Dict[str, JSON], 'Data returned in the response'),
         ('errors', t.List[t.Dict[str, JSON]],
