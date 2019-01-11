@@ -83,6 +83,15 @@ class TestExecute:
         assert exc.value == quiz.ErrorResponse({'foo': 4},
                                                [{'message': 'foo'}])
 
+    def test_errors_without_data(self):
+        client = MockClient(snug.Response(200, json.dumps({
+            'errors': [{'message': 'foo'}]
+        }).encode()))
+        with pytest.raises(quiz.ErrorResponse) as exc:
+            quiz.execute('my query', url='https://my.url/api',
+                         client=client, auth=token_auth('foo'))
+        assert exc.value == quiz.ErrorResponse({}, [{'message': 'foo'}])
+
     def test_http_error(self):
         err_response = snug.Response(403, b'this is an error!')
         client = MockClient(err_response)
