@@ -4,7 +4,7 @@ init:
 	pip install -r requirements/dev.txt
 
 test:
-	detox
+	tox --parallel auto
 
 coverage:
 	pytest --cov=quiz --cov-report html --cov-report term --live
