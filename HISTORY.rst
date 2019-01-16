@@ -4,7 +4,7 @@ Release history
 development
 +++++++++++
 
-0.2.0 (2018-11-??)
+0.2.0 (2019-??-??)
 ++++++++++++++++++
 
 - small fixes
@@ -13,6 +13,11 @@ development
 
 - ``InputValue`` has been renamed to ``InputValueDefinition``.
 - ``GenericScalar`` has been renamed to ``AnyScalar``.
+
+0.1.2 (2019-01-11)
+++++++++++++++++++
+
+- Handle error responses without ``data`` correctly
 
 0.1.1 (2018-10-30)
 ++++++++++++++++++

@@ -4,10 +4,10 @@ init:
 	pip install -r requirements/dev.txt
 
 test:
-	detox
+	tox --parallel auto
 
 coverage:
-	pytest --cov=quiz --cov-report html --cov-report term --cov-fail-under 100 --live
+	pytest --cov=quiz --cov-report html --cov-report term --live
 
 publish: clean
 	rm -rf build dist .egg quiz.egg-info
