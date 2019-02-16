@@ -390,7 +390,7 @@ def escape(txt):
 @singledispatch
 def dump_inputvalue(obj):
     """Dumpy any input value to GraphQL"""
-    # type: object -> str
+    # type: (object) -> str
     try:
         # consistent with other dunder methods, we look it up on the class
         serializer = type(obj).__gql_dump__

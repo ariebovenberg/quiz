@@ -30,7 +30,7 @@ def _namedict(classes):
 
 
 def object_as_type(typ, interfaces, module):
-    # type: (Object, Mapping[str, types.Interface], str) -> type
+    # type: (Object, t.Mapping[str, types.Interface], str) -> type
     # we don't add the fields yet -- these types may not exist yet.
     return type(
         str(typ.name),
@@ -535,7 +535,7 @@ def make_enumval(conf):
 
 
 def _deserialize_type(conf):
-    # type: Dict[str, JSON] -> Type
+    # type: (t.Dict[str, JSON]) -> Type
     return Type(
         name=conf["name"],
         kind=Kind(conf["kind"]),
@@ -586,7 +586,7 @@ TypeSchema = t.Union[Interface, Object, Scalar, Enum, Union, InputObject]
 
 
 def _cast_type(typ):
-    # type: Type -> TypeSchema
+    # type: (Type) -> TypeSchema
     if typ.kind is Kind.SCALAR:
         return Scalar(name=typ.name, desc=typ.desc)
     elif typ.kind is Kind.OBJECT:

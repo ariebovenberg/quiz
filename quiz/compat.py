@@ -1,5 +1,7 @@
 """Python2/3 compatibility helpers"""
+import os
 import sys
+import typing as t
 
 PY3 = sys.version_info > (3, )
 HAS_PEP519 = sys.version_info > (3, 6)
@@ -30,7 +32,7 @@ if HAS_PEP519:
 else:  # pragma: no cover
     # code adapted from https://www.python.org/dev/peps/pep-0519/
     def fspath(path):
-        # type: Union[Pathlike, str, bytes] -> Union[str, bytes]
+        # type: (t.Union[os.Pathlike, str, bytes]) -> t.Union[str, bytes]
         """Return the string representation of the path.
 
         If str or bytes is passed in, it is returned unchanged. If __fspath__()

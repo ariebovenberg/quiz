@@ -13,6 +13,11 @@ development
 
 - ``InputValue`` has been renamed to ``InputValueDefinition``.
 - ``GenericScalar`` has been renamed to ``AnyScalar``.
+  
+0.1.3 (2019-02-16)
+++++++++++++++++++
+
+- Add request context to `HTTPError` (#82)
 
 0.1.2 (2019-01-11)
 ++++++++++++++++++

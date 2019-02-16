@@ -8,9 +8,9 @@ from operator import methodcaller
 import attr
 import six
 
-from .build import InlineFragment, dump_inputvalue, escape
+from .build import InlineFragment, dump_inputvalue, escape, Field, SelectionSet
 from .compat import default_ne
-from .utils import FrozenDict, ValueObject, dataclass, field
+from .utils import FrozenDict, ValueObject, dataclass, field, JSON
 
 __all__ = [
     # types
@@ -122,7 +122,7 @@ class HasFields(type):
     """metaclass for classes with GraphQL field definitions"""
 
     def __getitem__(self, selection_set):
-        # type: SelectionSet -> InlineFragment
+        # type: (SelectionSet) -> InlineFragment
         return InlineFragment(self, validate(self, selection_set))
 
 
@@ -522,7 +522,7 @@ class ID(StringLike):
 
 
 def _unwrap_list_or_nullable(type_):
-    # type: Type[Nullable, List, Scalar, Enum, InputObject]
+    # type: t.Type[Nullable, List, Scalar, Enum, InputObject]
     # -> Type[Scalar | Enum | InputObject]
     if issubclass(type_, (Nullable, List)):
         return _unwrap_list_or_nullable(type_.__arg__)
@@ -558,8 +558,8 @@ class Valid(ValidationResult):
 
 
 def validate_args(schema, actual):
-    # type: (Mapping[str, InputValueDefinition], Mapping[str, object])
-    # -> ValidationResult[Mapping[str, object]]
+    # type: (t.Mapping[str, InputValueDefinition], t.Mapping[str, object])
+    # -> ValidationResult[t.Mapping[str, object]]
     # TODO: cleanup this logic
     required_args = {name for name, defin in six.iteritems(schema)
                      if not issubclass(defin.type, Nullable)}
@@ -578,8 +578,8 @@ def validate_args(schema, actual):
 
 
 def _validate_args(schema, actual):
-    # type: (Mapping[str, InputValueDefinition], Mapping[str, object])
-    # -> Mapping[str, object]
+    # type: (t.Mapping[str, InputValueDefinition], t.Mapping[str, object])
+    # -> t.Mapping[str, object]
     invalid_args = six.viewkeys(actual) - six.viewkeys(schema)
     if invalid_args:
         raise NoSuchArgument(invalid_args.pop())
@@ -651,10 +651,13 @@ def validate(cls, selection_set):
     return selection_set
 
 
+T = t.TypeVar('T')
+
+
 # TODO: refactor using singledispatch
 # TODO: cleanup this API: ``field`` is often unneeded. unify with ``load``?
 def load_field(type_, field, value):
-    # type: (Type[T], Field, JSON) -> T
+    # type: (t.Type[T], Field, JSON) -> T
     if issubclass(type_, Namespace):
         assert isinstance(value, dict)
         return load(type_, field.selection_set, value)

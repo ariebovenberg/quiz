@@ -28,7 +28,7 @@ Executable = t.Union[str, Query]
 
 @py2_compatible
 def _exec(executable):
-    # type: Executable -> Generator
+    # type: (Executable) -> t.Generator
     if isinstance(executable, str):
         return_((yield executable))
     elif isinstance(executable, Query):
@@ -43,15 +43,16 @@ def _exec(executable):
 
 @py2_compatible
 def middleware(url, query_str):
-    # type: (str, str) -> snug.Query[Dict[str, JSON]]
-    response = yield snug.Request(
+    # type: (str, str) -> snug.Query[t.Dict[str, JSON]]
+    request = snug.Request(
         'POST',
         url,
         content=json.dumps({'query': query_str}).encode('ascii'),
         headers={'Content-Type': 'application/json'}
     )
+    response = yield request
     if response.status_code >= 400:
-        raise HTTPError(response)
+        raise HTTPError(response, request)
     content = json.loads(response.content.decode('utf-8'))
     if 'errors' in content:
         content.setdefault('data', {})
@@ -189,10 +190,14 @@ class ErrorResponse(ValueObject, Exception):
 
 
 class HTTPError(ValueObject, Exception):
+    """Indicates a response with a non 2xx status code"""
     __fields__ = [
         ('response', snug.Response, 'The response object'),
+        ('request', snug.Request, 'The original request'),
     ]
 
     def __str__(self):
-        return ('Response with status {0.status_code}, content: {0.content!r}'
-                .format(self.response))
+        return ('Response with status {0.status_code}, content: {0.content!r} '
+                'for URL "{1.url}". View this exception\'s `request` and '
+                '`response` attributes for detailed info.'.format(
+                    self.response, self.request))

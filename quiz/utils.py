@@ -16,6 +16,7 @@ __all__ = [
     'Empty',
 ]
 
+T = t.TypeVar('T')
 T1 = t.TypeVar('T1')
 T2 = t.TypeVar('T2')
 
@@ -65,7 +66,7 @@ class Empty(Exception):
 
 
 def init_last(items):
-    # type: List[T] -> (List[T], T)
+    # type: (t.List[T]) -> t.Tuple[t.List[T], T]
     """Return the first items and last item from a list
 
     Raises
