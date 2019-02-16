@@ -8,9 +8,9 @@ from operator import methodcaller
 import attr
 import six
 
-from .build import InlineFragment, dump_inputvalue, escape, Field, SelectionSet
+from .build import Field, InlineFragment, SelectionSet, dump_inputvalue, escape
 from .compat import default_ne
-from .utils import FrozenDict, ValueObject, dataclass, field, JSON
+from .utils import JSON, FrozenDict, ValueObject, dataclass, field
 
 __all__ = [
     # types
