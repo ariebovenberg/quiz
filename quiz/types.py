@@ -5,8 +5,8 @@ from itertools import starmap
 
 import six
 
-from .build import InlineFragment, SelectionSet, Field
-from .utils import FrozenDict, ValueObject, JSON
+from .build import Field, InlineFragment, SelectionSet
+from .utils import JSON, FrozenDict, ValueObject
 
 __all__ = [
     # types

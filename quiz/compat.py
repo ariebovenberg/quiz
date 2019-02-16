@@ -1,6 +1,6 @@
 import os
-import typing as t
 import sys
+import typing as t
 
 PY3 = sys.version_info > (3, )
 HAS_PEP519 = sys.version_info > (3, 6)
