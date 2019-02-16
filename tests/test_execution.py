@@ -191,3 +191,4 @@ def test_http_error():
     )
     assert 'not found!\\x00' in str(err)
     assert '404' in str(err)
+    assert 'my.url' in str(err)

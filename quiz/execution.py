@@ -197,5 +197,7 @@ class HTTPError(ValueObject, Exception):
     ]
 
     def __str__(self):
-        return ('Response with status {0.status_code}, content: {0.content!r}'
-                .format(self.response))
+        return ('Response with status {0.status_code}, content: {0.content!r} '
+                'for URL "{1.url}". View this exception\'s `request` and '
+                '`response` attributes for detailed info.'.format(
+                    self.response, self.request))
