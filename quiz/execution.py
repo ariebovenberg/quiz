@@ -28,7 +28,7 @@ Executable = t.Union[str, Query]
 
 @py2_compatible
 def _exec(executable):
-    # type: Executable -> Generator
+    # type: (Executable) -> t.Generator
     if isinstance(executable, str):
         return_((yield executable))
     elif isinstance(executable, Query):

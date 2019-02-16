@@ -389,7 +389,7 @@ def escape(txt):
 
 @singledispatch
 def argument_as_gql(obj):
-    # type: object -> str
+    # type: (object) -> str
     try:
         # consistent with other dunder methods, we look it up on the class
         serializer = type(obj).__gql_dump__
