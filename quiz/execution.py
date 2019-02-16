@@ -43,15 +43,16 @@ def _exec(executable):
 
 @py2_compatible
 def middleware(url, query_str):
-    # type: (str, str) -> snug.Query[Dict[str, JSON]]
-    response = yield snug.Request(
+    # type: (str, str) -> snug.Query[t.Dict[str, JSON]]
+    request = snug.Request(
         'POST',
         url,
         content=json.dumps({'query': query_str}).encode('ascii'),
         headers={'Content-Type': 'application/json'}
     )
+    response = yield request
     if response.status_code >= 400:
-        raise HTTPError(response)
+        raise HTTPError(response, request)
     content = json.loads(response.content.decode('utf-8'))
     if 'errors' in content:
         content.setdefault('data', {})
@@ -189,8 +190,10 @@ class ErrorResponse(ValueObject, Exception):
 
 
 class HTTPError(ValueObject, Exception):
+    """Indicates a response with a non 2xx status code"""
     __fields__ = [
         ('response', snug.Response, 'The response object'),
+        ('request', snug.Request, 'The original request'),
     ]
 
     def __str__(self):

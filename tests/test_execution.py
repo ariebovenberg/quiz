@@ -92,13 +92,16 @@ class TestExecute:
                          client=client, auth=token_auth('foo'))
         assert exc.value == quiz.ErrorResponse({}, [{'message': 'foo'}])
 
-    def test_http_error(self):
+    def test_http_error(self, mocker):
         err_response = snug.Response(403, b'this is an error!')
         client = MockClient(err_response)
         with pytest.raises(quiz.HTTPError) as exc:
             quiz.execute('my query', url='https://my.url/api',
                          client=client, auth=token_auth('foo'))
-        assert exc.value == quiz.HTTPError(err_response)
+        assert exc.value == quiz.HTTPError(
+            err_response,
+            client.request.replace(headers=mocker.ANY),
+        )
 
 
 def test_executor():
@@ -182,6 +185,9 @@ def test_async_executor():
 
 
 def test_http_error():
-    err = quiz.HTTPError(snug.Response(404, content=b'not found!\x00'))
+    err = quiz.HTTPError(
+        snug.Response(404, content=b'not found!\x00'),
+        snug.Request('POST', 'https://my.url/api')
+    )
     assert 'not found!\\x00' in str(err)
     assert '404' in str(err)
