@@ -4,6 +4,11 @@ Release history
 development
 +++++++++++
 
+0.1.3 (2019-02-16)
+++++++++++++++++++
+
+- Add request context to `HTTPError` (#82)
+
 0.1.2 (2019-01-11)
 ++++++++++++++++++
 

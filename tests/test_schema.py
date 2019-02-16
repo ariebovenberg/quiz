@@ -6,9 +6,10 @@ import sys
 import types
 
 import pytest
-import quiz
 import six
 import snug
+
+import quiz
 from quiz import SELECTOR as _
 from quiz import schema as s
 

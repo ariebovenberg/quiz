@@ -2,6 +2,7 @@ from datetime import datetime
 from textwrap import dedent
 
 import pytest
+
 import quiz
 from quiz import SELECTOR as _
 from quiz.build import SelectionSet, gql

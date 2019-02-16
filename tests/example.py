@@ -1,8 +1,9 @@
 from datetime import datetime
 from functools import partial
 
-import quiz as q
 import six
+
+import quiz as q
 from quiz.utils import FrozenDict
 
 mkfield = partial(q.FieldDefinition,
