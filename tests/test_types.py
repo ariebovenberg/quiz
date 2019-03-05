@@ -552,7 +552,10 @@ class TestValidateArgs:
         ({'foo': 5, 'frobs': [], 'bar': 'OPT1'},
          {'foo': quiz.Int(5),
           'frobs': quiz.List[quiz.Nullable[quiz.Float]]([]),
-          'bar': quiz.Nullable[MyEnum](MyEnum.OPT1)})
+          'bar': quiz.Nullable[MyEnum](MyEnum.OPT1)}),
+        ({'foo': quiz.Int(4), 'frobs': []},
+         {'foo': quiz.Int(4),
+          'frobs': quiz.List[quiz.Nullable[quiz.Float]]([])}),
     ])
     def test_ok(self, value, expect):
         result = quiz.types.validate_args(EXAMPLE_ARG_SCHEMA, value)
@@ -915,6 +918,10 @@ class TestFieldDefinition:
 
         with pytest.raises(AttributeError, match='set'):
             f.bla = 3
+
+
+def test_inputwrapper_repr():
+    assert 'foobar' in repr(quiz.String('foobar'))
 
 
 class TestFloat:
