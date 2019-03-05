@@ -45,7 +45,7 @@
 Quiz
 ====
 
-Capable GraphQL client.
+Capable GraphQL client for Python.
 
 Features:
 
