@@ -76,6 +76,24 @@ class TestEnumAsType:
 
 class TestUnionAsType:
 
+    def test_one(self):
+        union_schema = s.Union('Foo', 'my union!', [
+            s.TypeRef('BlaType', s.Kind.OBJECT, None),
+        ])
+
+        objs = {
+            'BlaType': type('BlaType', (), {}),
+        }
+
+        created = s.union_as_type(union_schema, objs)
+        assert created.__name__ == 'Foo'
+        assert created.__doc__ == 'my union!'
+        assert issubclass(created, quiz.Union)
+
+        assert created.__args__ == (
+            objs['BlaType'],
+        )
+
     def test_simple(self):
         union_schema = s.Union('Foo', 'my union!', [
             s.TypeRef('BlaType', s.Kind.OBJECT, None),
