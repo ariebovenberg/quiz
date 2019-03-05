@@ -39,7 +39,7 @@ setup(
         'Programming Language :: Python :: 3.7',
     ],
     install_requires=[
-        'attrs~=18.2.0',
+        'attrs~=19.1.0',
         'enum34~=1.1.6; python_version<"3.4"',
         'gentools~=1.1.0',
         'six>=1.11,<1.13',
