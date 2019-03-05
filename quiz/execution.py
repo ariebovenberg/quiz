@@ -8,7 +8,7 @@ from gentools import irelay, py2_compatible, return_
 
 from .build import Query
 from .types import load
-from .utils import JSON, ValueObject
+from .utils import JSON, dataclass, field
 
 __all__ = [
     'execute',
@@ -179,22 +179,19 @@ def async_executor(**kwargs):
     return partial(execute_async, **kwargs)
 
 
-class ErrorResponse(ValueObject, Exception):
+@dataclass
+class ErrorResponse(Exception):
     """A response containing errors"""
-
-    __fields__ = [
-        ('data', t.Dict[str, JSON], 'Data returned in the response'),
-        ('errors', t.List[t.Dict[str, JSON]],
-         'Errors returned in the response'),
-    ]
+    data = field('Data returned in the response', type=t.Dict[str, JSON])
+    errors = field('Errors returned in the response',
+                   type=t.List[t.Dict[str, JSON]])
 
 
-class HTTPError(ValueObject, Exception):
+@dataclass
+class HTTPError(Exception):
     """Indicates a response with a non 2xx status code"""
-    __fields__ = [
-        ('response', snug.Response, 'The response object'),
-        ('request', snug.Request, 'The original request'),
-    ]
+    response = field('The response object', type=snug.Response)
+    request = field('The original request', type=snug.Request)
 
     def __str__(self):
         return ('Response with status {0.status_code}, content: {0.content!r} '

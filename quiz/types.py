@@ -10,7 +10,7 @@ import six
 
 from .build import Field, InlineFragment, SelectionSet, dump_inputvalue, escape
 from .compat import default_ne
-from .utils import JSON, FrozenDict, ValueObject, dataclass, field
+from .utils import JSON, FrozenDict, dataclass, field
 
 __all__ = [
     # types
@@ -66,8 +66,7 @@ InputValueDefinition = t.NamedTuple('InputValueDefinition', [
 _PRIMITIVE_TYPES = (int, float, bool, six.text_type)
 
 
-# TODO: make ABCMeta
-# TODO: make generic
+# TODO: make ABCMeta or generic?
 class InputValue(object):
     """Base class for input value classes.
     These values may be used in GraphQL queries (requests)"""
@@ -103,8 +102,7 @@ class InputWrapper(InputValue):
         return '{}({})'.format(self.__class__.__name__, self.value)
 
 
-# TODO: make ABCMeta
-# TODO: make generic
+# TODO: make ABCMeta/generic?
 # TODO: rename to indicate it can be the parser, not the value itself?
 class ResponseType(object):
     """Base class for response value classes.
@@ -152,10 +150,9 @@ class Object(Namespace):
     """a graphQL object"""
 
 
-class InputObjectFieldDescriptor(ValueObject):
-    __fields__ = [
-        ('value', InputValueDefinition, 'The input value'),
-    ]
+@dataclass
+class InputObjectFieldDescriptor(object):
+    value = field('The input value', type=InputValueDefinition)
 
     def __get__(self, obj, objtype=None):
         if obj is None:  # accessing on class
@@ -265,16 +262,16 @@ class CouldNotCoerce(ValueError):
             return self.reason
 
 
-class FieldDefinition(ValueObject):
-    __fields__ = [
-        ('name', str, 'Field name'),
-        ('desc', str, 'Field description'),
-        ('type', type, 'Field data type'),
-        ('args', FrozenDict[str, InputValueDefinition],
-         'Accepted field arguments'),
-        ('is_deprecated', bool, 'Whether the field is deprecated'),
-        ('deprecation_reason', t.Optional[str], 'Reason for deprecation'),
-    ]
+@dataclass
+class FieldDefinition(object):
+    name = field('Field name', type=str)
+    desc = field('Field description', type=str)
+    type = field('Field data type', type=type)
+    args = field('Accepted field arguments',
+                 type=FrozenDict[str, InputValueDefinition])
+    is_deprecated = field('Whether the field is deprecated', type=bool)
+    deprecation_reason = field('Reason ffor deprecation',
+                               type=t.Optional[str])
 
     def __get__(self, obj, objtype=None):
         if obj is None:  # accessing on class
@@ -717,12 +714,11 @@ class ValidationError(Exception):
     """base class for validation errors"""
 
 
-class SelectionError(ValueObject, ValidationError):
-    __fields__ = [
-        ('on', type, 'Type on which the error occurred'),
-        ('path', str, 'Path at which the error occurred'),
-        ('error', ValidationError, 'Original error'),
-    ]
+@dataclass
+class SelectionError(ValidationError):
+    on = field('Type on which the error occurred', type=type)
+    path = field('Path at which the error occurred', type=str)
+    error = field('Original error', type=ValidationError)
 
     def __str__(self):
         return '{} on "{}" at path "{}":\n\n    {}: {}'.format(
@@ -734,17 +730,16 @@ class SelectionError(ValueObject, ValidationError):
         )
 
 
-class NoSuchField(ValueObject, ValidationError):
-    __fields__ = []
+@dataclass
+class NoSuchField(ValidationError):
 
     def __str__(self):
         return 'field does not exist'
 
 
-class NoSuchArgument(ValueObject, ValidationError):
-    __fields__ = [
-        ('name', str, '(Invalid) argument name'),
-    ]
+@dataclass
+class NoSuchArgument(ValidationError):
+    name = field('(Invalid) argument name')
 
     def __str__(self):
         return 'argument "{}" does not exist'.format(self.name)
@@ -757,11 +752,10 @@ class InvalidArgumentValue(ValidationError):
     message = field('error message', type=str)
 
 
-class InvalidArgumentType(ValueObject, ValidationError):
-    __fields__ = [
-        ('name', str, 'Argument name'),
-        ('value', object, '(Invalid) value'),
-    ]
+@dataclass
+class InvalidArgumentType(ValidationError):
+    name = field('Argument name', type=str)
+    value = field('(Invalid) value', type=object)
 
     def __str__(self):
         return 'invalid value "{}" of type {} for argument "{}"'.format(
@@ -771,17 +765,16 @@ class InvalidArgumentType(ValueObject, ValidationError):
         )
 
 
-class MissingArgument(ValueObject, ValidationError):
-    __fields__ = [
-        ('name', str, 'Missing argument name'),
-    ]
+@dataclass
+class MissingArgument(ValidationError):
+    name = field('Missing argument name', type=str)
 
     def __str__(self):
         return 'argument "{}" missing (required)'.format(self.name)
 
 
-class SelectionsNotSupported(ValueObject, ValidationError):
-    __fields__ = []
+@dataclass
+class SelectionsNotSupported(ValidationError):
 
     def __str__(self):
         return 'selections not supported on this object'

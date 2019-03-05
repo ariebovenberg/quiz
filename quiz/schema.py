@@ -7,6 +7,7 @@ from collections import defaultdict
 from functools import partial
 from itertools import chain
 
+import attr
 import six
 
 from . import types
@@ -14,7 +15,7 @@ from .build import Query
 from .compat import fspath, map
 from .execution import execute
 from .types import validate
-from .utils import JSON, FrozenDict, ValueObject, merge
+from .utils import JSON, FrozenDict, dataclass, field, merge
 
 __all__ = [
     'Schema',
@@ -144,22 +145,22 @@ class _QueryCreator(object):
         return Query(cls, selections=validate(cls, selection_set))
 
 
-class Schema(ValueObject):
+@dataclass(repr=False)
+class Schema(object):
     """A GraphQL schema.
 
     Use :meth:`~Schema.from_path`, :meth:`~Schema.from_url`,
     or :meth:`~Schema.from_raw` to instantiate.
     """
-    __fields__ = [
-        ('classes', ClassDict, 'Mapping of classes in the schema'),
-        ('query_type', type, 'The query type of the schema'),
-        ('mutation_type', t.Optional[type], 'The mutation type of the schema'),
-        ('subscription_type', t.Optional[type],
-         'The subscription type of the schema'),
-        ('module', t.Optional[str],
-         'The module to which the classes are namespaced'),
-        ('raw', RawSchema, 'The raw schema (JSON). To be deprecated'),
-    ]
+    classes = field('Mapping of classes in the schema', type=ClassDict)
+    query_type = field('The query type of the schema', type=type)
+    mutation_type = field('The mutation type of the schema',
+                          type=t.Optional[type])
+    subscription_type = field('The subscription type of the schema',
+                              type=t.Optional[type])
+    module = field('The module to which the classes are namespaced',
+                   type=t.Optional[str])
+    raw = field('The raw schema (JSON). To be deprecated', type=RawSchema)
 
     def __getattr__(self, name):
         try:
@@ -170,7 +171,7 @@ class Schema(ValueObject):
     def __dir__(self):
         return list(chain(
             self.classes,
-            self._values._fields,
+            (f.name for f in attr.fields(self.__class__)),
             dir(super(Schema, self))
         ))
 
