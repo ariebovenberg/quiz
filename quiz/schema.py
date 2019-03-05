@@ -62,7 +62,7 @@ def enum_as_type(typ, module):
 
 def union_as_type(typ, objs):
     # type (Union, ClassDict) -> type
-    assert len(typ.types) > 1
+    assert len(typ.types) >= 1, 'Encountered a Union with zero types'
     return type(
         str(typ.name),
         (types.Union, ),

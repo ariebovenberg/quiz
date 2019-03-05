@@ -14,6 +14,11 @@ development
 - ``InputValue`` has been renamed to ``InputValueDefinition``.
 - ``GenericScalar`` has been renamed to ``AnyScalar``.
   
+0.1.4 (2019-03-05)
+++++++++++++++++++
+
+- Fixed issue with single-type unions (#100)
+
 0.1.3 (2019-02-16)
 ++++++++++++++++++
 
