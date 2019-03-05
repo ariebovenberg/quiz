@@ -231,7 +231,7 @@ class Enum(InputValue, ResponseType, enum.Enum):
 
     @classmethod
     def coerce(cls, value):
-        # type: object -> Enum
+        # type: (object) -> Enum
         try:
             return cls(value)
         except ValueError:
@@ -327,7 +327,7 @@ class List(InputWrapper, ResponseType):
 
     @classmethod
     def coerce(cls, data):
-        # type: object -> List
+        # type: (object) -> List
         if isinstance(data, list):
             return cls(list(map(cls.__arg__.coerce, data)))
         else:
@@ -364,7 +364,7 @@ class Nullable(InputWrapper, ResponseType):
 
     @classmethod
     def coerce(cls, data):
-        # type: object -> Nullable
+        # type: (object) -> Nullable
         return cls(data if data is None else cls.__arg__.coerce(data))
 
     def __gql_dump__(self):
@@ -425,7 +425,7 @@ class AnyScalar(Scalar):
 
     @classmethod
     def __gql_load__(cls, data):
-        # type: T -> T
+        # type: (T) -> T
         return data
 
 
@@ -435,7 +435,7 @@ class Float(InputWrapper, ResponseType):
     # TODO: consistent types of exceptions to raise
     @classmethod
     def coerce(cls, value):
-        # type: object -> Float
+        # type: (object) -> Float
         if not isinstance(value, (float, int)):
             raise CouldNotCoerce('Invalid type, must be float or int')
         if math.isnan(value) or math.isinf(value):
@@ -447,7 +447,7 @@ class Float(InputWrapper, ResponseType):
 
     @classmethod
     def __gql_load__(cls, data):
-        # type: Union[float, int] -> float
+        # type: (Union[float, int]) -> float
         return float(data)
 
 
@@ -456,7 +456,7 @@ class Int(InputWrapper, ResponseType):
     is that it may only represent integers up to 32 bits in size"""
     @classmethod
     def coerce(cls, value):
-        # type: object -> Int
+        # type: (object) -> Int
         if not isinstance(value, six.integer_types):
             raise CouldNotCoerce('Invalid type, must be int')
         if not MIN_INT < value < MAX_INT:
@@ -469,7 +469,7 @@ class Int(InputWrapper, ResponseType):
 
     @classmethod
     def __gql_load__(cls, data):
-        # type: int -> int
+        # type: (int) -> int
         return data
 
 
@@ -477,7 +477,7 @@ class Boolean(InputWrapper, ResponseType):
     """A GraphQL boolean object"""
     @classmethod
     def coerce(cls, value):
-        # type: object -> Boolean
+        # type: (object) -> Boolean
         if isinstance(value, bool):
             return cls(value)
         else:
@@ -488,7 +488,7 @@ class Boolean(InputWrapper, ResponseType):
 
     @classmethod
     def __gql_load__(cls, data):
-        # type: bool -> bool
+        # type: (bool) -> bool
         return data
 
 
@@ -496,7 +496,7 @@ class StringLike(InputWrapper, ResponseType):
     """Base for string-like types"""
     @classmethod
     def coerce(cls, value):
-        # type: object -> StringLike
+        # type: (object) -> StringLike
         if isinstance(value, six.text_type):
             return cls(value)
         elif six.PY2 and isinstance(value, bytes):  # pragma: no cover
@@ -509,7 +509,7 @@ class StringLike(InputWrapper, ResponseType):
 
     @classmethod
     def __gql_load__(cls, data):
-        # type: str -> str
+        # type: (str) -> str
         return data
 
 
@@ -529,8 +529,12 @@ def _unwrap_list_or_nullable(type_):
     return type_
 
 
-def validate_value(name, typ, value):
-    # type: (Type[InputValue], object) -> InputValue | InvalidArgumentValue
+def validate_value(
+        name,  # type: str
+        typ,  # type: t.Type[InputValue]
+        value  # type: object
+):
+    # type: (...) -> t.Union[InputValue, InvalidArgumentValue]
     # TODO: proper isinstance
     if type(value) == typ:
         return value
