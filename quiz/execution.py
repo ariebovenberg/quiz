@@ -2,6 +2,7 @@
 import json
 import typing as t
 from functools import partial
+from operator import attrgetter
 
 import snug
 from gentools import irelay, py2_compatible, return_
@@ -20,6 +21,8 @@ __all__ = [
 
     'ErrorResponse',
     'HTTPError',
+    'RawResult',
+    'QueryMetadata',
 ]
 
 Executable = t.Union[str, Query]
@@ -44,8 +47,7 @@ def _exec(executable):
 @py2_compatible
 def middleware(url, query_str):
     # type: (str, str) -> snug.Query[t.Dict[str, JSON]]
-    request = snug.Request(
-        'POST',
+    request = snug.POST(
         url,
         content=json.dumps({'query': query_str}).encode('ascii'),
         headers={'Content-Type': 'application/json'}
@@ -57,7 +59,10 @@ def middleware(url, query_str):
     if 'errors' in content:
         content.setdefault('data', {})
         raise ErrorResponse(**content)
-    return_(content['data'])
+    return_(RawResult(
+        content['data'],
+        QueryMetadata(request=request, response=response),
+    ))
 
 
 def execute(obj, url, **kwargs):
@@ -75,8 +80,9 @@ def execute(obj, url, **kwargs):
 
     Returns
     -------
-    JSON
-        The response data
+    RawResult or the schema's return type
+        In case of a raw string, a raw result.
+        Otherwise, an instance of the schema's type queried for.
 
     Raises
     ------
@@ -135,8 +141,10 @@ def execute_async(obj, url, **kwargs):
 
     Returns
     -------
-    JSON
-        The response data
+    RawResult or the schema's return type
+        In case of a raw string, a raw result.
+        Otherwise, an instance of the schema's type queried for.
+
 
     Raises
     ------
@@ -186,6 +194,30 @@ class ErrorResponse(ValueObject, Exception):
         ('data', t.Dict[str, JSON], 'Data returned in the response'),
         ('errors', t.List[t.Dict[str, JSON]],
          'Errors returned in the response'),
+    ]
+
+
+class RawResult(t.Mapping[str, t.Any]):
+    """Result of a raw query. An immutable mapping, i.e. dict-like object."""
+
+    def __init__(self, inner, meta):
+        # type: (t.Mapping[str, t.Any], QueryMetadata) -> None
+        self._inner = inner
+        self.__metadata__ = meta
+
+    __iter__ = property(attrgetter('_inner.__iter__'))
+    __len__ = property(attrgetter('_inner.__len__'))
+    __getitem__ = property(attrgetter('_inner.__getitem__'))
+
+    def __repr__(self):
+        return '{}({!r})'.format(self.__class__.__name__, self._inner)
+
+
+class QueryMetadata(ValueObject):
+    """HTTP metadata for query"""
+    __fields__ = [
+        ('response', snug.Response, 'The response object'),
+        ('request', snug.Request, 'The original request'),
     ]
 
 

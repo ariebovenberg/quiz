@@ -18,6 +18,9 @@ py3 = pytest.mark.skipif(sys.version_info < (3, ), reason='python 3+ only')
 if six.PY3:
     import asyncio
     snug.send_async.register(MockClient, asyncio.coroutine(MockClient.send))
+    from collections.abc import Mapping
+else:
+    from collections import Mapping
 
 
 def token_auth(token):
@@ -114,11 +117,26 @@ def test_executor():
 class TestExecuteAsync:
 
     def test_success(self, event_loop):
-        client = MockClient(snug.Response(200, b'{"data": {"foo": 4}}'))
+        response = snug.Response(200, b'{"data": {"foo": 4, "bar": ""}}')
+        client = MockClient(response)
         future = quiz.execute_async('my query', url='https://my.url/api',
                                     auth=token_auth('foo'), client=client)
         result = event_loop.run_until_complete(future)
-        assert result == {'foo': 4}
+        assert isinstance(result, quiz.RawResult)
+        assert result == {'foo': 4, 'bar': ''}
+        assert repr(result._inner) in repr(result)
+        assert len(result) == 2
+        assert result['foo'] == 4
+        assert set(result) == {'foo', 'bar'}
+        assert isinstance(result, Mapping)
+        assert result.__metadata__ == quiz.QueryMetadata(
+            response=response,
+            request=snug.POST(
+                'https://my.url/api',
+                headers={'Content-Type': 'application/json'},
+                content=b'{"query": "my query"}',
+            )
+        )
 
         request = client.request
         assert request.url == 'https://my.url/api'
