@@ -37,6 +37,7 @@ Executing such a query returns the result as JSON.
      (e.g. ``requests``, ``aiohttp``)
    * :ref:`Asynchronous execution <async>`
    * :ref:`Keeping everything DRY <executors>`
+   * :ref:`Acessing request metadata <metadata>`
 
 
 Retrieving a schema
