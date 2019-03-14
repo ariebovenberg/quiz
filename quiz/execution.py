@@ -38,7 +38,7 @@ def _exec(executable):
         return_(load(
             executable.cls,
             executable.selections,
-            (yield str(executable))
+            (yield str(executable)),
         ))
     else:
         raise NotImplementedError('not executable: ' + repr(executable))

@@ -52,14 +52,15 @@ class TestExecute:
                 .bark_volume
             ]
         )
-        client = MockClient(snug.Response(200, json.dumps({
+        response = snug.Response(200, json.dumps({
             'data': {
                 'dog': {
                     'name': 'Fred',
                     'bark_volume': 8,
                 }
             }
-        }).encode()))
+        }).encode())
+        client = MockClient(response)
         result = quiz.execute(query, url='https://my.url/api', client=client)
         assert result == DogQuery(
             dog=Dog(
@@ -67,8 +68,12 @@ class TestExecute:
                 bark_volume=8,
             )
         )
-
         request = client.request
+
+        assert result.__metadata__ == quiz.QueryMetadata(
+            response=response,
+            request=request,
+        )
         assert request.url == 'https://my.url/api'
         assert request.method == 'POST'
         assert json.loads(request.content.decode()) == {
