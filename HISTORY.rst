@@ -4,6 +4,11 @@ Release history
 development
 +++++++++++
 
+0.1.5 (2019-03-16)
+++++++++++++++++++
+
+- Include request/response metadata in responses (#95)
+
 0.1.4 (2019-03-05)
 ++++++++++++++++++
 

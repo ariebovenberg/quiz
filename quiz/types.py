@@ -57,12 +57,15 @@ class HasFields(type):
 
 class Namespace(object):
 
-    def __init__(__self__, **kwargs):
-        __self__.__dict__.update(kwargs)
+    def __init__(__self, **kwargs):
+        __self.__dict__.update(kwargs)
+
+    def __fields__(self):
+        return {k: v for k, v in self.__dict__.items() if k != '__metadata__'}
 
     def __eq__(self, other):
         if type(self) == type(other):
-            return self.__dict__ == other.__dict__
+            return self.__fields__() == other.__fields__()
         return NotImplemented
 
     if six.PY2:  # pragma: no cover
@@ -322,7 +325,7 @@ def load(cls, selection_set, response):
         The class to load against, an ``Object`` or ``Interface``
     selection_set: SelectionSet
         The selection set to validate
-    response: t.Dict[str, JSON]
+    response: t.Mapping[str, JSON]
         The JSON response data
 
     Returns
@@ -330,7 +333,7 @@ def load(cls, selection_set, response):
     T
         An instance of ``cls``
     """
-    return cls(**{
+    instance = cls(**{
         field.alias or field.name: load_field(
             getattr(cls, field.name).type,
             field,
@@ -338,6 +341,10 @@ def load(cls, selection_set, response):
         )
         for field in selection_set
     })
+    # TODO: do this in a cleaner way
+    if hasattr(response, '__metadata__'):
+        instance.__metadata__ = response.__metadata__
+    return instance
 
 
 class ValidationError(Exception):
