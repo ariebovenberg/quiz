@@ -129,7 +129,6 @@ class TestExecuteAsync:
         result = event_loop.run_until_complete(future)
         assert isinstance(result, quiz.RawResult)
         assert result == {'foo': 4, 'bar': ''}
-        assert repr(result._inner) in repr(result)
         assert len(result) == 2
         assert result['foo'] == 4
         assert set(result) == {'foo', 'bar'}

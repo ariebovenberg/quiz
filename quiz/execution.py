@@ -197,20 +197,13 @@ class ErrorResponse(ValueObject, Exception):
     ]
 
 
-class RawResult(t.Mapping[str, t.Any]):
-    """Result of a raw query. An immutable mapping, i.e. dict-like object."""
+class RawResult(dict):
+    """Dictionary as result of a raw query"""
+    __slots__ = '__metadata__'
 
-    def __init__(self, inner, meta):
-        # type: (t.Mapping[str, t.Any], QueryMetadata) -> None
-        self._inner = inner
+    def __init__(self, items, meta):
+        super(RawResult, self).__init__(items)
         self.__metadata__ = meta
-
-    __iter__ = property(attrgetter('_inner.__iter__'))
-    __len__ = property(attrgetter('_inner.__len__'))
-    __getitem__ = property(attrgetter('_inner.__getitem__'))
-
-    def __repr__(self):
-        return '{}({!r})'.format(self.__class__.__name__, self._inner)
 
 
 class QueryMetadata(ValueObject):
