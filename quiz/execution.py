@@ -80,7 +80,7 @@ def execute(obj, url, **kwargs):
 
     Returns
     -------
-    RawResult or the schema's return type
+    RawResult (a dict) or the schema's return type
         In case of a raw string, a raw result.
         Otherwise, an instance of the schema's type queried for.
 
@@ -141,7 +141,7 @@ def execute_async(obj, url, **kwargs):
 
     Returns
     -------
-    RawResult or the schema's return type
+    RawResult (a dict) or the schema's return type
         In case of a raw string, a raw result.
         Otherwise, an instance of the schema's type queried for.
 
@@ -198,7 +198,11 @@ class ErrorResponse(ValueObject, Exception):
 
 
 class RawResult(dict):
-    """Dictionary as result of a raw query"""
+    """Dictionary as result of a raw query.
+
+    Contains HTTP :class:`metadata <QueryMetadata>`
+    in its ``__metadata__`` attribute.
+    """
     __slots__ = '__metadata__'
 
     def __init__(self, items, meta):
