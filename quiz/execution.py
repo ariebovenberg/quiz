@@ -2,7 +2,6 @@
 import json
 import typing as t
 from functools import partial
-from operator import attrgetter
 
 import snug
 from gentools import irelay, py2_compatible, return_
