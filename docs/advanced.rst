@@ -53,13 +53,31 @@ repeatedly with specific arguments, the :func:`~quiz.execution.executor()` short
 .. code-block:: python3
 
    >>> import requests
-   >>> exec = snug.executor(auth=('me', 'password'),
+   >>> exec = quiz.executor(auth=('me', 'password'),
    ...                      client=requests.Session())
    >>> exec(some_query)
    >>> exec(other_query)
    ...
    >>> # we can still override arguments on each call
    >>> exec(another_query, auth=('bob', 'hunter2'))
+
+.. _metadata:
+
+Response metadata
+-----------------
+
+Each result contains metadata about the HTTP response and request.
+This can be accessed through the ``__metadata__`` attribute,
+which contains ``response`` and ``request``
+
+.. code-block:: python3
+
+   >>> result = quiz.execute(...)
+   >>> meta = result.__metadata__
+   >>> meta.response
+   snug.Response(200, ...)
+   >>> meta.request
+   snug.Request('POST', ...)
 
 .. _async:
 

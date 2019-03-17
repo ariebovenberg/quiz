@@ -3,6 +3,7 @@ from textwrap import dedent
 
 import pytest
 import six
+import snug
 
 import quiz
 from quiz import SELECTOR as _
@@ -758,6 +759,10 @@ class TestLoad:
         assert isinstance(loaded, DogQuery)
 
     def test_full(self):
+        metadata = quiz.QueryMetadata(
+            request=snug.GET('https://my.url/foo'),
+            response=snug.Response(200)
+        )
         selection = (
             _
             .dog[
@@ -784,7 +789,7 @@ class TestLoad:
                 .birthday
             ]
         )
-        loaded = quiz.load(DogQuery, selection, {
+        loaded = quiz.load(DogQuery, selection, quiz.RawResult({
             'dog': {
                 'name': u'Rufus',
                 'color': u'GOLDEN',
@@ -810,9 +815,10 @@ class TestLoad:
                 'age': 3,
                 'birthday': 1540731645,
             }
-        })
+        }, meta=metadata))
         # TODO: include union types
         assert isinstance(loaded, DogQuery)
+        assert loaded.__metadata__ == metadata
         assert loaded == DogQuery(
             dog=Dog(
                 name='Rufus',

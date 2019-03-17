@@ -45,7 +45,7 @@
 Quiz
 ====
 
-Capable GraphQL client.
+Capable GraphQL client for Python.
 
 Features:
 
@@ -76,7 +76,7 @@ A quick 'n dirty request to GitHub's new V4 API:
    ...     }
    ...   }
    ... '''
-   >>> quiz.execute(query, url='https://api.github.com/graphl',
+   >>> quiz.execute(query, url='https://api.github.com/graphql',
    ...              auth=('me', 'password'))
    {"repository": ...}
 
