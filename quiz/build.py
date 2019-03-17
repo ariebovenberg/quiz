@@ -4,8 +4,10 @@ import re
 import typing as t
 from operator import attrgetter, methodcaller
 
+from attr import evolve
+
 from .compat import indent, singledispatch
-from .utils import FrozenDict, ValueObject, compose, init_last
+from .utils import FrozenDict, compose, dataclass, field, init_last
 
 __all__ = [
     # building graphQL documents
@@ -139,7 +141,7 @@ class SelectionSet(t.Iterable['Selection'], t.Sized):
 
         return SelectionSet._make(
             tuple(rest)
-            + (target.replace(selection_set=selections), ))
+            + (evolve(target, selection_set=selections), ))
 
     def __repr__(self):
         return "<SelectionSet> {}".format(gql(self))
@@ -229,7 +231,7 @@ class SelectionSet(t.Iterable['Selection'], t.Sized):
     def __add_kwargs(self, args):
         rest, target = init_last(self.__selections__)
         return SelectionSet._make(
-            tuple(rest) + (target.replace(kwargs=FrozenDict(args)), ))
+            tuple(rest) + (evolve(target, kwargs=FrozenDict(args)), ))
 
     def __iter__(self):
         """Iterate over the selection set contents
@@ -290,25 +292,24 @@ SELECTOR = SelectionSet()
 """An empty, extendable :class:`SelectionSet`"""
 
 
-class Raw(ValueObject):
-    __fields__ = [
-        ('content', str, 'The raw GraphQL content')
-    ]
+@dataclass
+class Raw(object):
+    content = field('The raw GraphQL content', type=str)
 
     def __gql__(self):
         return self.content
 
 
-class Field(ValueObject):
-    __fields__ = [
-        ('name', str, 'Field name'),
-        ('kwargs', FrozenDict, 'Given arguments'),
-        ('selection_set', SelectionSet, 'Selection of subfields'),
-        ('alias', t.Optional[str], 'Field alias'),
-        # in the future:
-        # - directives
-    ]
-    __defaults__ = (FrozenDict.EMPTY, SelectionSet(), None)
+@dataclass
+class Field(object):
+    name = field('Field name', type=str)
+    kwargs = field('Given arguments', type=FrozenDict,
+                   default=FrozenDict.EMPTY)
+    selection_set = field('Selection of subfields', type=SelectionSet,
+                          default=SelectionSet())
+    alias = field('Field alias', type=t.Optional[str], default=None)
+    # in the future:
+    # - directives
 
     def __gql__(self):
         arguments = '({})'.format(
@@ -324,11 +325,10 @@ class Field(ValueObject):
         return alias + self.name + arguments + selection_set
 
 
-class InlineFragment(ValueObject):
-    __fields__ = [
-        ('on', type, 'Type of the fragment'),
-        ('selection_set', SelectionSet, 'Subfields of the fragment'),
-    ]
+@dataclass
+class InlineFragment(object):
+    on = field('Type of the fragment', type=type)
+    selection_set = field('Subfields of the fragment', type=SelectionSet)
     # in the future: directives
 
     def __gql__(self):
@@ -338,11 +338,10 @@ class InlineFragment(ValueObject):
         )
 
 
-class Query(ValueObject):
-    __fields__ = [
-        ('cls', type, 'The query class'),
-        ('selections', SelectionSet, 'Fields selection')
-    ]
+@dataclass
+class Query(object):
+    cls = field('The query class', type=type)
+    selections = field('Fields selection', type=SelectionSet)
     # in the future:
     # - name (optional)
     # - variable_defs (optional)
