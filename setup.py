@@ -33,7 +33,6 @@ setup(
         'Programming Language :: Python :: 2.7',
 
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
@@ -42,7 +41,7 @@ setup(
         'enum34~=1.1.6; python_version<"3.4"',
         'gentools~=1.1.0',
         'six>=1.11,<1.13',
-        'snug~=1.3.4',
+        'snug~=1.4.1',
         'typing>=3.6.6; python_version<"3.5"',
     ],
     keywords=['graphql', 'http', 'async'],
