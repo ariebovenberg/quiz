@@ -2,6 +2,6 @@
 -r docs.txt
 -r test.txt
 wheel~=0.33.6
-twine~=1.13.0
+twine~=1.14.0
 isort~=4.3.21
 tox~=3.14.0
