@@ -3,13 +3,12 @@ import json
 from collections.abc import Mapping
 
 import pytest
+import snug
 
 import quiz
 
 from .example import Dog, DogQuery
 from .helpers import MockClient
-
-import snug
 
 _ = quiz.SELECTOR
 

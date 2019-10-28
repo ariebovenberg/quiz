@@ -2,6 +2,7 @@ from datetime import datetime
 from textwrap import dedent
 
 import pytest
+import snug
 
 import quiz
 from quiz import SELECTOR as _
@@ -19,8 +20,6 @@ from .example import (
     Sentient,
 )
 from .helpers import AlwaysEquals, NeverEquals
-
-import snug
 
 
 class TestUnion:

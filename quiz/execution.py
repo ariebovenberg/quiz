@@ -3,13 +3,12 @@ import json
 import typing as t
 from functools import partial
 
+import snug
 from gentools import irelay, py2_compatible, return_
 
 from .build import Query
 from .types import load
 from .utils import JSON, ValueObject
-
-import snug
 
 __all__ = [
     "execute",

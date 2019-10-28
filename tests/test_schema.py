@@ -6,14 +6,13 @@ import sys
 import types
 
 import pytest
+import snug
 
 import quiz
 from quiz import SELECTOR as _
 from quiz import schema as s
 
 from .helpers import MockClient
-
-import snug
 
 
 def trim_whitespace(txt):
