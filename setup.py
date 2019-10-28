@@ -19,6 +19,7 @@ setup(
     description=metadata["__description__"],
     license=metadata["__license__"],
     long_description=read("README.rst") + "\n\n" + read("HISTORY.rst"),
+    long_description_content_type='text/plain',
     url="https://github.com/ariebovenberg/quiz",
     author=metadata["__author__"],
     author_email="a.c.bovenberg@gmail.com",
