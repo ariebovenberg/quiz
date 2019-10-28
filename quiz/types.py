@@ -3,48 +3,42 @@ import enum
 import typing as t
 from itertools import starmap
 
-import six
-
 from .build import Field, InlineFragment, SelectionSet
 from .utils import JSON, FrozenDict, ValueObject
 
 __all__ = [
     # types
-    'Enum',
-    'Union',
-    'GenericScalar',
-    'Scalar',
-    'List',
-    'Interface',
-    'Object',
-    'Nullable',
-    'FieldDefinition',
-    'InputValue',
+    "Enum",
+    "Union",
+    "GenericScalar",
+    "Scalar",
+    "List",
+    "Interface",
+    "Object",
+    "Nullable",
+    "FieldDefinition",
+    "InputValue",
     # TODO: mutation
     # TODO: subscription
-
     # validation
-    'validate',
-    'ValidationError',
-    'SelectionError',
-    'NoSuchField',
-    'NoSuchArgument',
-    'SelectionsNotSupported',
-    'InvalidArgumentType',
-    'MissingArgument',
-
-    'NoValueForField',
-    'load',
+    "validate",
+    "ValidationError",
+    "SelectionError",
+    "NoSuchField",
+    "NoSuchArgument",
+    "SelectionsNotSupported",
+    "InvalidArgumentType",
+    "MissingArgument",
+    "NoValueForField",
+    "load",
 ]
 
 
-InputValue = t.NamedTuple('InputValue', [
-    ('name', str),
-    ('desc', str),
-    ('type', type),
-])
+InputValue = t.NamedTuple(
+    "InputValue", [("name", str), ("desc", str), ("type", type)]
+)
 
-_PRIMITIVE_TYPES = (int, float, bool, six.text_type)
+_PRIMITIVE_TYPES = (int, float, bool, str)
 
 
 class HasFields(type):
@@ -56,32 +50,25 @@ class HasFields(type):
 
 
 class Namespace(object):
-
     def __init__(__self, **kwargs):
         __self.__dict__.update(kwargs)
 
     def __fields__(self):
-        return {k: v for k, v in self.__dict__.items() if k != '__metadata__'}
+        return {k: v for k, v in self.__dict__.items() if k != "__metadata__"}
 
     def __eq__(self, other):
         if type(self) == type(other):
             return self.__fields__() == other.__fields__()
         return NotImplemented
 
-    if six.PY2:  # pragma: no cover
-        def __ne__(self, other):
-            equal = self.__eq__(other)
-            return NotImplemented if equal is NotImplemented else not equal
-
     def __repr__(self):
-        return '{}({})'.format(
-            getattr(self.__class__, '__qualname__' if six.PY3 else '__name__'),
-            ', '.join(starmap('{}={!r}'.format, self.__dict__.items()))
+        return "{}({})".format(
+            self.__class__.__qualname__,
+            ", ".join(starmap("{}={!r}".format, self.__dict__.items())),
         )
 
 
-@six.add_metaclass(HasFields)
-class Object(Namespace):
+class Object(Namespace, metaclass=HasFields):
     """a graphQL object"""
 
 
@@ -104,12 +91,12 @@ class NoValueForField(AttributeError):
 
 class FieldDefinition(ValueObject):
     __fields__ = [
-        ('name', str, 'Field name'),
-        ('desc', str, 'Field description'),
-        ('type', type, 'Field data type'),
-        ('args', FrozenDict[str, InputValue], 'Accepted field arguments'),
-        ('is_deprecated', bool, 'Whether the field is deprecated'),
-        ('deprecation_reason', t.Optional[str], 'Reason for deprecation'),
+        ("name", str, "Field name"),
+        ("desc", str, "Field description"),
+        ("type", type, "Field data type"),
+        ("args", FrozenDict[str, InputValue], "Accepted field arguments"),
+        ("is_deprecated", bool, "Whether the field is deprecated"),
+        ("deprecation_reason", t.Optional[str], "Reason for deprecation"),
     ]
 
     def __get__(self, obj, objtype=None):
@@ -127,34 +114,30 @@ class FieldDefinition(ValueObject):
     # __doc__ allows descriptor to be displayed nicely in help()
     @property
     def __doc__(self):
-        return ': {.__name__}\n    {}'.format(self.type, self.desc)
+        return ": {.__name__}\n    {}".format(self.type, self.desc)
 
 
 class ListMeta(type):
-
     def __getitem__(self, arg):
-        return type('[{.__name__}]'.format(arg), (List, ), {
-            '__arg__': arg
-        })
+        return type("[{.__name__}]".format(arg), (List,), {"__arg__": arg})
 
     def __instancecheck__(self, instance):
-        return (isinstance(instance, list)
-                and all(isinstance(i, self.__arg__) for i in instance))
+        return isinstance(instance, list) and all(
+            isinstance(i, self.__arg__) for i in instance
+        )
 
 
 # Q: why not typing.List?
 # A: it doesn't support __doc__, __name__, or isinstance()
-@six.add_metaclass(ListMeta)
-class List(object):
+class List(object, metaclass=ListMeta):
     __arg__ = object
 
 
 class NullableMeta(type):
-
     def __getitem__(self, arg):
-        return type('{.__name__} or None'.format(arg), (Nullable, ), {
-            '__arg__': arg
-        })
+        return type(
+            "{.__name__} or None".format(arg), (Nullable,), {"__arg__": arg}
+        )
 
     def __instancecheck__(self, instance):
         return instance is None or isinstance(instance, self.__arg__)
@@ -163,13 +146,11 @@ class NullableMeta(type):
 # Q: why not typing.Optional?
 # A: it is not easily distinguished from Union,
 #    and doesn't support __doc__, __name__, or isinstance()
-@six.add_metaclass(NullableMeta)
-class Nullable(object):
+class Nullable(object, metaclass=NullableMeta):
     __arg__ = object
 
 
 class UnionMeta(type):
-
     def __instancecheck__(self, instance):
         return isinstance(instance, self.__args__)
 
@@ -177,8 +158,7 @@ class UnionMeta(type):
 # Q: why not typing.Union?
 # A: it isn't consistent across python versions,
 #    and doesn't support __doc__, __name__, or isinstance()
-@six.add_metaclass(UnionMeta)
-class Union(object):
+class Union(object, metaclass=UnionMeta):
     __args__ = ()
 
 
@@ -188,23 +168,23 @@ class Scalar(object):
     def __gql_dump__(self):
         """Serialize the scalar to a GraphQL primitive value"""
         raise NotImplementedError(
-            'GraphQL serialization is not defined for this scalar')
+            "GraphQL serialization is not defined for this scalar"
+        )
 
     @classmethod
     def __gql_load__(cls, data):
         """Load a scalar instance from GraphQL"""
         raise NotImplementedError(
-            'GraphQL deserialization is not defined for this scalar')
+            "GraphQL deserialization is not defined for this scalar"
+        )
 
 
 class GenericScalarMeta(type):
-
     def __instancecheck__(self, instance):
         return isinstance(instance, _PRIMITIVE_TYPES)
 
 
-@six.add_metaclass(GenericScalarMeta)
-class GenericScalar(Scalar):
+class GenericScalar(Scalar, metaclass=GenericScalarMeta):
     """A generic scalar, accepting any primitive type"""
 
 
@@ -219,7 +199,7 @@ def _unwrap_list_or_nullable(type_):
 def _validate_args(schema, actual):
     # type: (t.Mapping[str, InputValue], t.Mapping[str, object])
     # -> Mapping[str, object]
-    invalid_args = six.viewkeys(actual) - six.viewkeys(schema)
+    invalid_args = actual.keys() - schema.keys()
     if invalid_args:
         raise NoSuchArgument(invalid_args.pop())
 
@@ -285,7 +265,7 @@ def validate(cls, selection_set):
     return selection_set
 
 
-T = t.TypeVar('T')
+T = t.TypeVar("T")
 
 
 # TODO: refactor using singledispatch
@@ -296,8 +276,9 @@ def load_field(type_, field, value):
         assert isinstance(value, dict)
         return load(type_, field.selection_set, value)
     elif issubclass(type_, Nullable):
-        return None if value is None else load_field(
-            type_.__arg__, field, value)
+        return (
+            None if value is None else load_field(type_.__arg__, field, value)
+        )
     elif issubclass(type_, List):
         assert isinstance(value, list)
         return [load_field(type_.__arg__, field, v) for v in value]
@@ -333,16 +314,19 @@ def load(cls, selection_set, response):
     T
         An instance of ``cls``
     """
-    instance = cls(**{
-        field.alias or field.name: load_field(
-            getattr(cls, field.name).type,
-            field,
-            response[field.alias or field.name],
-        )
-        for field in selection_set
-    })
+    instance = cls(
+        **{
+            field.alias
+            or field.name: load_field(
+                getattr(cls, field.name).type,
+                field,
+                response[field.alias or field.name],
+            )
+            for field in selection_set
+        }
+    )
     # TODO: do this in a cleaner way
-    if hasattr(response, '__metadata__'):
+    if hasattr(response, "__metadata__"):
         instance.__metadata__ = response.__metadata__
     return instance
 
@@ -353,9 +337,9 @@ class ValidationError(Exception):
 
 class SelectionError(ValueObject, ValidationError):
     __fields__ = [
-        ('on', type, 'Type on which the error occurred'),
-        ('path', str, 'Path at which the error occurred'),
-        ('error', ValidationError, 'Original error'),
+        ("on", type, "Type on which the error occurred"),
+        ("path", str, "Path at which the error occurred"),
+        ("error", ValidationError, "Original error"),
     ]
 
     def __str__(self):
@@ -372,13 +356,11 @@ class NoSuchField(ValueObject, ValidationError):
     __fields__ = []
 
     def __str__(self):
-        return 'field does not exist'
+        return "field does not exist"
 
 
 class NoSuchArgument(ValueObject, ValidationError):
-    __fields__ = [
-        ('name', str, '(Invalid) argument name'),
-    ]
+    __fields__ = [("name", str, "(Invalid) argument name")]
 
     def __str__(self):
         return 'argument "{}" does not exist'.format(self.name)
@@ -386,22 +368,18 @@ class NoSuchArgument(ValueObject, ValidationError):
 
 class InvalidArgumentType(ValueObject, ValidationError):
     __fields__ = [
-        ('name', str, 'Argument name'),
-        ('value', object, '(Invalid) value'),
+        ("name", str, "Argument name"),
+        ("value", object, "(Invalid) value"),
     ]
 
     def __str__(self):
         return 'invalid value "{}" of type {} for argument "{}"'.format(
-            self.value,
-            type(self.value),
-            self.name,
+            self.value, type(self.value), self.name
         )
 
 
 class MissingArgument(ValueObject, ValidationError):
-    __fields__ = [
-        ('name', str, 'Missing argument name'),
-    ]
+    __fields__ = [("name", str, "Missing argument name")]
 
     def __str__(self):
         return 'argument "{}" missing (required)'.format(self.name)
@@ -411,12 +389,7 @@ class SelectionsNotSupported(ValueObject, ValidationError):
     __fields__ = []
 
     def __str__(self):
-        return 'selections not supported on this object'
+        return "selections not supported on this object"
 
 
-BUILTIN_SCALARS = {
-    "Boolean": bool,
-    "String":  str,
-    "Float":   float,
-    "Int":     int,
-}
+BUILTIN_SCALARS = {"Boolean": bool, "String": str, "Float": float, "Int": int}

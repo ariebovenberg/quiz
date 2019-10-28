@@ -4,24 +4,20 @@ import typing as t
 from collections import namedtuple
 from functools import wraps
 from itertools import chain, starmap
-from operator import attrgetter
-
-import six
+from operator import attrgetter, methodcaller
 
 from .compat import PY2
 
-__all__ = [
-    'JSON',
-    'Empty',
+__all__ = ["JSON", "Empty"]
+
+T = t.TypeVar("T")
+T1 = t.TypeVar("T1")
+T2 = t.TypeVar("T2")
+
+
+JSON = t.Union[
+    str, int, float, bool, None, t.Dict[str, "JSON"], t.List["JSON"]
 ]
-
-T = t.TypeVar('T')
-T1 = t.TypeVar('T1')
-T2 = t.TypeVar('T2')
-
-
-JSON = t.Union[str, int, float, bool, None,
-               t.Dict[str, 'JSON'], t.List['JSON']]
 
 
 def identity(obj):
@@ -31,21 +27,21 @@ def identity(obj):
 class FrozenDict(t.Mapping[T1, T2]):
     # see https://stackoverflow.com/questions/45864273
     if not (3, 7) > sys.version_info > (3, 4):  # pragma: no cover
-        __slots__ = '_inner'
+        __slots__ = "_inner"
 
     def __init__(self, inner):
         self._inner = inner if isinstance(inner, dict) else dict(inner)
 
-    __len__ = property(attrgetter('_inner.__len__'))
-    __iter__ = property(attrgetter('_inner.__iter__'))
-    __getitem__ = property(attrgetter('_inner.__getitem__'))
-    __repr__ = property(attrgetter('_inner.__repr__'))
+    __len__ = property(attrgetter("_inner.__len__"))
+    __iter__ = property(attrgetter("_inner.__iter__"))
+    __getitem__ = property(attrgetter("_inner.__getitem__"))
+    __repr__ = property(attrgetter("_inner.__repr__"))
 
     def __hash__(self):
         return hash(frozenset(self._inner.items()))
 
     if PY2:  # pragma: no cover
-        viewkeys = property(attrgetter('_inner.viewkeys'))
+        viewkeys = property(attrgetter("_inner.viewkeys"))
 
 
 FrozenDict.EMPTY = FrozenDict({})
@@ -55,7 +51,8 @@ def merge(*dicts):
     """merge several mappings"""
     if dicts:
         return type(dicts[0])(
-            chain.from_iterable(map(six.iteritems, dicts)))
+            chain.from_iterable(map(methodcaller("items"), dicts))
+        )
     else:
         return {}
 
@@ -83,6 +80,7 @@ def _make_init_fn(ntuple):
     @wraps(ntuple.__new__)
     def __init__(self, *args, **kwargs):
         self._values = ntuple(*args, **kwargs)
+
     return __init__
 
 
@@ -92,31 +90,31 @@ class _ValueObjectMeta(type(t.Generic)):
     # TODO: add parameters to __doc__
     def __new__(self, name, bases, dct):
         # skip the ``ValueObject`` class itself
-        if bases != (object, ):
-            fields = dct['__fields__']
-            fieldnames = [n for n, _, _ in dct['__fields__']]
-            assert 'replace' not in fieldnames
-            ntuple = namedtuple('_' + name, fieldnames)
-            ntuple.__new__.__defaults__ = dct.get('__defaults__', ())
-            dct.update({
-                '__namedtuple_cls__': ntuple,
-                '__slots__': '_values',
-                # For the signature to appear correctly in
-                # introspection and docs,
-                # we create the __init__ function for
-                # each ValueObject class individually
-                '__init__': _make_init_fn(ntuple)
-            })
+        if bases != (object,):
+            fields = dct["__fields__"]
+            fieldnames = [n for n, _, _ in dct["__fields__"]]
+            assert "replace" not in fieldnames
+            ntuple = namedtuple("_" + name, fieldnames)
+            ntuple.__new__.__defaults__ = dct.get("__defaults__", ())
             dct.update(
-                (name, property(attrgetter('_values.' + name),
-                                doc=doc))
+                {
+                    "__namedtuple_cls__": ntuple,
+                    "__slots__": "_values",
+                    # For the signature to appear correctly in
+                    # introspection and docs,
+                    # we create the __init__ function for
+                    # each ValueObject class individually
+                    "__init__": _make_init_fn(ntuple),
+                }
+            )
+            dct.update(
+                (name, property(attrgetter("_values." + name), doc=doc))
                 for name, _, doc in fields
             )
         return super(_ValueObjectMeta, self).__new__(self, name, bases, dct)
 
 
-@six.add_metaclass(_ValueObjectMeta)
-class ValueObject(object):
+class ValueObject(object, metaclass=_ValueObjectMeta):
     """Base class for "value object"-like classes,
     similar to frozen dataclasses in python 3.7+.
 
@@ -135,6 +133,7 @@ class ValueObject(object):
     Foo(foo=4, bla='foo')
 
     """
+
     __slots__ = ()
 
     def replace(self, **kwargs):
@@ -169,15 +168,19 @@ class ValueObject(object):
 
     def __repr__(self):
         try:
-            return '{}({})'.format(
-                getattr(self.__class__, '__name__' if PY2 else '__qualname__'),
-                ', '.join(starmap('{}={!r}'.format,
-                                  zip(self._values._fields, self._values)))
+            return "{}({})".format(
+                getattr(self.__class__, "__name__" if PY2 else "__qualname__"),
+                ", ".join(
+                    starmap(
+                        "{}={!r}".format,
+                        zip(self._values._fields, self._values),
+                    )
+                ),
             )
         except Exception:
             return object.__repr__(self)
 
-    __hash__ = property(attrgetter('_values.__hash__'))
+    __hash__ = property(attrgetter("_values.__hash__"))
 
 
 class compose(object):
@@ -190,6 +193,7 @@ class compose(object):
     ----
     * if given no functions, acts as an identity function
     """
+
     def __init__(self, *funcs):
         self.funcs = funcs
         self.__wrapped__ = funcs[-1] if funcs else identity

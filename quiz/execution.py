@@ -3,25 +3,24 @@ import json
 import typing as t
 from functools import partial
 
-import snug
 from gentools import irelay, py2_compatible, return_
 
 from .build import Query
 from .types import load
 from .utils import JSON, ValueObject
 
+import snug
+
 __all__ = [
-    'execute',
-    'execute_async',
-    'executor',
-    'async_executor',
-
-    'Executable',
-
-    'ErrorResponse',
-    'HTTPError',
-    'RawResult',
-    'QueryMetadata',
+    "execute",
+    "execute_async",
+    "executor",
+    "async_executor",
+    "Executable",
+    "ErrorResponse",
+    "HTTPError",
+    "RawResult",
+    "QueryMetadata",
 ]
 
 Executable = t.Union[str, Query]
@@ -34,13 +33,13 @@ def _exec(executable):
     if isinstance(executable, str):
         return_((yield executable))
     elif isinstance(executable, Query):
-        return_(load(
-            executable.cls,
-            executable.selections,
-            (yield str(executable)),
-        ))
+        return_(
+            load(
+                executable.cls, executable.selections, (yield str(executable))
+            )
+        )
     else:
-        raise NotImplementedError('not executable: ' + repr(executable))
+        raise NotImplementedError("not executable: " + repr(executable))
 
 
 @py2_compatible
@@ -48,20 +47,21 @@ def middleware(url, query_str):
     # type: (str, str) -> snug.Query[t.Dict[str, JSON]]
     request = snug.POST(
         url,
-        content=json.dumps({'query': query_str}).encode('ascii'),
-        headers={'Content-Type': 'application/json'}
+        content=json.dumps({"query": query_str}).encode("ascii"),
+        headers={"Content-Type": "application/json"},
     )
     response = yield request
     if response.status_code >= 400:
         raise HTTPError(response, request)
-    content = json.loads(response.content.decode('utf-8'))
-    if 'errors' in content:
-        content.setdefault('data', {})
+    content = json.loads(response.content.decode("utf-8"))
+    if "errors" in content:
+        content.setdefault("data", {})
         raise ErrorResponse(**content)
-    return_(RawResult(
-        content['data'],
-        QueryMetadata(request=request, response=response),
-    ))
+    return_(
+        RawResult(
+            content["data"], QueryMetadata(request=request, response=response)
+        )
+    )
 
 
 def execute(obj, url, **kwargs):
@@ -190,9 +190,12 @@ class ErrorResponse(ValueObject, Exception):
     """A response containing errors"""
 
     __fields__ = [
-        ('data', t.Dict[str, JSON], 'Data returned in the response'),
-        ('errors', t.List[t.Dict[str, JSON]],
-         'Errors returned in the response'),
+        ("data", t.Dict[str, JSON], "Data returned in the response"),
+        (
+            "errors",
+            t.List[t.Dict[str, JSON]],
+            "Errors returned in the response",
+        ),
     ]
 
 
@@ -202,7 +205,8 @@ class RawResult(dict):
     Contains HTTP :class:`metadata <QueryMetadata>`
     in its ``__metadata__`` attribute.
     """
-    __slots__ = '__metadata__'
+
+    __slots__ = "__metadata__"
 
     def __init__(self, items, meta):
         super(RawResult, self).__init__(items)
@@ -211,21 +215,26 @@ class RawResult(dict):
 
 class QueryMetadata(ValueObject):
     """HTTP metadata for query"""
+
     __fields__ = [
-        ('response', snug.Response, 'The response object'),
-        ('request', snug.Request, 'The original request'),
+        ("response", snug.Response, "The response object"),
+        ("request", snug.Request, "The original request"),
     ]
 
 
 class HTTPError(ValueObject, Exception):
     """Indicates a response with a non 2xx status code"""
+
     __fields__ = [
-        ('response', snug.Response, 'The response object'),
-        ('request', snug.Request, 'The original request'),
+        ("response", snug.Response, "The response object"),
+        ("request", snug.Request, "The original request"),
     ]
 
     def __str__(self):
-        return ('Response with status {0.status_code}, content: {0.content!r} '
-                'for URL "{1.url}". View this exception\'s `request` and '
-                '`response` attributes for detailed info.'.format(
-                    self.response, self.request))
+        return (
+            "Response with status {0.status_code}, content: {0.content!r} "
+            'for URL "{1.url}". View this exception\'s `request` and '
+            "`response` attributes for detailed info.".format(
+                self.response, self.request
+            )
+        )
