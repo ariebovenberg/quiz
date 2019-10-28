@@ -4,7 +4,7 @@ import typing as t
 from functools import partial
 
 import snug
-from gentools import irelay, py2_compatible, return_
+from gentools import irelay
 
 from .build import Query
 from .types import load
@@ -26,22 +26,18 @@ Executable = t.Union[str, Query]
 """Anything which can be executed as a GraphQL operation"""
 
 
-@py2_compatible
 def _exec(executable):
     # type: (Executable) -> t.Generator
     if isinstance(executable, str):
-        return_((yield executable))
+        return (yield executable)
     elif isinstance(executable, Query):
-        return_(
-            load(
-                executable.cls, executable.selections, (yield str(executable))
-            )
+        return load(
+            executable.cls, executable.selections, (yield str(executable))
         )
     else:
         raise NotImplementedError("not executable: " + repr(executable))
 
 
-@py2_compatible
 def middleware(url, query_str):
     # type: (str, str) -> snug.Query[t.Dict[str, JSON]]
     request = snug.POST(
@@ -56,10 +52,8 @@ def middleware(url, query_str):
     if "errors" in content:
         content.setdefault("data", {})
         raise ErrorResponse(**content)
-    return_(
-        RawResult(
-            content["data"], QueryMetadata(request=request, response=response)
-        )
+    return RawResult(
+        content["data"], QueryMetadata(request=request, response=response)
     )
 
 

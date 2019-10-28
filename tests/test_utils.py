@@ -3,7 +3,6 @@ import inspect
 import pytest
 
 from quiz import utils
-from quiz.compat import PY3
 
 from .helpers import AlwaysEquals, NeverEquals
 
@@ -69,11 +68,10 @@ class TestValueObject:
         assert issubclass(Foo, utils.ValueObject)
         assert issubclass(Foo, MyBase)
 
-        if PY3:
-            Foo.__qualname__ = "my_module.Foo"
-            assert inspect.signature(Foo) == inspect.signature(
-                Foo.__namedtuple_cls__
-            )
+        Foo.__qualname__ = "my_module.Foo"
+        assert inspect.signature(Foo) == inspect.signature(
+            Foo.__namedtuple_cls__
+        )
 
         instance = Foo(4, bla="foo")
 
@@ -102,10 +100,7 @@ class TestValueObject:
         with pytest.raises(AttributeError, match="can't set"):
             instance.foo = 6
 
-        if PY3:
-            assert repr(instance) == "my_module.Foo(foo=4, bla='foo')"
-        else:
-            assert repr(instance) == "Foo(foo=4, bla='foo')"
+        assert repr(instance) == "my_module.Foo(foo=4, bla='foo')"
 
         assert Foo.bla.__doc__ == "description for bla"
 

@@ -2,9 +2,10 @@
 import enum
 import re
 import typing as t
+from functools import singledispatch
 from operator import attrgetter, methodcaller
+from textwrap import indent
 
-from .compat import indent, singledispatch
 from .utils import FrozenDict, ValueObject, compose, init_last
 
 __all__ = [

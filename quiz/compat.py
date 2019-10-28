@@ -2,23 +2,7 @@ import os
 import sys
 import typing as t
 
-PY3 = sys.version_info > (3,)
 HAS_PEP519 = sys.version_info > (3, 6)
-PY2 = not PY3
-
-
-if PY3:
-    from functools import singledispatch
-    from textwrap import indent
-
-    map = map
-else:  # pragma: no cover
-    from singledispatch import singledispatch  # noqa
-
-    def indent(text, pad):
-        return "\n".join(map(pad.__add__, text.splitlines()))
-
-    from itertools import imap as map
 
 
 if HAS_PEP519:

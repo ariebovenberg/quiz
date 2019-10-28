@@ -6,8 +6,6 @@ from functools import wraps
 from itertools import chain, starmap
 from operator import attrgetter, methodcaller
 
-from .compat import PY2
-
 __all__ = ["JSON", "Empty"]
 
 T = t.TypeVar("T")
@@ -39,9 +37,6 @@ class FrozenDict(t.Mapping[T1, T2]):
 
     def __hash__(self):
         return hash(frozenset(self._inner.items()))
-
-    if PY2:  # pragma: no cover
-        viewkeys = property(attrgetter("_inner.viewkeys"))
 
 
 FrozenDict.EMPTY = FrozenDict({})
@@ -169,7 +164,7 @@ class ValueObject(object, metaclass=_ValueObjectMeta):
     def __repr__(self):
         try:
             return "{}({})".format(
-                getattr(self.__class__, "__name__" if PY2 else "__qualname__"),
+                self.__class__.__qualname__,
                 ", ".join(
                     starmap(
                         "{}={!r}".format,
