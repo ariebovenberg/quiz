@@ -39,6 +39,10 @@
          <img src="https://img.shields.io/pypi/pyversions/quiz.svg?style=flat-square&logo=python&logoColor=white" alt="Supported python versions">
    </a>
 
+   <a href="https://github.com/psf/black" class="reference external image-reference">
+         <img src="https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square&logo=python&logoColor=white" alt="Black code style">
+   </a>
+
    </p>
 
 
