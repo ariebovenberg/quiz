@@ -2,25 +2,25 @@
 import enum
 import re
 import typing as t
+from functools import singledispatch
 from operator import attrgetter, methodcaller
+from textwrap import indent
 
-from .compat import indent, singledispatch
 from .utils import FrozenDict, ValueObject, compose, init_last
 
 __all__ = [
     # building graphQL documents
-    'SelectionSet',
-    'Selection',
-    'Field',
-    'InlineFragment',
-    'Raw',
-    'Query',
-    'SELECTOR',
-
+    "SelectionSet",
+    "Selection",
+    "Field",
+    "InlineFragment",
+    "Raw",
+    "Query",
+    "SELECTOR",
     # render
-    'gql',
-    'escape',
-    'argument_as_gql',
+    "gql",
+    "escape",
+    "argument_as_gql",
 ]
 
 INDENT = "  "
@@ -28,7 +28,7 @@ INDENT = "  "
 gql = methodcaller("__gql__")
 
 
-class SelectionSet(t.Iterable['Selection'], t.Sized):
+class SelectionSet(t.Iterable["Selection"], t.Sized):
     """Sequence of selections
 
     Parameters
@@ -42,10 +42,11 @@ class SelectionSet(t.Iterable['Selection'], t.Sized):
     * Extending selection sets is possible through special methods
       (``__getattr__``, ``__call__``, ``__getitem__``)
     """
+
     # The attribute needs to have a dunder name to prevent
     # conflicts with GraphQL field names.
     # This is also why we can't just subclass `tuple`.
-    __slots__ = '__selections__'
+    __slots__ = "__selections__"
 
     def __init__(self, *selections):
         self.__selections__ = selections
@@ -89,7 +90,7 @@ class SelectionSet(t.Iterable['Selection'], t.Sized):
           bing
         }
         """
-        return SelectionSet._make(self.__selections__ + (Field(fieldname), ))
+        return SelectionSet._make(self.__selections__ + (Field(fieldname),))
 
     def __getitem__(self, selections):
         """Add a sub-selection to the last field in the selection set
@@ -138,8 +139,8 @@ class SelectionSet(t.Iterable['Selection'], t.Sized):
         assert len(selections.__selections__) >= 1
 
         return SelectionSet._make(
-            tuple(rest)
-            + (target.replace(selection_set=selections), ))
+            tuple(rest) + (target.replace(selection_set=selections),)
+        )
 
     def __repr__(self):
         return "<SelectionSet> {}".format(gql(self))
@@ -229,7 +230,8 @@ class SelectionSet(t.Iterable['Selection'], t.Sized):
     def __add_kwargs(self, args):
         rest, target = init_last(self.__selections__)
         return SelectionSet._make(
-            tuple(rest) + (target.replace(kwargs=FrozenDict(args)), ))
+            tuple(rest) + (target.replace(kwargs=FrozenDict(args)),)
+        )
 
     def __iter__(self):
         """Iterate over the selection set contents
@@ -256,9 +258,13 @@ class SelectionSet(t.Iterable['Selection'], t.Sized):
         return self.__gql__()
 
     def __gql__(self):
-        return '{{\n{}\n}}'.format(
-            '\n'.join(indent(gql(f), INDENT) for f in self)
-        ) if self.__selections__ else ''
+        return (
+            "{{\n{}\n}}".format(
+                "\n".join(indent(gql(f), INDENT) for f in self)
+            )
+            if self.__selections__
+            else ""
+        )
 
     def __eq__(self, other):
         if isinstance(other, type(self)):
@@ -269,11 +275,11 @@ class SelectionSet(t.Iterable['Selection'], t.Sized):
         equality = self.__eq__(other)
         return NotImplemented if equality is NotImplemented else not equality
 
-    __hash__ = property(attrgetter('__selections__.__hash__'))
+    __hash__ = property(attrgetter("__selections__.__hash__"))
 
 
 class _AliasForNextField(object):
-    __slots__ = '__selection_set', '__alias'
+    __slots__ = "__selection_set", "__alias"
 
     def __init__(self, selection_set, alias):
         self.__selection_set = selection_set
@@ -282,7 +288,7 @@ class _AliasForNextField(object):
     def __getattr__(self, fieldname):
         return SelectionSet._make(
             self.__selection_set.__selections__
-            + (Field(fieldname, alias=self.__alias), )
+            + (Field(fieldname, alias=self.__alias),)
         )
 
 
@@ -291,9 +297,7 @@ SELECTOR = SelectionSet()
 
 
 class Raw(ValueObject):
-    __fields__ = [
-        ('content', str, 'The raw GraphQL content')
-    ]
+    __fields__ = [("content", str, "The raw GraphQL content")]
 
     def __gql__(self):
         return self.content
@@ -301,47 +305,48 @@ class Raw(ValueObject):
 
 class Field(ValueObject):
     __fields__ = [
-        ('name', str, 'Field name'),
-        ('kwargs', FrozenDict, 'Given arguments'),
-        ('selection_set', SelectionSet, 'Selection of subfields'),
-        ('alias', t.Optional[str], 'Field alias'),
+        ("name", str, "Field name"),
+        ("kwargs", FrozenDict, "Given arguments"),
+        ("selection_set", SelectionSet, "Selection of subfields"),
+        ("alias", t.Optional[str], "Field alias"),
         # in the future:
         # - directives
     ]
     __defaults__ = (FrozenDict.EMPTY, SelectionSet(), None)
 
     def __gql__(self):
-        arguments = '({})'.format(
-            ', '.join(
-                "{}: {}".format(k, argument_as_gql(v))
-                for k, v in self.kwargs.items()
+        arguments = (
+            "({})".format(
+                ", ".join(
+                    "{}: {}".format(k, argument_as_gql(v))
+                    for k, v in self.kwargs.items()
+                )
             )
-        ) if self.kwargs else ''
+            if self.kwargs
+            else ""
+        )
         selection_set = (
-            ' ' + gql(self.selection_set)
-            if self.selection_set else '')
-        alias = self.alias + ': ' if self.alias else ''
+            " " + gql(self.selection_set) if self.selection_set else ""
+        )
+        alias = self.alias + ": " if self.alias else ""
         return alias + self.name + arguments + selection_set
 
 
 class InlineFragment(ValueObject):
     __fields__ = [
-        ('on', type, 'Type of the fragment'),
-        ('selection_set', SelectionSet, 'Subfields of the fragment'),
+        ("on", type, "Type of the fragment"),
+        ("selection_set", SelectionSet, "Subfields of the fragment"),
     ]
     # in the future: directives
 
     def __gql__(self):
-        return '... on {} {}'.format(
-            self.on.__name__,
-            gql(self.selection_set)
-        )
+        return "... on {} {}".format(self.on.__name__, gql(self.selection_set))
 
 
 class Query(ValueObject):
     __fields__ = [
-        ('cls', type, 'The query class'),
-        ('selections', SelectionSet, 'Fields selection')
+        ("cls", type, "The query class"),
+        ("selections", SelectionSet, "Fields selection"),
     ]
     # in the future:
     # - name (optional)
@@ -349,22 +354,22 @@ class Query(ValueObject):
     # - directives (optional)
 
     def __gql__(self):
-        return 'query ' + gql(self.selections)
+        return "query " + gql(self.selections)
 
     def __str__(self):
         return self.__gql__()
 
 
 _ESCAPE_PATTERNS = {
-    '\b': r'\b',
-    '\f': r'\f',
-    '\n': r'\n',
-    '\r': r'\r',
-    '\t': r'\t',
-    '\\': r'\\',
-    '"':  r'\"',
+    "\b": r"\b",
+    "\f": r"\f",
+    "\n": r"\n",
+    "\r": r"\r",
+    "\t": r"\t",
+    "\\": r"\\",
+    '"': r"\"",
 }
-_ESCAPE_RE = re.compile('|'.join(map(re.escape, _ESCAPE_PATTERNS)))
+_ESCAPE_RE = re.compile("|".join(map(re.escape, _ESCAPE_PATTERNS)))
 
 
 def _escape_match(match):
@@ -401,8 +406,8 @@ def argument_as_gql(obj):
 
 argument_as_gql.register(str, compose('"{}"'.format, escape))
 argument_as_gql.register(int, str)
-argument_as_gql.register(type(None), 'null'.format)
-argument_as_gql.register(bool, {True: 'true', False: 'false'}.__getitem__)
+argument_as_gql.register(type(None), "null".format)
+argument_as_gql.register(bool, {True: "true", False: "false"}.__getitem__)
 argument_as_gql.register(float, str)
 
 

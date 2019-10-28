@@ -4,6 +4,12 @@ Release history
 development
 +++++++++++
 
+0.2.0 (2019-10-28)
+++++++++++++++++++
+
+- Drop Python 2 support
+- Add Python 3.8 support
+
 0.1.6 (2019-04-07)
 ++++++++++++++++++
 

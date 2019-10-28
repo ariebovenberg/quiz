@@ -21,3 +21,7 @@ clean:
 docs:
 	@touch docs/api.rst
 	make -C docs/ html
+
+format:
+	black quiz tests
+	isort -rc quiz tests

@@ -2,7 +2,6 @@ import snug
 
 
 class MockClient:
-
     def __init__(self, response):
         self.response = response
 
