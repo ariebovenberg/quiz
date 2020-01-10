@@ -4,9 +4,10 @@ Release history
 development
 +++++++++++
 
-0.2.0 (2019-??-??)
+0.3.0 (2020-??-??)
 ++++++++++++++++++
 
+- Drop Python 3.5 support
 - small fixes
 
 **breaking changes**
@@ -14,6 +15,17 @@ development
 - ``InputValue`` has been renamed to ``InputValueDefinition``.
 - ``GenericScalar`` has been renamed to ``AnyScalar``.
   
+0.2.0 (2019-10-28)
+++++++++++++++++++
+
+- Drop Python 2 support
+- Add Python 3.8 support
+
+0.1.6 (2019-04-07)
+++++++++++++++++++
+
+- Drop python 3.4 suport
+
 0.1.5 (2019-03-16)
 ++++++++++++++++++
 

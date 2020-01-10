@@ -6,64 +6,58 @@ from itertools import chain, starmap
 from operator import methodcaller
 
 import attr
-import six
 
 from .build import Field, InlineFragment, SelectionSet, dump_inputvalue, escape
-from .compat import default_ne
 from .utils import JSON, FrozenDict, dataclass, field
 
 __all__ = [
     # types
-    'AnyScalar',
-    'Boolean',
-    'Enum',
-    'FieldDefinition',
-    'Float',
-    'ID',
-    'InputObject',
-    'InputObjectFieldDescriptor',
-    'InputValue',
-    'InputValueDefinition',
-    'Int',
-    'Interface',
-    'List',
-    'Nullable',
-    'Object',
-    'ResponseType',
-    'Scalar',
-    'String',
-    'StringLike',
-    'Union',
+    "AnyScalar",
+    "Boolean",
+    "Enum",
+    "FieldDefinition",
+    "Float",
+    "ID",
+    "InputObject",
+    "InputObjectFieldDescriptor",
+    "InputValue",
+    "InputValueDefinition",
+    "Int",
+    "Interface",
+    "List",
+    "Nullable",
+    "Object",
+    "ResponseType",
+    "Scalar",
+    "String",
+    "StringLike",
+    "Union",
     # TODO: mutation
     # TODO: subscription
-
     # validation
-    'validate',
-    'ValidationError',
-    'SelectionError',
-    'NoSuchField',
-    'NoSuchArgument',
-    'SelectionsNotSupported',
-    'InvalidArgumentType',
-    'InvalidArgumentValue',
-    'MissingArgument',
-    'CouldNotCoerce',
-
-    'NoValueForField',
-    'load',
+    "validate",
+    "ValidationError",
+    "SelectionError",
+    "NoSuchField",
+    "NoSuchArgument",
+    "SelectionsNotSupported",
+    "InvalidArgumentType",
+    "InvalidArgumentValue",
+    "MissingArgument",
+    "CouldNotCoerce",
+    "NoValueForField",
+    "load",
 ]
 
 MIN_INT = -2 << 30
 MAX_INT = (2 << 30) - 1
 
 
-InputValueDefinition = t.NamedTuple('InputValueDefinition', [
-    ('name', str),
-    ('desc', str),
-    ('type', type),
-])
+InputValueDefinition = t.NamedTuple(
+    "InputValueDefinition", [("name", str), ("desc", str), ("type", type),]
+)
 
-_PRIMITIVE_TYPES = (int, float, bool, six.text_type)
+_PRIMITIVE_TYPES = (int, float, bool, str)
 
 
 # TODO: make ABCMeta or generic?
@@ -76,7 +70,8 @@ class InputValue(object):
         # type: () -> str
         """Serialize the object to a GraphQL primitive value"""
         raise NotImplementedError(
-            'GraphQL serialization is not defined for this type')
+            "GraphQL serialization is not defined for this type"
+        )
 
     # TODO: a sensible default implementation
     @classmethod
@@ -95,11 +90,8 @@ class InputWrapper(InputValue):
             return self.value == other.value
         return NotImplemented
 
-    if six.PY2:  # pragma: no cover
-        __ne__ = default_ne
-
     def __repr__(self):
-        return '{}({})'.format(self.__class__.__name__, self.value)
+        return "{}({})".format(self.__class__.__name__, self.value)
 
 
 # TODO: make ABCMeta/generic?
@@ -113,7 +105,8 @@ class ResponseType(object):
     def __gql_load__(cls, data):
         """Load an instance from GraphQL"""
         raise NotImplementedError(
-            'GraphQL deserialization is not defined for this type')
+            "GraphQL deserialization is not defined for this type"
+        )
 
 
 class HasFields(type):
@@ -125,36 +118,31 @@ class HasFields(type):
 
 
 class Namespace(object):
-
     def __init__(__self, **kwargs):
         __self.__dict__.update(kwargs)
 
     def __fields__(self):
-        return {k: v for k, v in self.__dict__.items() if k != '__metadata__'}
+        return {k: v for k, v in self.__dict__.items() if k != "__metadata__"}
 
     def __eq__(self, other):
         if type(self) == type(other):
             return self.__fields__() == other.__fields__()
         return NotImplemented
 
-    if six.PY2:  # pragma: no cover
-        __ne__ = default_ne
-
     def __repr__(self):
-        return '{}({})'.format(
-            getattr(self.__class__, '__qualname__' if six.PY3 else '__name__'),
-            ', '.join(starmap('{}={!r}'.format, self.__dict__.items()))
+        return "{}({})".format(
+            self.__class__.__qualname__,
+            ", ".join(starmap("{}={!r}".format, self.__dict__.items())),
         )
 
 
-@six.add_metaclass(HasFields)
-class Object(Namespace):
+class Object(Namespace, metaclass=HasFields):
     """a graphQL object"""
 
 
 @dataclass
 class InputObjectFieldDescriptor(object):
-    value = field('The input value', type=InputValueDefinition)
+    value = field("The input value", type=InputValueDefinition)
 
     def __get__(self, obj, objtype=None):
         if obj is None:  # accessing on class
@@ -172,7 +160,7 @@ class InputObjectFieldDescriptor(object):
     # __doc__ allows descriptor to be displayed nicely in help()
     @property
     def __doc__(self):
-        return ': {.__name__}\n    {}'.format(self.value.type, self.value.desc)
+        return ": {.__name__}\n    {}".format(self.value.type, self.value.desc)
 
 
 # TODO: slots?
@@ -181,26 +169,30 @@ class InputObjectFieldDescriptor(object):
 # TODO: prevent setting invalid attributes?
 class InputObject(object):
     """Base class for input objects"""
+
     __input_fields__ = {}
 
     def __init__(__self__, **kwargs):
         self = __self__  # prevents `self` from potentially clobbering kwargs
-        argnames_defined = six.viewkeys(self.__input_fields__)
+        argnames_defined = self.__input_fields__.keys()
         argnames_required = {
-            name for name, obj in six.iteritems(self.__input_fields__)
+            name
+            for name, obj in self.__input_fields__.items()
             if not issubclass(obj.type, Nullable)
         }
-        argnames_given = six.viewkeys(kwargs)
+        argnames_given = kwargs.keys()
 
         invalid_argnames = argnames_given - argnames_defined
         if invalid_argnames:
             raise NoSuchArgument(
-                'invalid arguments: {}'.format(', '.join(invalid_argnames)))
+                "invalid arguments: {}".format(", ".join(invalid_argnames))
+            )
 
         missing_argnames = argnames_required - argnames_given
         if missing_argnames:
             raise MissingArgument(
-                'invalid arguments: {}'.format(', '.join(missing_argnames)))
+                "invalid arguments: {}".format(", ".join(missing_argnames))
+            )
 
         self.__dict__.update(kwargs)
 
@@ -209,19 +201,18 @@ class InputObject(object):
             return self.__dict__ == other.__dict__
         return NotImplemented
 
-    if six.PY2:  # pragma: no cover
-        __ne__ = default_ne
-
     def __gql_dump__(self):
-        return '{{{}}}'.format(' '.join(
-            '{}: {}'.format(name, dump_inputvalue(value))
-            for name, value in self.__dict__.items()
-        ))
+        return "{{{}}}".format(
+            " ".join(
+                "{}: {}".format(name, dump_inputvalue(value))
+                for name, value in self.__dict__.items()
+            )
+        )
 
     def __repr__(self):
-        return '{}({})'.format(
-            getattr(self.__class__, '__qualname__' if six.PY3 else '__name__'),
-            ', '.join(starmap('{}={!r}'.format, self.__dict__.items()))
+        return "{}({})".format(
+            self.__class__.__qualname__,
+            ", ".join(starmap("{}={!r}".format, self.__dict__.items())),
         )
 
 
@@ -234,8 +225,9 @@ class Enum(InputValue, ResponseType, enum.Enum):
         try:
             return cls(value)
         except ValueError:
-            raise CouldNotCoerce('{!r} is not a valid {.__name__}'.format(
-                value, cls))
+            raise CouldNotCoerce(
+                "{!r} is not a valid {.__name__}".format(value, cls)
+            )
 
     def __gql_dump__(self):
         # type: () -> str
@@ -257,23 +249,20 @@ class NoValueForField(AttributeError):
 @dataclass
 class CouldNotCoerce(ValueError):
     """Could not coerce a value"""
-    reason = field('The reason coercion failed', type=str)
 
-    if six.PY2:  # pragma: no cover
-        def __str__(self):
-            return self.reason
+    reason = field("The reason coercion failed", type=str)
 
 
 @dataclass
 class FieldDefinition(object):
-    name = field('Field name', type=str)
-    desc = field('Field description', type=str)
-    type = field('Field data type', type=type)
-    args = field('Accepted field arguments',
-                 type=FrozenDict[str, InputValueDefinition])
-    is_deprecated = field('Whether the field is deprecated', type=bool)
-    deprecation_reason = field('Reason ffor deprecation',
-                               type=t.Optional[str])
+    name = field("Field name", type=str)
+    desc = field("Field description", type=str)
+    type = field("Field data type", type=type)
+    args = field(
+        "Accepted field arguments", type=FrozenDict[str, InputValueDefinition]
+    )
+    is_deprecated = field("Whether the field is deprecated", type=bool)
+    deprecation_reason = field("Reason ffor deprecation", type=t.Optional[str])
 
     def __get__(self, obj, objtype=None):
         if obj is None:  # accessing on class
@@ -290,38 +279,32 @@ class FieldDefinition(object):
     # __doc__ allows descriptor to be displayed nicely in help()
     @property
     def __doc__(self):
-        return ': {.__name__}\n    {}'.format(self.type, self.desc)
+        return ": {.__name__}\n    {}".format(self.type, self.desc)
 
 
 class _Generic(type):
-
     def __eq__(self, other):
         if isinstance(other, type(self)):
             return self.__arg__ == other.__arg__
         return NotImplemented
-
-    if six.PY2:  # pragma: no cover
-        __ne__ = default_ne
 
 
 class _ListMeta(_Generic):
 
     # TODO: a better autogenerated name
     def __getitem__(self, arg):
-        return type('List[{.__name__}]'.format(arg), (List, ), {
-            '__arg__': arg
-        })
+        return type("List[{.__name__}]".format(arg), (List,), {"__arg__": arg})
 
     def __instancecheck__(self, instance):
-        return (isinstance(instance, list)
-                and all(isinstance(i, self.__arg__) for i in instance))
+        return isinstance(instance, list) and all(
+            isinstance(i, self.__arg__) for i in instance
+        )
 
 
 # Q: why not typing.List?
 # A: it doesn't support __doc__, __name__, or isinstance()
 # TODO: a separate class for input value lists?
-@six.add_metaclass(_ListMeta)
-class List(InputWrapper, ResponseType):
+class List(InputWrapper, ResponseType, metaclass=_ListMeta):
     __arg__ = object
 
     @classmethod
@@ -330,12 +313,13 @@ class List(InputWrapper, ResponseType):
         if isinstance(data, list):
             return cls(list(map(cls.__arg__.coerce, data)))
         else:
-            raise CouldNotCoerce('Invalid type, must be a list')
+            raise CouldNotCoerce("Invalid type, must be a list")
 
     def __gql_dump__(self):
         # type: () -> str
-        return '[{}]'.format(' '.join(map(methodcaller('__gql_dump__'),
-                                          self.value)))
+        return "[{}]".format(
+            " ".join(map(methodcaller("__gql_dump__"), self.value))
+        )
 
     @classmethod
     def __gql_load__(cls, data):
@@ -346,9 +330,9 @@ class _NullableMeta(_Generic):
 
     # TODO: a better autogenerated name
     def __getitem__(self, arg):
-        return type('Nullable[{.__name__}]'.format(arg), (Nullable, ), {
-            '__arg__': arg
-        })
+        return type(
+            "Nullable[{.__name__}]".format(arg), (Nullable,), {"__arg__": arg}
+        )
 
     def __instancecheck__(self, instance):
         return instance is None or isinstance(instance, self.__arg__)
@@ -357,8 +341,7 @@ class _NullableMeta(_Generic):
 # Q: why not typing.Optional?
 # A: it is not easily distinguished from Union,
 #    and doesn't support __doc__, __name__, or isinstance()
-@six.add_metaclass(_NullableMeta)
-class Nullable(InputWrapper, ResponseType):
+class Nullable(InputWrapper, ResponseType, metaclass=_NullableMeta):
     __arg__ = object
 
     @classmethod
@@ -368,7 +351,7 @@ class Nullable(InputWrapper, ResponseType):
 
     def __gql_dump__(self):
         # type: () -> str
-        return 'null' if self.value is None else self.value.__gql_dump__()
+        return "null" if self.value is None else self.value.__gql_dump__()
 
     @classmethod
     def __gql_load__(cls, data):
@@ -377,14 +360,15 @@ class Nullable(InputWrapper, ResponseType):
 
 # TODO: add __getitem__, similar to list and nullable
 class UnionMeta(type):
-    pass
+    # TODO: remove this method?
+    def __instancecheck__(self, instance):
+        return isinstance(instance, self.__args__)
 
 
 # Q: why not typing.Union?
 # A: it isn't consistent across python versions,
 #    and doesn't support __doc__, __name__, or isinstance()
-@six.add_metaclass(UnionMeta)
-class Union(object):
+class Union(object, metaclass=UnionMeta):
     __args__ = ()
 
 
@@ -393,13 +377,11 @@ class Scalar(InputWrapper, ResponseType):
 
 
 class _AnyScalarMeta(type):
-
     def __instancecheck__(self, instance):
         return isinstance(instance, _PRIMITIVE_TYPES)
 
 
-@six.add_metaclass(_AnyScalarMeta)
-class AnyScalar(Scalar):
+class AnyScalar(Scalar, metaclass=_AnyScalarMeta):
     """A generic scalar, accepting any primitive type"""
 
     def __init__(self, value):
@@ -412,13 +394,13 @@ class AnyScalar(Scalar):
         try:
             gql_type = PY_TYPE_TO_GQL_TYPE[type(data)]
         except KeyError:
-            raise CouldNotCoerce('Invalid type, must be a scalar')
+            raise CouldNotCoerce("Invalid type, must be a scalar")
         return cls(gql_type.coerce(data))
 
     def __gql_dump__(self):
         # type: () -> str
         if self.value is None:
-            return 'null'
+            return "null"
         else:
             return self.value.__gql_dump__()
 
@@ -431,14 +413,15 @@ class AnyScalar(Scalar):
 class Float(InputWrapper, ResponseType):
     """A GraphQL float object. The main difference with :class:`float`
     is that it may not be infinite or NaN"""
+
     # TODO: consistent types of exceptions to raise
     @classmethod
     def coerce(cls, value):
         # type: (object) -> Float
         if not isinstance(value, (float, int)):
-            raise CouldNotCoerce('Invalid type, must be float or int')
+            raise CouldNotCoerce("Invalid type, must be float or int")
         if math.isnan(value) or math.isinf(value):
-            raise CouldNotCoerce('Float value cannot be infinite or NaN')
+            raise CouldNotCoerce("Float value cannot be infinite or NaN")
         return cls(float(value))
 
     def __gql_dump__(self):
@@ -453,14 +436,16 @@ class Float(InputWrapper, ResponseType):
 class Int(InputWrapper, ResponseType):
     """A GraphQL integer object. The main difference with :class:`int`
     is that it may only represent integers up to 32 bits in size"""
+
     @classmethod
     def coerce(cls, value):
         # type: (object) -> Int
-        if not isinstance(value, six.integer_types):
-            raise CouldNotCoerce('Invalid type, must be int')
+        if not isinstance(value, int):
+            raise CouldNotCoerce("Invalid type, must be int")
         if not MIN_INT < value < MAX_INT:
-            raise CouldNotCoerce('{} is not representable by a 32-bit integer'
-                                 .format(value))
+            raise CouldNotCoerce(
+                "{} is not representable by a 32-bit integer".format(value)
+            )
         return cls(int(value))
 
     def __gql_dump__(self):
@@ -474,16 +459,17 @@ class Int(InputWrapper, ResponseType):
 
 class Boolean(InputWrapper, ResponseType):
     """A GraphQL boolean object"""
+
     @classmethod
     def coerce(cls, value):
         # type: (object) -> Boolean
         if isinstance(value, bool):
             return cls(value)
         else:
-            raise CouldNotCoerce('A boolean type is required')
+            raise CouldNotCoerce("A boolean type is required")
 
     def __gql_dump__(self):
-        return 'true' if self.value else 'false'
+        return "true" if self.value else "false"
 
     @classmethod
     def __gql_load__(cls, data):
@@ -493,15 +479,14 @@ class Boolean(InputWrapper, ResponseType):
 
 class StringLike(InputWrapper, ResponseType):
     """Base for string-like types"""
+
     @classmethod
     def coerce(cls, value):
         # type: (object) -> StringLike
-        if isinstance(value, six.text_type):
+        if isinstance(value, str):
             return cls(value)
-        elif six.PY2 and isinstance(value, bytes):  # pragma: no cover
-            return cls(six.text_type(value))
         else:
-            raise CouldNotCoerce('A string type is required')
+            raise CouldNotCoerce("A string type is required")
 
     def __gql_dump__(self):
         return '"{}"'.format(escape(self.value))
@@ -529,9 +514,9 @@ def _unwrap_list_or_nullable(type_):
 
 
 def validate_value(
-        name,  # type: str
-        typ,  # type: t.Type[InputValue]
-        value  # type: object
+    name,  # type: str
+    typ,  # type: t.Type[InputValue]
+    value,  # type: object
 ):
     # type: (...) -> t.Union[InputValue, InvalidArgumentValue]
     # TODO: proper isinstance
@@ -551,7 +536,7 @@ class ValidationResult(object):
 
 @dataclass
 class Errors(ValidationResult):
-    items = attr.ib(type=t.Set['ValidationError'])
+    items = attr.ib(type=t.Set["ValidationError"])
 
 
 # TODO: typing
@@ -564,33 +549,40 @@ def validate_args(schema, actual):
     # type: (t.Mapping[str, InputValueDefinition], t.Mapping[str, object])
     # -> ValidationResult[t.Mapping[str, object]]
     # TODO: cleanup this logic
-    required_args = {name for name, defin in six.iteritems(schema)
-                     if not issubclass(defin.type, Nullable)}
-    errors = set(chain(
-        map(NoSuchArgument, six.viewkeys(actual) - six.viewkeys(schema)),
-        map(MissingArgument, required_args - six.viewkeys(actual)),
-    ))
+    required_args = {
+        name
+        for name, defin in schema.items()
+        if not issubclass(defin.type, Nullable)
+    }
+    errors = set(
+        chain(
+            map(NoSuchArgument, actual.keys() - schema.keys()),
+            map(MissingArgument, required_args - actual.keys()),
+        )
+    )
     coerced = {
         name: validate_value(name, schema[name].type, value)
-        for name, value in six.iteritems(actual)
+        for name, value in actual.items()
         if name in schema
     }
-    errors.update(v for v in coerced.values()
-                  if isinstance(v, InvalidArgumentValue))
+    errors.update(
+        v for v in coerced.values() if isinstance(v, InvalidArgumentValue)
+    )
     return Errors(errors) if errors else Valid(coerced)
 
 
 def _validate_args(schema, actual):
     # type: (t.Mapping[str, InputValueDefinition], t.Mapping[str, object])
     # -> t.Mapping[str, object]
-    invalid_args = six.viewkeys(actual) - six.viewkeys(schema)
+    invalid_args = actual.keys() - schema.keys()
     if invalid_args:
         raise NoSuchArgument(invalid_args.pop())
     required_args = {
-        name for name, defin in six.iteritems(schema)
+        name
+        for name, defin in schema.items()
         if not issubclass(defin.type, Nullable)
     }
-    missing_args = required_args - six.viewkeys(actual)
+    missing_args = required_args - actual.keys()
     if missing_args:
         # TODO: return all missing args
         raise MissingArgument(missing_args.pop())
@@ -654,7 +646,7 @@ def validate(cls, selection_set):
     return selection_set
 
 
-T = t.TypeVar('T')
+T = t.TypeVar("T")
 
 
 # TODO: refactor using singledispatch
@@ -665,8 +657,9 @@ def load_field(type_, field, value):
         assert isinstance(value, dict)
         return load(type_, field.selection_set, value)
     elif issubclass(type_, Nullable):
-        return None if value is None else load_field(
-            type_.__arg__, field, value)
+        return (
+            None if value is None else load_field(type_.__arg__, field, value)
+        )
     elif issubclass(type_, List):
         assert isinstance(value, list)
         return [load_field(type_.__arg__, field, v) for v in value]
@@ -702,16 +695,19 @@ def load(cls, selection_set, response):
     T
         An instance of ``cls``
     """
-    instance = cls(**{
-        field.alias or field.name: load_field(
-            getattr(cls, field.name).type,
-            field,
-            response[field.alias or field.name],
-        )
-        for field in selection_set
-    })
+    instance = cls(
+        **{
+            field.alias
+            or field.name: load_field(
+                getattr(cls, field.name).type,
+                field,
+                response[field.alias or field.name],
+            )
+            for field in selection_set
+        }
+    )
     # TODO: do this in a cleaner way
-    if hasattr(response, '__metadata__'):
+    if hasattr(response, "__metadata__"):
         instance.__metadata__ = response.__metadata__
     return instance
 
@@ -722,9 +718,9 @@ class ValidationError(Exception):
 
 @dataclass
 class SelectionError(ValidationError):
-    on = field('Type on which the error occurred', type=type)
-    path = field('Path at which the error occurred', type=str)
-    error = field('Original error', type=ValidationError)
+    on = field("Type on which the error occurred", type=type)
+    path = field("Path at which the error occurred", type=str)
+    error = field("Original error", type=ValidationError)
 
     def __str__(self):
         return '{} on "{}" at path "{}":\n\n    {}: {}'.format(
@@ -738,14 +734,13 @@ class SelectionError(ValidationError):
 
 @dataclass
 class NoSuchField(ValidationError):
-
     def __str__(self):
-        return 'field does not exist'
+        return "field does not exist"
 
 
 @dataclass
 class NoSuchArgument(ValidationError):
-    name = field('(Invalid) argument name')
+    name = field("(Invalid) argument name")
 
     def __str__(self):
         return 'argument "{}" does not exist'.format(self.name)
@@ -753,27 +748,25 @@ class NoSuchArgument(ValidationError):
 
 @dataclass
 class InvalidArgumentValue(ValidationError):
-    name = field('name of the argument', type=str)
-    value = field('value of the argument', type=object)
-    message = field('error message', type=str)
+    name = field("name of the argument", type=str)
+    value = field("value of the argument", type=object)
+    message = field("error message", type=str)
 
 
 @dataclass
 class InvalidArgumentType(ValidationError):
-    name = field('Argument name', type=str)
-    value = field('(Invalid) value', type=object)
+    name = field("Argument name", type=str)
+    value = field("(Invalid) value", type=object)
 
     def __str__(self):
         return 'invalid value "{}" of type {} for argument "{}"'.format(
-            self.value,
-            type(self.value),
-            self.name,
+            self.value, type(self.value), self.name
         )
 
 
 @dataclass
 class MissingArgument(ValidationError):
-    name = field('Missing argument name', type=str)
+    name = field("Missing argument name", type=str)
 
     def __str__(self):
         return 'argument "{}" missing (required)'.format(self.name)
@@ -781,16 +774,15 @@ class MissingArgument(ValidationError):
 
 @dataclass
 class SelectionsNotSupported(ValidationError):
-
     def __str__(self):
-        return 'selections not supported on this object'
+        return "selections not supported on this object"
 
 
 BUILTIN_SCALARS = {
     "Boolean": bool,
-    "String":  str,
-    "Float":   float,
-    "Int":     int,
+    "String": str,
+    "Float": float,
+    "Int": int,
 }
 
 
@@ -798,7 +790,5 @@ PY_TYPE_TO_GQL_TYPE = {
     float: Float,
     int: Int,
     bool: Boolean,
-    six.text_type: String,
+    str: String,
 }
-if six.PY2:  # pragma: no cover
-    PY_TYPE_TO_GQL_TYPE[str] = String

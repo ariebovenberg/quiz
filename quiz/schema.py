@@ -6,21 +6,19 @@ import typing as t
 from collections import defaultdict
 from functools import partial
 from itertools import chain
+from operator import methodcaller
+from types import new_class
 
 import attr
-import six
 
 from . import types
 from .build import Query
-from .compat import fspath, map
+from .compat import fspath
 from .execution import execute
 from .types import validate
 from .utils import JSON, FrozenDict, dataclass, field, merge
 
-__all__ = [
-    'Schema',
-    'INTROSPECTION_QUERY',
-]
+__all__ = ["Schema", "INTROSPECTION_QUERY"]
 
 RawSchema = t.Dict[str, JSON]
 ClassDict = t.Dict[str, type]
@@ -35,26 +33,31 @@ def object_as_type(typ, interfaces, module):
     # we don't add the fields yet -- these types may not exist yet.
     return type(
         str(typ.name),
-        tuple(interfaces[i.name] for i in typ.interfaces) + (types.Object, ),
-        {"__doc__": typ.desc, "__raw__": typ, '__module__': module},
+        tuple(interfaces[i.name] for i in typ.interfaces) + (types.Object,),
+        {"__doc__": typ.desc, "__raw__": typ, "__module__": module},
     )
 
 
 def interface_as_type(typ, module):
     # type: (Interface, str) -> type
     # we don't add the fields yet -- these types may not exist yet.
-    return six.add_metaclass(types.Interface)(
-        type(str(typ.name), (types.Namespace, ),
-             {"__doc__": typ.desc,
-              '__raw__': typ,
-              '__module__': module}))
+    return new_class(
+        str(typ.name),
+        (types.Namespace,),
+        kwds={"metaclass": types.Interface},
+        exec_body=methodcaller(
+            "update",
+            {"__doc__": typ.desc, "__raw__": typ, "__module__": module},
+        ),
+    )
 
 
 def enum_as_type(typ, module):
     # type: (Enum, str) -> Type[types.Enum]
     assert len(typ.values) > 0
-    cls = types.Enum(typ.name, [(v.name, v.name) for v in typ.values],
-                     module=module)
+    cls = types.Enum(
+        typ.name, [(v.name, v.name) for v in typ.values], module=module
+    )
     cls.__doc__ = typ.desc
     for member, conf in zip(cls.__members__.values(), typ.values):
         member.__doc__ = conf.desc
@@ -63,21 +66,24 @@ def enum_as_type(typ, module):
 
 def union_as_type(typ, objs):
     # type (Union, ClassDict) -> type
-    assert len(typ.types) >= 1, 'Encountered a Union with zero types'
+    assert len(typ.types) >= 1, "Encountered a Union with zero types"
     return type(
         str(typ.name),
-        (types.Union, ),
+        (types.Union,),
         {
-            '__doc__': typ.desc,
-            '__args__': tuple(objs[o.name] for o in typ.types)
-        }
+            "__doc__": typ.desc,
+            "__args__": tuple(objs[o.name] for o in typ.types),
+        },
     )
 
 
 def inputobject_as_type(typ, module):
     # type (InputObject, str) -> Type[types.InputObject]
-    return type(str(typ.name), (types.InputObject, ),
-                {"__doc__": typ.desc, "__raw__": typ, '__module__': module})
+    return type(
+        str(typ.name),
+        (types.InputObject,),
+        {"__doc__": typ.desc, "__raw__": typ, "__module__": module},
+    )
 
 
 def _add_fields(obj, classes):
@@ -88,14 +94,16 @@ def _add_fields(obj, classes):
             types.FieldDefinition(
                 name=f.name,
                 desc=f.desc,
-                args=FrozenDict({
-                    i.name: types.InputValueDefinition(
-                        name=i.name,
-                        desc=i.desc,
-                        type=resolve_typeref(i.type, classes),
-                    )
-                    for i in f.args
-                }),
+                args=FrozenDict(
+                    {
+                        i.name: types.InputValueDefinition(
+                            name=i.name,
+                            desc=i.desc,
+                            type=resolve_typeref(i.type, classes),
+                        )
+                        for i in f.args
+                    }
+                ),
                 is_deprecated=f.is_deprecated,
                 deprecation_reason=f.deprecation_reason,
                 type=resolve_typeref(f.type, classes),
@@ -109,12 +117,16 @@ def _add_input_fields(obj, classes):
     # TODO: fix this duplication of data
     obj.__input_fields__ = {
         f.name: types.InputValueDefinition(
-            f.name, f.desc, type=resolve_typeref(f.type, classes))
+            f.name, f.desc, type=resolve_typeref(f.type, classes)
+        )
         for f in obj.__raw__.input_fields
     }
     for f in obj.__raw__.input_fields:
-        setattr(obj, f.name,
-                types.InputObjectFieldDescriptor(obj.__input_fields__[f.name]))
+        setattr(
+            obj,
+            f.name,
+            types.InputObjectFieldDescriptor(obj.__input_fields__[f.name]),
+        )
 
     del obj.__raw__
     return obj
@@ -136,7 +148,6 @@ def _resolve_typeref_required(ref, classes):
 
 
 class _QueryCreator(object):
-
     def __init__(self, schema):
         self.schema = schema
 
@@ -152,15 +163,19 @@ class Schema(object):
     Use :meth:`~Schema.from_path`, :meth:`~Schema.from_url`,
     or :meth:`~Schema.from_raw` to instantiate.
     """
-    classes = field('Mapping of classes in the schema', type=ClassDict)
-    query_type = field('The query type of the schema', type=type)
-    mutation_type = field('The mutation type of the schema',
-                          type=t.Optional[type])
-    subscription_type = field('The subscription type of the schema',
-                              type=t.Optional[type])
-    module = field('The module to which the classes are namespaced',
-                   type=t.Optional[str])
-    raw = field('The raw schema (JSON). To be deprecated', type=RawSchema)
+
+    classes = field("Mapping of classes in the schema", type=ClassDict)
+    query_type = field("The query type of the schema", type=type)
+    mutation_type = field(
+        "The mutation type of the schema", type=t.Optional[type]
+    )
+    subscription_type = field(
+        "The subscription type of the schema", type=t.Optional[type]
+    )
+    module = field(
+        "The module to which the classes are namespaced", type=t.Optional[str]
+    )
+    raw = field("The raw schema (JSON). To be deprecated", type=RawSchema)
 
     def __getattr__(self, name):
         try:
@@ -169,14 +184,16 @@ class Schema(object):
             raise AttributeError(name)
 
     def __dir__(self):
-        return list(chain(
-            self.classes,
-            (f.name for f in attr.fields(self.__class__)),
-            dir(super(Schema, self))
-        ))
+        return list(
+            chain(
+                self.classes,
+                (f.name for f in attr.fields(self.__class__)),
+                dir(super(Schema, self)),
+            )
+        )
 
     def __repr__(self):
-        return 'quiz.Schema(module={})'.format(self.module)
+        return "quiz.Schema(module={})".format(self.module)
 
     def populate_module(self):
         """Populate the schema's module with the schema's classes
@@ -192,7 +209,7 @@ class Schema(object):
         """
         # TODO: this is a bit ugly
         if self.module is None:
-            raise RuntimeError('schema.module is not set')
+            raise RuntimeError("schema.module is not set")
         module_obj = sys.modules[self.module]
         for name, cls in self.classes.items():
             setattr(module_obj, name, cls)
@@ -244,8 +261,9 @@ class Schema(object):
             If the file at given path cannot be read
         """
         with open(fspath(path)) as rfile:
-            return cls.from_raw(json.load(rfile), module=module,
-                                scalars=scalars)
+            return cls.from_raw(
+                json.load(rfile), module=module, scalars=scalars
+            )
 
     def to_path(self, path):
         """Dump the schema as JSON to a path
@@ -255,7 +273,7 @@ class Schema(object):
         path: str or ~os.PathLike
             The path to write the raw schema to
         """
-        with open(fspath(path), 'w') as wfile:
+        with open(fspath(path), "w") as wfile:
             json.dump(self.raw, wfile)
 
     @classmethod
@@ -286,33 +304,35 @@ class Schema(object):
         scalars_by_name = _namedict(scalars)
         scalars_by_name.update(types.BUILTIN_SCALARS)
         scalars_by_name.update(
-            (tp.name,
-             type(str(tp.name), (types.AnyScalar, ), {'__doc__': tp.desc}))
+            (
+                tp.name,
+                type(str(tp.name), (types.AnyScalar,), {"__doc__": tp.desc}),
+            )
             for tp in by_kind[Scalar]
             if tp.name not in scalars_by_name
         )
 
-        interfaces = _namedict(map(
-            partial(interface_as_type, module=module),
-            by_kind[Interface]
-        ))
-        enums = _namedict(map(
-            partial(enum_as_type, module=module),
-            by_kind[Enum]
-        ))
-        objs = _namedict(map(
-            partial(object_as_type, interfaces=interfaces,
-                    module=module),
-            by_kind[Object],
-        ))
-        unions = _namedict(map(
-            partial(union_as_type, objs=objs),
-            by_kind[Union]
-        ))
-        input_objects = _namedict(map(
-            partial(inputobject_as_type, module=module),
-            by_kind[InputObject]
-        ))
+        interfaces = _namedict(
+            map(partial(interface_as_type, module=module), by_kind[Interface])
+        )
+        enums = _namedict(
+            map(partial(enum_as_type, module=module), by_kind[Enum])
+        )
+        objs = _namedict(
+            map(
+                partial(object_as_type, interfaces=interfaces, module=module),
+                by_kind[Object],
+            )
+        )
+        unions = _namedict(
+            map(partial(union_as_type, objs=objs), by_kind[Union])
+        )
+        input_objects = _namedict(
+            map(
+                partial(inputobject_as_type, module=module),
+                by_kind[InputObject],
+            )
+        )
 
         classes = merge(
             scalars_by_name, interfaces, enums, objs, unions, input_objects
@@ -326,14 +346,14 @@ class Schema(object):
 
         return cls(
             classes,
-            query_type=classes[raw_schema['queryType']['name']],
+            query_type=classes[raw_schema["queryType"]["name"]],
             mutation_type=(
-                raw_schema['mutationType']
-                and classes[raw_schema['mutationType']['name']]
-                ),
+                raw_schema["mutationType"]
+                and classes[raw_schema["mutationType"]["name"]]
+            ),
             subscription_type=(
-                raw_schema['subscriptionType']
-                and classes[raw_schema['subscriptionType']['name']]
+                raw_schema["subscriptionType"]
+                and classes[raw_schema["subscriptionType"]["name"]]
             ),
             module=module,
             raw=raw_schema,
@@ -368,14 +388,14 @@ class Schema(object):
             If there are errors in the response data
         """
         result = execute(INTROSPECTION_QUERY, url=url, **kwargs)
-        return cls.from_raw(result['__schema'], scalars=scalars, module=module)
+        return cls.from_raw(result["__schema"], scalars=scalars, module=module)
 
     # TODO: from_url_async
 
 
 def _load_types(raw_schema):
     # type RawSchema -> Iterable[TypeSchema]
-    return map(_cast_type, map(_deserialize_type, raw_schema['types']))
+    return map(_cast_type, map(_deserialize_type, raw_schema["types"]))
 
 
 INTROSPECTION_QUERY = """
@@ -461,41 +481,51 @@ class Kind(enum.Enum):
     UNION = "UNION"
 
 
-TypeRef = t.NamedTuple('TypeRef', [
-    ('name', t.Optional[str]),
-    ('kind', Kind),
-    ('of_type', t.Optional['TypeRef']),
-])
-InputValue = t.NamedTuple('InputValue', [
-    ('name', str),
-    ('desc', str),
-    ('type', TypeRef),
-    ('default', object),
-])
-Field = t.NamedTuple('Field', [
-    ('name', str),
-    ('type', TypeRef),
-    ('args', t.List[InputValue]),
-    ('desc', str),
-    ('is_deprecated', bool),
-    ('deprecation_reason', t.Optional[str]),
-])
-Type = t.NamedTuple('Type', [
-    ('name', t.Optional[str]),
-    ('kind', Kind),
-    ('desc', str),
-    ('fields', t.Optional[t.List[Field]]),
-    ('input_fields', t.Optional[t.List["InputValue"]]),
-    ('interfaces', t.Optional[t.List[TypeRef]]),
-    ('possible_types', t.Optional[t.List[TypeRef]]),
-    ('enum_values', t.Optional[t.List]),
-])
-EnumValue = t.NamedTuple('EnumValue', [
-    ('name', str),
-    ('desc', str),
-    ('is_deprecated', bool),
-    ('deprecation_reason', t.Optional[str]),
-])
+TypeRef = t.NamedTuple(
+    "TypeRef",
+    [
+        ("name", t.Optional[str]),
+        ("kind", Kind),
+        ("of_type", t.Optional["TypeRef"]),
+    ],
+)
+InputValue = t.NamedTuple(
+    "InputValue",
+    [("name", str), ("desc", str), ("type", TypeRef), ("default", object)],
+)
+Field = t.NamedTuple(
+    "Field",
+    [
+        ("name", str),
+        ("type", TypeRef),
+        ("args", t.List[InputValue]),
+        ("desc", str),
+        ("is_deprecated", bool),
+        ("deprecation_reason", t.Optional[str]),
+    ],
+)
+Type = t.NamedTuple(
+    "Type",
+    [
+        ("name", t.Optional[str]),
+        ("kind", Kind),
+        ("desc", str),
+        ("fields", t.Optional[t.List[Field]]),
+        ("input_fields", t.Optional[t.List["InputValue"]]),
+        ("interfaces", t.Optional[t.List[TypeRef]]),
+        ("possible_types", t.Optional[t.List[TypeRef]]),
+        ("enum_values", t.Optional[t.List]),
+    ],
+)
+EnumValue = t.NamedTuple(
+    "EnumValue",
+    [
+        ("name", str),
+        ("desc", str),
+        ("is_deprecated", bool),
+        ("deprecation_reason", t.Optional[str]),
+    ],
+)
 
 
 def make_inputvalue(conf):
@@ -553,36 +583,29 @@ def _deserialize_type(conf):
     )
 
 
-Interface = t.NamedTuple('Interface', [
-    ('name', str),
-    ('desc', str),
-    ('fields', t.List[Field]),
-])
-Object = t.NamedTuple('Object', [
-    ('name', str),
-    ('desc', str),
-    ('interfaces', t.List[TypeRef]),
-    ('fields', t.List[Field]),
-])
-Scalar = t.NamedTuple('Scalar', [
-    ('name', str),
-    ('desc', str),
-])
-Enum = t.NamedTuple('Enum', [
-    ('name', str),
-    ('desc', str),
-    ('values', t.List[EnumValue]),
-])
-Union = t.NamedTuple('Union', [
-    ('name', str),
-    ('desc', str),
-    ('types', t.List[TypeRef]),
-])
-InputObject = t.NamedTuple('InputObject', [
-    ('name', str),
-    ('desc', str),
-    ('input_fields', t.List[InputValue]),
-])
+Interface = t.NamedTuple(
+    "Interface", [("name", str), ("desc", str), ("fields", t.List[Field]),]
+)
+Object = t.NamedTuple(
+    "Object",
+    [
+        ("name", str),
+        ("desc", str),
+        ("interfaces", t.List[TypeRef]),
+        ("fields", t.List[Field]),
+    ],
+)
+Scalar = t.NamedTuple("Scalar", [("name", str), ("desc", str),])
+Enum = t.NamedTuple(
+    "Enum", [("name", str), ("desc", str), ("values", t.List[EnumValue]),]
+)
+Union = t.NamedTuple(
+    "Union", [("name", str), ("desc", str), ("types", t.List[TypeRef]),]
+)
+InputObject = t.NamedTuple(
+    "InputObject",
+    [("name", str), ("desc", str), ("input_fields", t.List[InputValue]),],
+)
 TypeSchema = t.Union[Interface, Object, Scalar, Enum, Union, InputObject]
 
 

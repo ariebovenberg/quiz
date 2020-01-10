@@ -3,25 +3,20 @@ import sys
 import typing as t
 from functools import partial
 from itertools import chain
-from operator import attrgetter
+from operator import attrgetter, methodcaller
 
 import attr
-import six
 
-from .compat import PY2
+__all__ = ["JSON", "Empty"]
 
-__all__ = [
-    'JSON',
-    'Empty',
+T = t.TypeVar("T")
+T1 = t.TypeVar("T1")
+T2 = t.TypeVar("T2")
+
+
+JSON = t.Union[
+    str, int, float, bool, None, t.Dict[str, "JSON"], t.List["JSON"]
 ]
-
-T = t.TypeVar('T')
-T1 = t.TypeVar('T1')
-T2 = t.TypeVar('T2')
-
-
-JSON = t.Union[str, int, float, bool, None,
-               t.Dict[str, 'JSON'], t.List['JSON']]
 
 
 def identity(obj):
@@ -31,21 +26,18 @@ def identity(obj):
 class FrozenDict(t.Mapping[T1, T2]):
     # see https://stackoverflow.com/questions/45864273
     if not (3, 7) > sys.version_info > (3, 4):  # pragma: no cover
-        __slots__ = '_inner'
+        __slots__ = "_inner"
 
     def __init__(self, inner):
         self._inner = inner if isinstance(inner, dict) else dict(inner)
 
-    __len__ = property(attrgetter('_inner.__len__'))
-    __iter__ = property(attrgetter('_inner.__iter__'))
-    __getitem__ = property(attrgetter('_inner.__getitem__'))
-    __repr__ = property(attrgetter('_inner.__repr__'))
+    __len__ = property(attrgetter("_inner.__len__"))
+    __iter__ = property(attrgetter("_inner.__iter__"))
+    __getitem__ = property(attrgetter("_inner.__getitem__"))
+    __repr__ = property(attrgetter("_inner.__repr__"))
 
     def __hash__(self):
         return hash(frozenset(self._inner.items()))
-
-    if PY2:  # pragma: no cover
-        viewkeys = property(attrgetter('_inner.viewkeys'))
 
 
 FrozenDict.EMPTY = FrozenDict({})
@@ -55,7 +47,8 @@ def merge(*dicts):
     """merge several mappings"""
     if dicts:
         return type(dicts[0])(
-            chain.from_iterable(map(six.iteritems, dicts)))
+            chain.from_iterable(map(methodcaller("items"), dicts))
+        )
     else:
         return {}
 
@@ -89,6 +82,7 @@ class compose(object):
     ----
     * if given no functions, acts as an identity function
     """
+
     def __init__(self, *funcs):
         self.funcs = funcs
         self.__wrapped__ = funcs[-1] if funcs else identity
@@ -107,4 +101,4 @@ dataclass = partial(attr.s, frozen=True, slots=True)
 
 
 def field(doc, **kwargs):
-    return attr.ib(metadata={'doc': doc}, **kwargs)
+    return attr.ib(metadata={"doc": doc}, **kwargs)

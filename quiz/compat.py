@@ -3,22 +3,7 @@ import os
 import sys
 import typing as t
 
-PY3 = sys.version_info > (3, )
 HAS_PEP519 = sys.version_info > (3, 6)
-PY2 = not PY3
-
-
-if PY3:
-    from functools import singledispatch
-    from textwrap import indent
-    map = map
-else:  # pragma: no cover
-    from singledispatch import singledispatch  # noqa
-
-    def indent(text, pad):
-        return '\n'.join(map(pad.__add__, text.splitlines()))
-
-    from itertools import imap as map
 
 
 def default_ne(self, other):  # pragma: no cover -- only for py2
@@ -49,7 +34,7 @@ else:  # pragma: no cover
         try:
             path = path_type.__fspath__(path)
         except AttributeError:
-            if hasattr(path_type, '__fspath__'):
+            if hasattr(path_type, "__fspath__"):
                 raise
         else:
             if isinstance(path, (str, bytes)):
@@ -57,7 +42,10 @@ else:  # pragma: no cover
             else:
                 raise TypeError(
                     "expected __fspath__() to return str or bytes, "
-                    "not " + type(path).__name__)
+                    "not " + type(path).__name__
+                )
 
-        raise TypeError("expected str, bytes or os.PathLike object, not "
-                        + path_type.__name__)
+        raise TypeError(
+            "expected str, bytes or os.PathLike object, not "
+            + path_type.__name__
+        )

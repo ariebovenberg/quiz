@@ -39,6 +39,10 @@
          <img src="https://img.shields.io/pypi/pyversions/quiz.svg?style=flat-square&logo=python&logoColor=white" alt="Supported python versions">
    </a>
 
+   <a href="https://github.com/psf/black" class="reference external image-reference">
+         <img src="https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square&logo=python&logoColor=white" alt="Black code style">
+   </a>
+
    </p>
 
 
@@ -233,17 +237,18 @@ Preliminary roadmap
 ================================================================== ===========
 Feature                                                            status
 ================================================================== ===========
-custom scalars for existing types (e.g. ``datetime``)              v0.2.0
-Mutations & subscriptions                                          v0.2.0
-Custom enum base class                                             v0.2.0
+Input objects                                                      v0.3.0
 better query validation errors                                     v0.3.0
+more examples in docs                                              v0.3.0
 executing selection sets directly                                  v0.3.0
-improve Object/Interface API                                       v0.3.0
 introspection fields (i.e. ``__typename``)                         v0.3.0
+custom scalars for existing types (e.g. ``datetime``)              v0.3.0
+improve Object/Interface API                                       v0.3.0
 value object docs                                                  v0.3.0
+Mutations & subscriptions                                          v0.3.0
 Inline fragments                                                   v0.3.0
-Fragments and fragment spreads                                     v0.3.0
-py2 unicode robustness                                             v0.3.0
+Fragments and fragment spreads                                     v0.4.0
+py2 unicode robustness                                             v0.4.0
 Mixing in raw GraphQL                                              planned
 Module autogeneration                                              planned
 Type inference (e.g. enum values)                                  planned
