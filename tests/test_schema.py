@@ -7,7 +7,7 @@ import types
 import pytest
 import quiz
 import snug
-from quiz import SELECTOR as _
+from quiz import _
 from quiz import schema as s
 
 from .helpers import MockClient, render_doc
@@ -193,7 +193,7 @@ def test_object_as_type():
                 desc="my description",
                 is_deprecated=False,
                 deprecation_reason=None,
-            ),
+            )
         ],
     )
     interfaces = {
@@ -216,9 +216,7 @@ def test_object_as_type():
     assert created.__raw__ == obj_schema
 
     # test adding the fields later
-    classes = {
-        "MyObject": type("MyObject", (), {}),
-    }
+    classes = {"MyObject": type("MyObject", (), {})}
     s._add_fields(created, classes)
 
     assert created.blabla == quiz.FieldDefinition(

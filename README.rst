@@ -134,7 +134,7 @@ Features
 
    .. code-block:: python3
 
-      >>> _ = quiz.SELECTOR
+      >>> from quiz import _
       >>> query = schema.query[
       ...     _
       ...     .repository(owner='octocat', name='Hello-World')[

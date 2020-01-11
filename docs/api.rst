@@ -15,15 +15,15 @@ API reference
       __new__, __repr__, __eq__, __ne__, __init__, __next_in_mro__
 
 
-``quiz.types``
---------------
+.. ``quiz.types``
+.. --------------
 
-.. automodule:: quiz.types
-   :members:
-   :special-members:
-   :show-inheritance:
-   :exclude-members: __namedtuple_cls__, __hash__, __weakref__, __getnewargs__,
-      __new__, __repr__, __eq__, __ne__, __init__, __next_in_mro__
+.. .. automodule:: quiz.types
+..    :members:
+..    :special-members:
+..    :show-inheritance:
+..    :exclude-members: __namedtuple_cls__, __hash__, __weakref__, __getnewargs__,
+..       __new__, __repr__, __eq__, __ne__, __init__, __next_in_mro__
 
 
 .. _execution-api:

@@ -3,8 +3,7 @@ from textwrap import dedent
 import pytest
 import quiz
 from hypothesis import given, strategies
-from quiz import SELECTOR as _
-from quiz import Field, InlineFragment, SelectionSet, gql
+from quiz import Field, InlineFragment, SelectionSet, _, gql
 from quiz.utils import FrozenDict as fdict
 
 from .example import Dog

@@ -4,7 +4,7 @@ from textwrap import dedent
 import pytest
 import quiz
 import snug
-from quiz import SELECTOR as _
+from quiz import _
 from quiz.build import SelectionSet, gql
 from quiz.utils import FrozenDict as fdict
 

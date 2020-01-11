@@ -106,14 +106,14 @@ As we've seen in the first section,
 we can execute queries in text form.
 Using the :class:`~quiz.schema.Schema`, however,
 we can write GraphQL using python syntax.
-To do this, we use the :class:`~quiz.build.SELECTOR` object
+To do this, we use the :class:`~quiz.build._` object
 combined with python's slice syntax.
 
 The example below shows how we can recreate our original query in this syntax:
 
 .. code-block:: python3
 
-   >>> from quiz import SELECTOR as _
+   >>> from quiz import _
    >>> query = schema.query[
    ...     _
    ...     .repository(owner='octocat', name='hello-world')[

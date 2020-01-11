@@ -52,9 +52,12 @@ MIN_INT = -2 << 30
 MAX_INT = (2 << 30) - 1
 
 
-InputValueDefinition = t.NamedTuple(
-    "InputValueDefinition", [("name", str), ("desc", str), ("type", type)]
-)
+@dataclass(frozen=True)
+class InputValueDefinition:
+    name: str
+    desc: str
+    type: type
+
 
 _PRIMITIVE_TYPES = (int, float, bool, str)
 
@@ -230,6 +233,9 @@ class Enum(InputValue, ResponseType, enum.Enum):
 
     def __gql_dump__(self):
         # type: () -> str
+        return self.value
+
+    def __repr__(self):
         return self.value
 
     @classmethod

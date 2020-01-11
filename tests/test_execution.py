@@ -4,12 +4,10 @@ from collections.abc import Mapping
 import pytest
 import quiz
 import snug
+from quiz import _
 
 from .example import Dog, DogQuery
 from .helpers import MockClient
-
-_ = quiz.SELECTOR
-
 
 snug.send_async.register(MockClient, MockClient.send_async)
 

@@ -14,6 +14,7 @@ __all__ = [
     "InlineFragment",
     "Query",
     "Raw",
+    "_",
     "SELECTOR",
     "Selection",
     "SelectionSet",
@@ -287,7 +288,7 @@ class _AliasForNextField:
         )
 
 
-SELECTOR = SelectionSet()
+_ = SELECTOR = SelectionSet()
 """An empty, extendable :class:`SelectionSet`"""
 
 
