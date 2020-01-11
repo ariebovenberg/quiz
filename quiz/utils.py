@@ -1,11 +1,8 @@
 """Common utilities and boilerplate"""
 import sys
 import typing as t
-from functools import partial
 from itertools import chain
 from operator import attrgetter, methodcaller
-
-import attr
 
 __all__ = ["JSON", "Empty"]
 
@@ -25,7 +22,7 @@ def identity(obj):
 
 class FrozenDict(t.Mapping[T1, T2]):
     # see https://stackoverflow.com/questions/45864273
-    if not (3, 7) > sys.version_info > (3, 4):  # pragma: no cover
+    if sys.version_info > (3, 7):  # pragma: no cover
         __slots__ = "_inner"
 
     def __init__(self, inner):
@@ -95,10 +92,3 @@ class compose(object):
         for func in reversed(tail):
             value = func(value)
         return value
-
-
-dataclass = partial(attr.s, frozen=True, slots=True)
-
-
-def field(doc, **kwargs):
-    return attr.ib(metadata={"doc": doc}, **kwargs)

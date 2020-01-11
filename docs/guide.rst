@@ -95,7 +95,7 @@ to easily write and validate queries.
    The :ref:`advanced topics <advanced>` section has more information about:
 
    * :ref:`Caching schemas<caching_schemas>`
-   * :ref:`Defining custom scalars<caching_schemas>`
+   * :ref:`Defining custom scalars<scalars>`
    * :ref:`Building modules with schemas <modules>`
 
 

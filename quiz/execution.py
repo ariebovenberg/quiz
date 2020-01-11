@@ -1,6 +1,7 @@
 """Components for executing GraphQL operations"""
 import json
 import typing as t
+from dataclasses import dataclass
 from functools import partial
 
 import snug
@@ -8,7 +9,7 @@ from gentools import irelay
 
 from .build import Query
 from .types import load
-from .utils import JSON, dataclass, field
+from .utils import JSON
 
 __all__ = [
     "execute",
@@ -179,14 +180,12 @@ def async_executor(**kwargs):
     return partial(execute_async, **kwargs)
 
 
-@dataclass
+@dataclass(frozen=True)
 class ErrorResponse(Exception):
     """A response containing errors"""
 
-    data = field("Data returned in the response", type=t.Dict[str, JSON])
-    errors = field(
-        "Errors returned in the response", type=t.List[t.Dict[str, JSON]]
-    )
+    data: t.Dict[str, JSON]
+    errors: t.List[t.Dict[str, JSON]]
 
 
 class RawResult(dict):
@@ -203,20 +202,20 @@ class RawResult(dict):
         self.__metadata__ = meta
 
 
-@dataclass
+@dataclass(frozen=True)
 class QueryMetadata(object):
     """HTTP metadata for query"""
 
-    response = field("The response object", type=snug.Response)
-    request = field("The original request", type=snug.Request)
+    response: snug.Response
+    request: snug.Request
 
 
-@dataclass
+@dataclass(frozen=True)
 class HTTPError(Exception):
     """Indicates a response with a non 2xx status code"""
 
-    response = field("The response object", type=snug.Response)
-    request = field("The original request", type=snug.Request)
+    response: snug.Response
+    request: snug.Request
 
     def __str__(self):
         return (

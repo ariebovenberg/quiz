@@ -1,12 +1,11 @@
 import os.path
+from pathlib import Path
 
 from setuptools import find_packages, setup
 
 
 def read(fname):
-    path = os.path.join(os.path.dirname(__file__), fname)
-    with open(path, "r") as rfile:
-        return rfile.read()
+    return (Path(__file__).parent / fname).read_text()
 
 
 metadata = {}
@@ -28,13 +27,16 @@ setup(
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
     ],
-    install_requires=["attrs~=19.3.0", "gentools~=1.1.0", "snug~=2.0.0"],
+    install_requires=[
+        "dataclasses==0.7; python_version<'3.7'",
+        "gentools~=1.1.0",
+        "snug~=2.0.0",
+    ],
     keywords=["graphql", "http", "async"],
-    python_requires=">=3.5.2",
+    python_requires=">=3.6.0",
     packages=find_packages(exclude=("tests", "docs")),
 )

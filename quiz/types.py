@@ -2,13 +2,12 @@
 import enum
 import math
 import typing as t
+from dataclasses import dataclass
 from itertools import chain, starmap
 from operator import methodcaller
 
-import attr
-
 from .build import Field, InlineFragment, SelectionSet, dump_inputvalue, escape
-from .utils import JSON, FrozenDict, dataclass, field
+from .utils import JSON, FrozenDict
 
 __all__ = [
     # types
@@ -140,9 +139,9 @@ class Object(Namespace, metaclass=HasFields):
     """a graphQL object"""
 
 
-@dataclass
-class InputObjectFieldDescriptor(object):
-    value = field("The input value", type=InputValueDefinition)
+@dataclass(frozen=True)
+class InputObjectFieldDescriptor:
+    value: InputValueDefinition
 
     def __get__(self, obj, objtype=None):
         if obj is None:  # accessing on class
@@ -246,23 +245,21 @@ class NoValueForField(AttributeError):
     """Indicates a value cannot be retrieved for the field"""
 
 
-@dataclass
+@dataclass(frozen=True)
 class CouldNotCoerce(ValueError):
     """Could not coerce a value"""
 
-    reason = field("The reason coercion failed", type=str)
+    reason: str
 
 
-@dataclass
-class FieldDefinition(object):
-    name = field("Field name", type=str)
-    desc = field("Field description", type=str)
-    type = field("Field data type", type=type)
-    args = field(
-        "Accepted field arguments", type=FrozenDict[str, InputValueDefinition]
-    )
-    is_deprecated = field("Whether the field is deprecated", type=bool)
-    deprecation_reason = field("Reason ffor deprecation", type=t.Optional[str])
+@dataclass(frozen=True)
+class FieldDefinition:
+    name: str
+    desc: str
+    type: type
+    args: FrozenDict[str, InputValueDefinition]
+    is_deprecated: bool
+    deprecation_reason: t.Optional[str]
 
     def __get__(self, obj, objtype=None):
         if obj is None:  # accessing on class
@@ -532,15 +529,15 @@ class ValidationResult(object):
     pass
 
 
-@dataclass
+@dataclass(frozen=True)
 class Errors(ValidationResult):
-    items = attr.ib(type=t.Set["ValidationError"])
+    items: t.Set["ValidationError"]
 
 
 # TODO: typing
-@dataclass
+@dataclass(frozen=True)
 class Valid(ValidationResult):
-    value = attr.ib()
+    value: object
 
 
 def validate_args(schema, actual):
@@ -714,11 +711,11 @@ class ValidationError(Exception):
     """base class for validation errors"""
 
 
-@dataclass
+@dataclass(frozen=True)
 class SelectionError(ValidationError):
-    on = field("Type on which the error occurred", type=type)
-    path = field("Path at which the error occurred", type=str)
-    error = field("Original error", type=ValidationError)
+    on: type
+    path: str
+    error: ValidationError
 
     def __str__(self):
         return '{} on "{}" at path "{}":\n\n    {}: {}'.format(
@@ -730,31 +727,31 @@ class SelectionError(ValidationError):
         )
 
 
-@dataclass
+@dataclass(frozen=True)
 class NoSuchField(ValidationError):
     def __str__(self):
         return "field does not exist"
 
 
-@dataclass
+@dataclass(frozen=True)
 class NoSuchArgument(ValidationError):
-    name = field("(Invalid) argument name")
+    name: str
 
     def __str__(self):
         return 'argument "{}" does not exist'.format(self.name)
 
 
-@dataclass
+@dataclass(frozen=True)
 class InvalidArgumentValue(ValidationError):
-    name = field("name of the argument", type=str)
-    value = field("value of the argument", type=object)
-    message = field("error message", type=str)
+    name: str
+    value: object
+    message: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class InvalidArgumentType(ValidationError):
-    name = field("Argument name", type=str)
-    value = field("(Invalid) value", type=object)
+    name: str
+    value: object
 
     def __str__(self):
         return 'invalid value "{}" of type {} for argument "{}"'.format(
@@ -762,15 +759,15 @@ class InvalidArgumentType(ValidationError):
         )
 
 
-@dataclass
+@dataclass(frozen=True)
 class MissingArgument(ValidationError):
-    name = field("Missing argument name", type=str)
+    name: str
 
     def __str__(self):
         return 'argument "{}" missing (required)'.format(self.name)
 
 
-@dataclass
+@dataclass(frozen=True)
 class SelectionsNotSupported(ValidationError):
     def __str__(self):
         return "selections not supported on this object"

@@ -2,27 +2,24 @@
 import enum
 import re
 import typing as t
+from dataclasses import dataclass, replace
 from functools import singledispatch
 from operator import attrgetter, methodcaller
 from textwrap import indent
 
-from attr import evolve
-
-from .utils import FrozenDict, compose, dataclass, field, init_last
+from .utils import FrozenDict, compose, init_last
 
 __all__ = [
-    # building graphQL documents
-    "SelectionSet",
-    "Selection",
     "Field",
     "InlineFragment",
-    "Raw",
     "Query",
+    "Raw",
     "SELECTOR",
-    # render
-    "gql",
-    "escape",
+    "Selection",
+    "SelectionSet",
     "dump_inputvalue",
+    "escape",
+    "gql",
 ]
 
 INDENT = "  "
@@ -56,7 +53,7 @@ class SelectionSet(t.Iterable["Selection"], t.Sized):
     # TODO: check if actually faster
     # faster, internal, alternative to __init__
     @classmethod
-    def _make(cls, selections):
+    def __make__(cls, selections):
         instance = cls.__new__(cls)
         instance.__selections__ = tuple(selections)
         return instance
@@ -92,7 +89,7 @@ class SelectionSet(t.Iterable["Selection"], t.Sized):
           bing
         }
         """
-        return SelectionSet._make(self.__selections__ + (Field(fieldname),))
+        return SelectionSet.__make__(self.__selections__ + (Field(fieldname),))
 
     def __getitem__(self, selections):
         """Add a sub-selection to the last field in the selection set
@@ -140,8 +137,8 @@ class SelectionSet(t.Iterable["Selection"], t.Sized):
         assert isinstance(selections, SelectionSet)
         assert len(selections.__selections__) >= 1
 
-        return SelectionSet._make(
-            tuple(rest) + (evolve(target, selection_set=selections),)
+        return SelectionSet.__make__(
+            tuple(rest) + (replace(target, selection_set=selections),)
         )
 
     def __repr__(self):
@@ -231,8 +228,8 @@ class SelectionSet(t.Iterable["Selection"], t.Sized):
 
     def __add_kwargs(self, args):
         rest, target = init_last(self.__selections__)
-        return SelectionSet._make(
-            tuple(rest) + (evolve(target, kwargs=FrozenDict(args)),)
+        return SelectionSet.__make__(
+            tuple(rest) + (replace(target, kwargs=FrozenDict(args)),)
         )
 
     def __iter__(self):
@@ -273,22 +270,18 @@ class SelectionSet(t.Iterable["Selection"], t.Sized):
             return other.__selections__ == self.__selections__
         return NotImplemented
 
-    def __ne__(self, other):
-        equality = self.__eq__(other)
-        return NotImplemented if equality is NotImplemented else not equality
-
     __hash__ = property(attrgetter("__selections__.__hash__"))
 
 
-class _AliasForNextField(object):
+@dataclass(frozen=True)
+class _AliasForNextField:
     __slots__ = "__selection_set", "__alias"
 
-    def __init__(self, selection_set, alias):
-        self.__selection_set = selection_set
-        self.__alias = alias
+    __selection_set: SelectionSet
+    __alias: str
 
-    def __getattr__(self, fieldname):
-        return SelectionSet._make(
+    def __getattr__(self, fieldname: str) -> SelectionSet:
+        return SelectionSet.__make__(
             self.__selection_set.__selections__
             + (Field(fieldname, alias=self.__alias),)
         )
@@ -299,23 +292,19 @@ SELECTOR = SelectionSet()
 
 
 @dataclass
-class Raw(object):
-    content = field("The raw GraphQL content", type=str)
+class Raw:
+    content: str
 
     def __gql__(self):
         return self.content
 
 
-@dataclass
-class Field(object):
-    name = field("Field name", type=str)
-    kwargs = field(
-        "Given arguments", type=FrozenDict, default=FrozenDict.EMPTY
-    )
-    selection_set = field(
-        "Selection of subfields", type=SelectionSet, default=SelectionSet()
-    )
-    alias = field("Field alias", type=t.Optional[str], default=None)
+@dataclass(frozen=True)
+class Field:
+    name: str
+    kwargs: FrozenDict = FrozenDict.EMPTY
+    selection_set: SelectionSet = SelectionSet()
+    alias: t.Optional[str] = None
     # in the future:
     # - directives
 
@@ -337,20 +326,20 @@ class Field(object):
         return alias + self.name + arguments + selection_set
 
 
-@dataclass
-class InlineFragment(object):
-    on = field("Type of the fragment", type=type)
-    selection_set = field("Subfields of the fragment", type=SelectionSet)
+@dataclass(frozen=True)
+class InlineFragment:
+    on: type
+    selection_set: SelectionSet
     # in the future: directives
 
     def __gql__(self):
         return "... on {} {}".format(self.on.__name__, gql(self.selection_set))
 
 
-@dataclass
-class Query(object):
-    cls = field("The query class", type=type)
-    selections = field("Fields selection", type=SelectionSet)
+@dataclass(frozen=True)
+class Query:
+    cls: type
+    selections: SelectionSet
     # in the future:
     # - name (optional)
     # - variable_defs (optional)
@@ -379,24 +368,13 @@ def _escape_match(match):
     return _ESCAPE_PATTERNS[match.group(0)]
 
 
-def escape(txt):
-    """Escape a string according to GraphQL specification
-
-    Parameters
-    ----------
-    txt: str
-        The string to escape
-
-    Returns
-    -------
-    str
-        the escaped string
-    """
+def escape(txt: str) -> str:
+    "Escape a string according to GraphQL specification"
     return _ESCAPE_RE.sub(_escape_match, txt)
 
 
 @singledispatch
-def dump_inputvalue(obj):
+def dump_inputvalue(obj) -> str:
     """Dumpy any input value to GraphQL"""
     try:
         # consistent with other dunder methods, we look it up on the class
@@ -408,7 +386,6 @@ def dump_inputvalue(obj):
 
 
 # see https://facebook.github.io/graphql/June2018/#sec-Input-Values
-# TODO: support list
 dump_inputvalue.register(str, compose('"{}"'.format, escape))
 dump_inputvalue.register(int, str)  # TODO: catch > 32bit integers
 dump_inputvalue.register(type(None), "null".format)

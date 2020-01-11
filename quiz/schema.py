@@ -4,19 +4,18 @@ import json
 import sys
 import typing as t
 from collections import defaultdict
+from dataclasses import dataclass, fields
 from functools import partial
 from itertools import chain
 from operator import methodcaller
+from os import fspath
 from types import new_class
-
-import attr
 
 from . import types
 from .build import Query
-from .compat import fspath
 from .execution import execute
 from .types import validate
-from .utils import JSON, FrozenDict, dataclass, field, merge
+from .utils import JSON, FrozenDict, merge
 
 __all__ = ["Schema", "INTROSPECTION_QUERY"]
 
@@ -156,26 +155,20 @@ class _QueryCreator(object):
         return Query(cls, selections=validate(cls, selection_set))
 
 
-@dataclass(repr=False)
-class Schema(object):
+@dataclass(frozen=True, repr=False)
+class Schema:
     """A GraphQL schema.
 
     Use :meth:`~Schema.from_path`, :meth:`~Schema.from_url`,
     or :meth:`~Schema.from_raw` to instantiate.
     """
 
-    classes = field("Mapping of classes in the schema", type=ClassDict)
-    query_type = field("The query type of the schema", type=type)
-    mutation_type = field(
-        "The mutation type of the schema", type=t.Optional[type]
-    )
-    subscription_type = field(
-        "The subscription type of the schema", type=t.Optional[type]
-    )
-    module = field(
-        "The module to which the classes are namespaced", type=t.Optional[str]
-    )
-    raw = field("The raw schema (JSON). To be deprecated", type=RawSchema)
+    classes: ClassDict
+    query_type: type
+    mutation_type: t.Optional[type]
+    subscription_type: t.Optional[type]
+    module: t.Optional[str]
+    raw: RawSchema
 
     def __getattr__(self, name):
         try:
@@ -187,7 +180,7 @@ class Schema(object):
         return list(
             chain(
                 self.classes,
-                (f.name for f in attr.fields(self.__class__)),
+                (f.name for f in fields(self.__class__)),
                 dir(super(Schema, self)),
             )
         )
