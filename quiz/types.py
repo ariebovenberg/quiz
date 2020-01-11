@@ -236,7 +236,7 @@ class Enum(InputValue, ResponseType, enum.Enum):
         return self.value
 
     def __repr__(self):
-        return self.value
+        return ".".join([self.__class__.__qualname__, self.value])
 
     @classmethod
     def __gql_load__(cls, data):
