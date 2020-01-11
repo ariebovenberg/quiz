@@ -39,10 +39,10 @@ class MyEnum(quiz.Enum):
 EXAMPLE_ARG_SCHEMA = {
     "foo": quiz.InputValueDefinition("foo", "the foo", type=quiz.Int),
     "bar": quiz.InputValueDefinition(
-        "bar", "blabla", type=quiz.Nullable[MyEnum],
+        "bar", "blabla", type=quiz.Nullable[MyEnum]
     ),
     "qux": quiz.InputValueDefinition(
-        "qux", "blablabla", type=quiz.Nullable[quiz.String],
+        "qux", "blablabla", type=quiz.Nullable[quiz.String]
     ),
     "frobs": quiz.InputValueDefinition(
         "frobs", "", type=quiz.List[quiz.Nullable[quiz.Float]]
@@ -427,11 +427,11 @@ class TestInputObject:
         class Foo(quiz.InputObject):
             __input_fields__ = {
                 "self": quiz.InputValueDefinition(
-                    "self", "example field", type=int,
+                    "self", "example field", type=int
                 )
             }
             self = quiz.InputObjectFieldDescriptor(
-                quiz.InputValueDefinition("self", "example field", type=int,)
+                quiz.InputValueDefinition("self", "example field", type=int)
             )
 
         foo = Foo(self=4)
@@ -452,11 +452,18 @@ class TestInputObject:
 
 class TestInlineFragment:
     def test_gql(self):
+        # fmt: off
         fragment = Dog[
-            _.name.bark_volume.knows_command(
-                command=Command.SIT
-            ).is_housetrained.owner[_.name]
+            _
+            .name
+            .bark_volume
+            .knows_command(command=Command.SIT)
+            .is_housetrained
+            .owner[
+                _.name
+            ]
         ]
+        # fmt: on
         assert (
             gql(fragment)
             == dedent(
