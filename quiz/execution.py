@@ -3,9 +3,8 @@ import json
 import typing as t
 from functools import partial
 
-from gentools import irelay
-
 import snug
+from gentools import irelay
 
 from .build import Query
 from .types import load

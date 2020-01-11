@@ -2,7 +2,6 @@ from datetime import datetime
 from textwrap import dedent
 
 import pytest
-
 import quiz
 import snug
 from quiz import SELECTOR as _
@@ -123,7 +122,7 @@ class TestNullable:
 
     @pytest.mark.parametrize(
         "value, expect",
-        [(None, "null"), (quiz.String("foo\nbar"), '"foo\\nbar"'),],
+        [(None, "null"), (quiz.String("foo\nbar"), '"foo\\nbar"')],
     )
     def test_gql_dump(self, value, expect):
         assert quiz.Nullable[quiz.String](value).__gql_dump__() == expect
@@ -291,7 +290,7 @@ class TestAnyScalar:
                 FooScalar.coerce(object())
 
     @pytest.mark.parametrize(
-        "value, expect", [(None, "null"), (quiz.String("foo"), '"foo"'),]
+        "value, expect", [(None, "null"), (quiz.String("foo"), '"foo"')]
     )
     def test_gql_dump(self, value, expect):
         assert FooScalar(value).__gql_dump__() == expect
@@ -913,7 +912,7 @@ class TestFloat:
 
     @pytest.mark.parametrize(
         "value, expect",
-        [(1.2, "1.2"), (1.0, "1.0"), (1.234e53, "1.234e+53"), (0.4, "0.4"),],
+        [(1.2, "1.2"), (1.0, "1.0"), (1.234e53, "1.234e+53"), (0.4, "0.4")],
     )
     def test_gql_dump(self, value, expect):
         f = quiz.Float(value)
@@ -942,7 +941,7 @@ class TestInt:
             assert isinstance(result, quiz.Int)
             assert result.value == -4234
 
-        @pytest.mark.parametrize("value", [2 << 30, (-2 << 30) - 1,])
+        @pytest.mark.parametrize("value", [2 << 30, (-2 << 30) - 1])
         def test_invalid_int(self, value):
             with pytest.raises(quiz.CouldNotCoerce, match="32"):
                 quiz.Int.coerce(value)
@@ -953,7 +952,7 @@ class TestInt:
                 quiz.Int.coerce(value)
 
     @pytest.mark.parametrize(
-        "value, expect", [(1, "1"), (0, "0"), (-334, "-334"),]
+        "value, expect", [(1, "1"), (0, "0"), (-334, "-334")]
     )
     def test_gql_dump(self, value, expect):
         f = quiz.Int(value)
@@ -980,7 +979,7 @@ class TestBoolean:
                 quiz.Boolean.coerce(value)
 
     @pytest.mark.parametrize(
-        "value, expect", [(True, "true"), (False, "false"),]
+        "value, expect", [(True, "true"), (False, "false")]
     )
     def test_gql_dump(self, value, expect):
         assert quiz.Boolean(value).__gql_dump__() == expect

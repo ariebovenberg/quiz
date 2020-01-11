@@ -54,7 +54,7 @@ MAX_INT = (2 << 30) - 1
 
 
 InputValueDefinition = t.NamedTuple(
-    "InputValueDefinition", [("name", str), ("desc", str), ("type", type),]
+    "InputValueDefinition", [("name", str), ("desc", str), ("type", type)]
 )
 
 _PRIMITIVE_TYPES = (int, float, bool, str)
@@ -360,9 +360,7 @@ class Nullable(InputWrapper, ResponseType, metaclass=_NullableMeta):
 
 # TODO: add __getitem__, similar to list and nullable
 class UnionMeta(type):
-    # TODO: remove this method?
-    def __instancecheck__(self, instance):
-        return isinstance(instance, self.__args__)
+    pass
 
 
 # Q: why not typing.Union?

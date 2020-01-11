@@ -5,7 +5,6 @@ import sys
 import types
 
 import pytest
-
 import quiz
 import snug
 from quiz import SELECTOR as _

@@ -15,12 +15,12 @@ mkfield = partial(
 
 
 Command = q.Enum(
-    "Command", {"SIT": "SIT", "DOWN": "DOWN", "ROLL_OVER": "ROLL_OVER",}
+    "Command", {"SIT": "SIT", "DOWN": "DOWN", "ROLL_OVER": "ROLL_OVER"}
 )
 Color = q.Enum(
-    "Color", {"BROWN": "BROWN", "BLACK": "BLACK", "GOLDEN": "GOLDEN",}
+    "Color", {"BROWN": "BROWN", "BLACK": "BLACK", "GOLDEN": "GOLDEN"}
 )
-Order = q.Enum("Order", {"ASC": "ASC", "DESC": "DESC",})
+Order = q.Enum("Order", {"ASC": "ASC", "DESC": "DESC"})
 
 
 class MyDateTime(q.Scalar):

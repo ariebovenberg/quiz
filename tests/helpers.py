@@ -31,5 +31,9 @@ class MockClient:
         self.request = req
         return self.response
 
+    async def send_async(self, req):
+        self.request = req
+        return self.response
+
 
 snug.send.register(MockClient, MockClient.send)

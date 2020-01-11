@@ -584,7 +584,7 @@ def _deserialize_type(conf):
 
 
 Interface = t.NamedTuple(
-    "Interface", [("name", str), ("desc", str), ("fields", t.List[Field]),]
+    "Interface", [("name", str), ("desc", str), ("fields", t.List[Field])]
 )
 Object = t.NamedTuple(
     "Object",
@@ -595,16 +595,16 @@ Object = t.NamedTuple(
         ("fields", t.List[Field]),
     ],
 )
-Scalar = t.NamedTuple("Scalar", [("name", str), ("desc", str),])
+Scalar = t.NamedTuple("Scalar", [("name", str), ("desc", str)])
 Enum = t.NamedTuple(
-    "Enum", [("name", str), ("desc", str), ("values", t.List[EnumValue]),]
+    "Enum", [("name", str), ("desc", str), ("values", t.List[EnumValue])]
 )
 Union = t.NamedTuple(
-    "Union", [("name", str), ("desc", str), ("types", t.List[TypeRef]),]
+    "Union", [("name", str), ("desc", str), ("types", t.List[TypeRef])]
 )
 InputObject = t.NamedTuple(
     "InputObject",
-    [("name", str), ("desc", str), ("input_fields", t.List[InputValue]),],
+    [("name", str), ("desc", str), ("input_fields", t.List[InputValue])],
 )
 TypeSchema = t.Union[Interface, Object, Scalar, Enum, Union, InputObject]
 

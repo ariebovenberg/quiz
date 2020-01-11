@@ -33,7 +33,7 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
     ],
-    install_requires=["attrs~=19.1.0", "gentools~=1.1.0", "snug~=2.0.0"],
+    install_requires=["attrs~=19.3.0", "gentools~=1.1.0", "snug~=2.0.0"],
     keywords=["graphql", "http", "async"],
     python_requires=">=3.5.2",
     packages=find_packages(exclude=("tests", "docs")),

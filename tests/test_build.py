@@ -1,9 +1,8 @@
 from textwrap import dedent
 
 import pytest
-from hypothesis import given, strategies
-
 import quiz
+from hypothesis import given, strategies
 from quiz import SELECTOR as _
 from quiz import Field, InlineFragment, SelectionSet, gql
 from quiz.utils import FrozenDict as fdict
@@ -225,7 +224,7 @@ class TestDumpInputvalue:
         assert quiz.dump_inputvalue(False) == "false"
 
     @pytest.mark.parametrize(
-        "value, expect", [(1.2, "1.2"), (1.0, "1.0"), (1.234e53, "1.234e+53"),]
+        "value, expect", [(1.2, "1.2"), (1.0, "1.0"), (1.234e53, "1.234e+53")]
     )
     def test_float(self, value, expect):
         assert quiz.dump_inputvalue(value) == expect
