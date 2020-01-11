@@ -1,9 +1,8 @@
-from dataclasses import dataclass
 import pickle
-
-from quiz import utils
+from dataclasses import dataclass
 
 import pytest
+from quiz import utils
 
 
 @utils.add_slots

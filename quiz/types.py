@@ -517,9 +517,7 @@ def _unwrap_list_or_nullable(type_):
 
 
 def validate_value(
-    name: str,
-    typ: t.Type[InputValue],
-    value: object,
+    name: str, typ: t.Type[InputValue], value: object,
 ) -> t.Union[InputValue, "InvalidArgumentValue"]:
     # TODO: proper isinstance
     if type(value) == typ:

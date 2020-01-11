@@ -2,10 +2,9 @@ import os
 from dataclasses import dataclass
 from datetime import datetime
 
+import pytest
 import quiz
 from quiz import _
-
-import pytest
 
 GITHUB_USER = os.environ.get("QUIZ_GITHUB_USER")
 GITHUB_TOKEN = os.environ.get("QUIZ_GITHUB_TOKEN")
@@ -79,9 +78,10 @@ def test_end2end(raw_schema):
             _
             .issues(
                 first=30,
-                filterBy=schema.IssueFilters(since=datetime(2018, 1, 1), states=[
-                    'OPEN', schema.IssueState.CLOSED
-                ])
+                filterBy=schema.IssueFilters(
+                    since=datetime(2018, 1, 1),
+                    states=['OPEN', schema.IssueState.CLOSED]
+                )
             )[
                 issues_selection
             ]
@@ -89,7 +89,9 @@ def test_end2end(raw_schema):
                 first=3,
                 # dict coercion to input value
                 filterBy={'assignee': None}
-            )
+            )[
+                issues_selection
+            ]
         ]
     ]
     # fmt: on

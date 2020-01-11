@@ -80,7 +80,7 @@ class TestEnum:
         assert Command.__gql_load__("SIT") is Command.SIT
 
     def test_repr(self):
-        assert repr(Command.SIT) == 'Command.SIT'
+        assert repr(Command.SIT) == "Command.SIT"
 
 
 class TestNullable:

@@ -15,7 +15,7 @@ from . import types
 from .build import Query
 from .execution import execute
 from .types import validate
-from .utils import JSON, FrozenDict, merge, add_slots
+from .utils import JSON, FrozenDict, add_slots, merge
 
 __all__ = ["Schema", "INTROSPECTION_QUERY"]
 
@@ -241,8 +241,8 @@ class Schema:
             The name of the module to use when creating the schema's classes.
         scalars: ~typing.Iterable[~typing.Type[Scalar]]
             :class:`~quiz.types.Scalar` classes to use in the schema.
-            Scalars in the schema, but not in this collection, will be defined as
-            :class:`~quiz.types.AnyScalar` subclasses.
+            Scalars in the schema, but not in this collection, will be defined
+            as :class:`~quiz.types.AnyScalar` subclasses.
 
         Returns
         -------
@@ -283,8 +283,8 @@ class Schema:
             The name of the module to use when creating classes
         scalars: ~typing.Iterable[~typing.Type[Scalar]]
             :class:`~quiz.types.Scalar` classes to use in the schema.
-            Scalars in the schema, but not in this collection, will be defined as
-            :class:`~quiz.types.AnyScalar` subclasses.
+            Scalars in the schema, but not in this collection, will be defined
+            as :class:`~quiz.types.AnyScalar` subclasses.
 
         Returns
         -------

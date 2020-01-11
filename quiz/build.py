@@ -7,7 +7,7 @@ from functools import singledispatch
 from operator import attrgetter, methodcaller
 from textwrap import indent
 
-from .utils import FrozenDict, compose, init_last, add_slots
+from .utils import FrozenDict, add_slots, compose, init_last
 
 __all__ = [
     "Field",
