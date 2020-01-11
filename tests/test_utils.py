@@ -1,5 +1,24 @@
-import pytest
+from dataclasses import dataclass
+import pickle
+
 from quiz import utils
+
+import pytest
+
+
+@utils.add_slots
+@dataclass(frozen=True)
+class ExampleDataclass:
+    foo: str
+    bar: int
+
+
+def test_add_slots():
+    assert ExampleDataclass.__slots__ == ("foo", "bar")
+
+    assert pickle.loads(
+        pickle.dumps(ExampleDataclass("a", 1))
+    ) == ExampleDataclass("a", 1)
 
 
 class TestMergeMappings:

@@ -7,7 +7,7 @@ from functools import singledispatch
 from operator import attrgetter, methodcaller
 from textwrap import indent
 
-from .utils import FrozenDict, compose, init_last
+from .utils import FrozenDict, compose, init_last, add_slots
 
 __all__ = [
     "Field",
@@ -274,10 +274,9 @@ class SelectionSet(t.Iterable["Selection"], t.Sized):
     __hash__ = property(attrgetter("__selections__.__hash__"))
 
 
+@add_slots
 @dataclass(frozen=True)
 class _AliasForNextField:
-    __slots__ = "__selection_set", "__alias"
-
     __selection_set: SelectionSet
     __alias: str
 
@@ -292,7 +291,8 @@ _ = SELECTOR = SelectionSet()
 """An empty, extendable :class:`SelectionSet`"""
 
 
-@dataclass
+@add_slots
+@dataclass(frozen=True)
 class Raw:
     content: str
 
@@ -300,6 +300,7 @@ class Raw:
         return self.content
 
 
+@add_slots
 @dataclass(frozen=True)
 class Field:
     name: str
@@ -327,6 +328,7 @@ class Field:
         return alias + self.name + arguments + selection_set
 
 
+@add_slots
 @dataclass(frozen=True)
 class InlineFragment:
     on: type
@@ -337,6 +339,7 @@ class InlineFragment:
         return "... on {} {}".format(self.on.__name__, gql(self.selection_set))
 
 
+@add_slots
 @dataclass(frozen=True)
 class Query:
     cls: type

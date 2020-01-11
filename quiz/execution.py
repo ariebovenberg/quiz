@@ -9,7 +9,7 @@ from gentools import irelay
 
 from .build import Query
 from .types import load
-from .utils import JSON
+from .utils import JSON, add_slots
 
 __all__ = [
     "execute",
@@ -180,6 +180,7 @@ def async_executor(**kwargs):
     return partial(execute_async, **kwargs)
 
 
+@add_slots
 @dataclass(frozen=True)
 class ErrorResponse(Exception):
     """A response containing errors"""
@@ -202,6 +203,7 @@ class RawResult(dict):
         self.__metadata__ = meta
 
 
+@add_slots
 @dataclass(frozen=True)
 class QueryMetadata(object):
     """HTTP metadata for query"""
@@ -210,6 +212,7 @@ class QueryMetadata(object):
     request: snug.Request
 
 
+@add_slots
 @dataclass(frozen=True)
 class HTTPError(Exception):
     """Indicates a response with a non 2xx status code"""

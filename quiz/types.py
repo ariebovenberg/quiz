@@ -7,7 +7,7 @@ from itertools import chain, starmap
 from operator import methodcaller
 
 from .build import Field, InlineFragment, SelectionSet, dump_inputvalue, escape
-from .utils import JSON, FrozenDict
+from .utils import JSON, FrozenDict, add_slots
 
 __all__ = [
     # types
@@ -52,6 +52,7 @@ MIN_INT = -2 << 30
 MAX_INT = (2 << 30) - 1
 
 
+@add_slots
 @dataclass(frozen=True)
 class InputValueDefinition:
     name: str
@@ -142,6 +143,7 @@ class Object(Namespace, metaclass=HasFields):
     """a graphQL object"""
 
 
+@add_slots
 @dataclass(frozen=True)
 class InputObjectFieldDescriptor:
     value: InputValueDefinition
@@ -166,13 +168,11 @@ class InputObjectFieldDescriptor:
 
 
 # TODO: slots?
-# TODO: validation?
 # TODO: coercing from dict?
-# TODO: prevent setting invalid attributes?
 class InputObject(object):
     """Base class for input objects"""
 
-    __input_fields__ = {}
+    __input_fields__ = FrozenDict.EMPTY
 
     def __init__(__self__, **kwargs):
         self = __self__  # prevents `self` from potentially clobbering kwargs
@@ -251,6 +251,7 @@ class NoValueForField(AttributeError):
     """Indicates a value cannot be retrieved for the field"""
 
 
+@add_slots
 @dataclass(frozen=True)
 class CouldNotCoerce(ValueError):
     """Could not coerce a value"""
@@ -258,6 +259,7 @@ class CouldNotCoerce(ValueError):
     reason: str
 
 
+@add_slots
 @dataclass(frozen=True)
 class FieldDefinition:
     name: str
@@ -515,11 +517,10 @@ def _unwrap_list_or_nullable(type_):
 
 
 def validate_value(
-    name,  # type: str
-    typ,  # type: t.Type[InputValue]
-    value,  # type: object
-):
-    # type: (...) -> t.Union[InputValue, InvalidArgumentValue]
+    name: str,
+    typ: t.Type[InputValue],
+    value: object,
+) -> t.Union[InputValue, "InvalidArgumentValue"]:
     # TODO: proper isinstance
     if type(value) == typ:
         return value
@@ -531,16 +532,18 @@ def validate_value(
 
 
 # TODO: make generic
-class ValidationResult(object):
+class ValidationResult:
     pass
 
 
+@add_slots
 @dataclass(frozen=True)
 class Errors(ValidationResult):
     items: t.Set["ValidationError"]
 
 
 # TODO: typing
+@add_slots
 @dataclass(frozen=True)
 class Valid(ValidationResult):
     value: object
@@ -717,6 +720,7 @@ class ValidationError(Exception):
     """base class for validation errors"""
 
 
+@add_slots
 @dataclass(frozen=True)
 class SelectionError(ValidationError):
     on: type
@@ -733,12 +737,14 @@ class SelectionError(ValidationError):
         )
 
 
+@add_slots
 @dataclass(frozen=True)
 class NoSuchField(ValidationError):
     def __str__(self):
         return "field does not exist"
 
 
+@add_slots
 @dataclass(frozen=True)
 class NoSuchArgument(ValidationError):
     name: str
@@ -747,6 +753,7 @@ class NoSuchArgument(ValidationError):
         return 'argument "{}" does not exist'.format(self.name)
 
 
+@add_slots
 @dataclass(frozen=True)
 class InvalidArgumentValue(ValidationError):
     name: str
@@ -754,6 +761,7 @@ class InvalidArgumentValue(ValidationError):
     message: str
 
 
+@add_slots
 @dataclass(frozen=True)
 class InvalidArgumentType(ValidationError):
     name: str
@@ -765,6 +773,7 @@ class InvalidArgumentType(ValidationError):
         )
 
 
+@add_slots
 @dataclass(frozen=True)
 class MissingArgument(ValidationError):
     name: str
@@ -773,6 +782,7 @@ class MissingArgument(ValidationError):
         return 'argument "{}" missing (required)'.format(self.name)
 
 
+@add_slots
 @dataclass(frozen=True)
 class SelectionsNotSupported(ValidationError):
     def __str__(self):

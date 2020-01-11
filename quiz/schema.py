@@ -15,7 +15,7 @@ from . import types
 from .build import Query
 from .execution import execute
 from .types import validate
-from .utils import JSON, FrozenDict, merge
+from .utils import JSON, FrozenDict, merge, add_slots
 
 __all__ = ["Schema", "INTROSPECTION_QUERY"]
 
@@ -155,6 +155,7 @@ class _QueryCreator(object):
         return Query(cls, selections=validate(cls, selection_set))
 
 
+@add_slots
 @dataclass(frozen=True, repr=False)
 class Schema:
     """A GraphQL schema.
@@ -240,7 +241,7 @@ class Schema:
             The name of the module to use when creating the schema's classes.
         scalars: ~typing.Iterable[~typing.Type[Scalar]]
             :class:`~quiz.types.Scalar` classes to use in the schema.
-            Scalars in the schema, but not in this sequence, will be defined as
+            Scalars in the schema, but not in this collection, will be defined as
             :class:`~quiz.types.AnyScalar` subclasses.
 
         Returns
@@ -282,7 +283,7 @@ class Schema:
             The name of the module to use when creating classes
         scalars: ~typing.Iterable[~typing.Type[Scalar]]
             :class:`~quiz.types.Scalar` classes to use in the schema.
-            Scalars in the schema, but not in this sequence, will be defined as
+            Scalars in the schema, but not in this collection, will be defined as
             :class:`~quiz.types.AnyScalar` subclasses.
 
         Returns
@@ -474,6 +475,7 @@ class Kind(enum.Enum):
     UNION = "UNION"
 
 
+@add_slots
 @dataclass(frozen=True)
 class TypeRef:
     name: t.Optional[str]
@@ -481,6 +483,7 @@ class TypeRef:
     of_type: t.Optional["TypeRef"]
 
 
+@add_slots
 @dataclass(frozen=True)
 class InputValue:
     name: str
@@ -489,6 +492,7 @@ class InputValue:
     default: object
 
 
+@add_slots
 @dataclass(frozen=True)
 class Field:
     name: str
@@ -499,6 +503,7 @@ class Field:
     deprecation_reason: t.Optional[str]
 
 
+@add_slots
 @dataclass(frozen=True)
 class Type:
     name: t.Optional[str]
@@ -511,6 +516,7 @@ class Type:
     enum_values: t.Optional[t.List["EnumValue"]]
 
 
+@add_slots
 @dataclass(frozen=True)
 class EnumValue:
     name: str
@@ -574,6 +580,7 @@ def _deserialize_type(conf):
     )
 
 
+@add_slots
 @dataclass(frozen=True)
 class Interface:
     name: str
@@ -581,6 +588,7 @@ class Interface:
     fields: t.List[Field]
 
 
+@add_slots
 @dataclass(frozen=True)
 class Object:
     name: str
@@ -589,12 +597,14 @@ class Object:
     fields: t.List[Field]
 
 
+@add_slots
 @dataclass(frozen=True)
 class Scalar:
     name: str
     desc: str
 
 
+@add_slots
 @dataclass(frozen=True)
 class Enum:
     name: str
@@ -602,6 +612,7 @@ class Enum:
     values: t.List[EnumValue]
 
 
+@add_slots
 @dataclass(frozen=True)
 class Union:
     name: str
@@ -609,6 +620,7 @@ class Union:
     types: t.List[TypeRef]
 
 
+@add_slots
 @dataclass(frozen=True)
 class InputObject:
     name: str
