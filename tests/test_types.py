@@ -19,6 +19,7 @@ from .example import (
     Order,
     SearchFilters,
     Sentient,
+    OptionalInputObject,
 )
 from .helpers import AlwaysEquals, NeverEquals, render_doc
 
@@ -363,6 +364,26 @@ class TestObject:
 
 
 class TestInputObject:
+
+    class TestCoerce:
+        def test_dict_empty(self):
+            result = OptionalInputObject.coerce({})
+            assert isinstance(result, OptionalInputObject)
+
+        def test_dict(self):
+            result = SearchFilters.coerce({'field': 'foo', 'order': "ASC"})
+            assert isinstance(result, SearchFilters)
+            assert result.field == 'foo'
+
+        def test_invalid_dict_key(self):
+            with pytest.raises(quiz.CouldNotCoerce, match="non-string key"):
+                SearchFilters.coerce({'field': 'a', 5: 'bla'})
+
+        @pytest.mark.parametrize("value", [object(), "foo", "1.2", None])
+        def test_invalid_type(self, value):
+            with pytest.raises(quiz.CouldNotCoerce, match="type"):
+                SearchFilters.coerce(value)
+
     def test_init_full(self):
         search = SearchFilters(field="foo", order=Order.ASC)
         assert search.field == "foo"
@@ -570,7 +591,7 @@ class TestValidateArgs:
     )
     def test_ok(self, value, expect):
         result = quiz.types.validate_args(EXAMPLE_ARG_SCHEMA, value)
-        assert result == quiz.types.Valid(expect)
+        assert result == quiz.types.Ok(expect)
 
     @pytest.mark.parametrize(
         "value, expect",
@@ -597,7 +618,7 @@ class TestValidateArgs:
     )
     def test_errors(self, value, expect):
         result = quiz.types.validate_args(EXAMPLE_ARG_SCHEMA, value)
-        assert result == quiz.types.Errors(expect)
+        assert result == quiz.types.Err(expect)
 
 
 class TestValidate:

@@ -105,6 +105,16 @@ class Dog(Sentient, q.Object):
     data = mkfield("data", type=q.AnyScalar)
 
 
+class OptionalInputObject(q.InputObject):
+    """dummy"""
+
+    __input_fields__ = {
+        "foo": q.InputValueDefinition(
+            "foo", "the foo", type=q.Nullable[str],
+        ),
+    }
+
+
 class SearchFilters(q.InputObject):
     """filters for searching"""
 

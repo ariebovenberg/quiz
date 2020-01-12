@@ -111,7 +111,7 @@ def add_slots(cls):
     #  after a class has been created.
 
     # Make sure __slots__ isn't already set.
-    if "__slots__" in cls.__dict__:  # noqa
+    if "__slots__" in cls.__dict__:  # pragma: no cover
         raise TypeError(f"{cls.__name__} already specifies __slots__")
 
     # Create a new dict for our new class.
@@ -127,7 +127,7 @@ def add_slots(cls):
     # And finally create the class.
     qualname = getattr(cls, "__qualname__", None)
     cls = type(cls)(cls.__name__, cls.__bases__, cls_dict)
-    if qualname is not None:
+    if qualname is not None:  # pragma: no cover
         cls.__qualname__ = qualname
     cls.__getstate__ = _dataclass_getstate
     cls.__setstate__ = _dataclass_setstate

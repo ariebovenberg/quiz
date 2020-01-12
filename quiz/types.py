@@ -5,6 +5,7 @@ import typing as t
 from dataclasses import dataclass
 from itertools import chain, starmap
 from operator import methodcaller
+from typing import Mapping, Type, TypeVar, Generic, Set
 
 from .build import Field, InlineFragment, SelectionSet, dump_inputvalue, escape
 from .utils import JSON, FrozenDict, add_slots
@@ -48,6 +49,8 @@ __all__ = [
     "load",
 ]
 
+T = TypeVar("T")
+E = TypeVar("E")
 MIN_INT = -2 << 30
 MAX_INT = (2 << 30) - 1
 
@@ -168,11 +171,30 @@ class InputObjectFieldDescriptor:
 
 
 # TODO: slots?
-# TODO: coercing from dict?
 class InputObject(object):
     """Base class for input objects"""
 
     __input_fields__ = FrozenDict.EMPTY
+
+    @classmethod
+    def coerce(cls: Type[T], value: object) -> T:
+        if isinstance(value, dict):
+            if all(isinstance(k, str) for k in value):
+                result = validate_args(cls.__input_fields__, value)
+                if isinstance(result, Err):
+                    raise NotImplementedError()
+                else:
+                    return cls(**result.value)
+            else:
+                raise CouldNotCoerce(
+                    "Cannot coerce dict with non-string key to InputObject"
+                )
+        else:
+            raise CouldNotCoerce(
+                f"Cannot coerce type {value!r} to InputObject"
+            )
+
+        return cls()
 
     def __init__(__self__, **kwargs):
         self = __self__  # prevents `self` from potentially clobbering kwargs
@@ -517,7 +539,7 @@ def _unwrap_list_or_nullable(type_):
 
 
 def validate_value(
-    name: str, typ: t.Type[InputValue], value: object,
+    name: str, typ: t.Type[InputValue], value: object
 ) -> t.Union[InputValue, "InvalidArgumentValue"]:
     # TODO: proper isinstance
     if type(value) == typ:
@@ -529,27 +551,27 @@ def validate_value(
             return InvalidArgumentValue(name, value, e.reason)
 
 
-# TODO: make generic
-class ValidationResult:
+class Result(Generic[T, E]):
     pass
 
 
 @add_slots
 @dataclass(frozen=True)
-class Errors(ValidationResult):
-    items: t.Set["ValidationError"]
+class Err(Result[T, E]):
+    items: E
 
 
 # TODO: typing
 @add_slots
 @dataclass(frozen=True)
-class Valid(ValidationResult):
-    value: object
+class Ok(Result[T, E]):
+    value: T
 
 
-def validate_args(schema, actual):
-    # type: (t.Mapping[str, InputValueDefinition], t.Mapping[str, object])
-    # -> ValidationResult[t.Mapping[str, object]]
+def validate_args(
+    schema: Mapping[str, InputValueDefinition], actual: Mapping[str, object]
+) -> Result[Mapping[str, object], Set["ValidationError"]]:
+    # -> Result[t.Mapping[str, object]]
     # TODO: cleanup this logic
     required_args = {
         name
@@ -570,7 +592,7 @@ def validate_args(schema, actual):
     errors.update(
         v for v in coerced.values() if isinstance(v, InvalidArgumentValue)
     )
-    return Errors(errors) if errors else Valid(coerced)
+    return Err(errors) if errors else Ok(coerced)
 
 
 def _validate_args(schema, actual):
@@ -646,9 +668,6 @@ def validate(cls, selection_set):
         except ValidationError as e:
             raise SelectionError(cls, _field.name, e)
     return selection_set
-
-
-T = t.TypeVar("T")
 
 
 # TODO: refactor using singledispatch
@@ -787,17 +806,7 @@ class SelectionsNotSupported(ValidationError):
         return "selections not supported on this object"
 
 
-BUILTIN_SCALARS = {
-    "Boolean": bool,
-    "String": str,
-    "Float": float,
-    "Int": int,
-}
+BUILTIN_SCALARS = {"Boolean": bool, "String": str, "Float": float, "Int": int}
 
 
-PY_TYPE_TO_GQL_TYPE = {
-    float: Float,
-    int: Int,
-    bool: Boolean,
-    str: String,
-}
+PY_TYPE_TO_GQL_TYPE = {float: Float, int: Int, bool: Boolean, str: String}
