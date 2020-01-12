@@ -1,24 +1,17 @@
 """Components for typed GraphQL interactions"""
-from textwrap import indent
 import abc
 import enum
 import math
 import typing as t
 from dataclasses import dataclass
+from functools import partial
 from itertools import chain, starmap
 from operator import methodcaller
-from typing import (
-    Callable,
-    Generic,
-    Iterable,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Type,
-    TypeVar,
-)
+from textwrap import indent
+from typing import Any, Callable, Generic, Iterable
+from typing import List as List_
+from typing import Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar
+from typing import Union as Union_
 
 from .build import Field, InlineFragment, SelectionSet, dump_inputvalue, escape
 from .utils import JSON, FrozenDict, add_slots
@@ -45,8 +38,6 @@ __all__ = [
     "String",
     "StringLike",
     "Union",
-    # TODO: mutation
-    # TODO: subscription
     # validation
     "validate",
     "ValidationError",
@@ -69,6 +60,7 @@ E = TypeVar("E")
 MIN_INT = -2 << 30
 MAX_INT = (2 << 30) - 1
 INDENT = "  "
+_indent = partial(indent, prefix=INDENT)
 
 
 # Ok/Err container, similar to Result in Rust, or Either.
@@ -106,11 +98,24 @@ class Result(Generic[T, E]):
 
     @staticmethod
     def sequence(
-        results: Iterable["Result[T, E]"]
+        results: Iterable["Result[T, E]"],
     ) -> "Result[Sequence[T], Sequence[Tuple[int, E]]]":
-        oks = []
-        for r in enumerate(results):
-            ...
+        oks: List[T] = []
+        errs: List[Tuple[int, E]] = []
+        for i, r in enumerate(results):
+            if r.is_ok():
+                oks.append(r.ok())
+            else:
+                errs.append((i, r.err()))
+                break
+        else:
+            return Ok(oks)
+
+        for i, r in enumerate(results, start=i + 1):
+            if r.is_err():
+                errs.append((i, r.err()))
+
+        return Err(errs)
 
 
 @add_slots
@@ -359,9 +364,9 @@ class Enum(InputValue, ResponseType, enum.Enum):
             try:
                 return Ok(cls(value))
             except ValueError:
-                return Err(f"'{value}' is not a valid enum option")
+                return Err(f"'{value}' is not a valid enum option.")
         else:
-            return Err(f"Invalid type {type(value)}")
+            return Err(f"Invalid type {type(value)}.")
 
     def __gql_dump__(self) -> str:
         return self.value
@@ -441,17 +446,19 @@ class List(InputWrapper, ResponseType, metaclass=_ListMeta):
     @classmethod
     def coerce(cls: Type[T], data: object) -> Result[T, str]:
         if isinstance(data, list):
-            subresults = list(
-                map(lambda x: validate_value2(cls.__arg__, x), data)
+            subresults = map(partial(validate_value2, cls.__arg__), data)
+            traversed = Result.sequence(subresults)
+            return traversed.map_or_else(
+                cls,
+                fallback=lambda errs: "Invalid items in list:\n"
+                + _indent(
+                    "\n".join(
+                        [f"at index {i}:\n{_indent(m)}" for i, m in errs]
+                    )
+                ),
             )
-            if not all(r.is_ok() for r in subresults):
-                raise NotADirectoryError()
-            return Ok(cls([r.value for r in subresults]))
         else:
             return Err(f"Invalid type {type(data)}.")
-            # return cls(list(map(cls.__arg__.coerce, data)))
-        # else:
-        # raise CouldNotCoerce("Invalid type, must be a list")
 
     def __gql_dump__(self) -> str:
         return "[{}]".format(
@@ -459,7 +466,7 @@ class List(InputWrapper, ResponseType, metaclass=_ListMeta):
         )
 
     @classmethod
-    def __gql_load__(cls, data):
+    def __gql_load__(cls, data: str) -> list:
         return list(map(cls.__arg__.__gql_load__, data))
 
 
@@ -471,9 +478,6 @@ class _NullableMeta(_Generic):
             "Nullable[{.__name__}]".format(arg), (Nullable,), {"__arg__": arg}
         )
 
-    def __instancecheck__(self, instance):
-        return instance is None or isinstance(instance, self.__arg__)
-
 
 # Q: why not typing.Optional?
 # A: it is not easily distinguished from Union,
@@ -482,16 +486,18 @@ class Nullable(InputWrapper, ResponseType, metaclass=_NullableMeta):
     __arg__ = object
 
     @classmethod
-    def coerce(cls, data):
-        # type: (object) -> Nullable
-        return cls(data if data is None else cls.__arg__.coerce(data))
+    def coerce(cls: Type[T], data: object) -> Result[T, str]:
+        if data is None:
+            return Ok(cls(None))
+        else:
+            return cls.__arg__.coerce(data).map(cls)
+        return Ok(cls(data if data is None else cls.__arg__.coerce(data)))
 
-    def __gql_dump__(self):
-        # type: () -> str
+    def __gql_dump__(self) -> str:
         return "null" if self.value is None else self.value.__gql_dump__()
 
     @classmethod
-    def __gql_load__(cls, data):
+    def __gql_load__(cls, data: Any) -> Any:
         return data if data is None else cls.__arg__.__gql_load__(data)
 
 
@@ -532,16 +538,14 @@ class AnyScalar(Scalar, metaclass=_AnyScalarMeta):
             raise CouldNotCoerce("Invalid type, must be a scalar")
         return cls(gql_type.coerce(data))
 
-    def __gql_dump__(self):
-        # type: () -> str
+    def __gql_dump__(self) -> str:
         if self.value is None:
             return "null"
         else:
             return self.value.__gql_dump__()
 
     @classmethod
-    def __gql_load__(cls, data):
-        # type: (T) -> T
+    def __gql_load__(cls, data: T) -> T:
         return data
 
 
@@ -549,21 +553,21 @@ class Float(InputWrapper, ResponseType):
     """A GraphQL float object. The main difference with :class:`float`
     is that it may not be infinite or NaN"""
 
-    # TODO: consistent types of exceptions to raise
     @classmethod
     def coerce(cls: Type[T], value: object) -> Result[T, str]:
         if not isinstance(value, (float, int)):
-            return Err(f"Can only coerce float or int, not {type(value)!r}")
+            return Err(
+                f"Can only coerce float or int, not {class_name(type(value))}."
+            )
         elif math.isnan(value) or math.isinf(value):
-            return Err("Value cannot be infinite or NaN")
+            return Err("Value cannot be infinite or NaN.")
         return Ok(cls(float(value)))
 
-    def __gql_dump__(self):
+    def __gql_dump__(self) -> str:
         return str(self.value)
 
     @classmethod
-    def __gql_load__(cls, data):
-        # type: (Union[float, int]) -> float
+    def __gql_load__(cls, data: Union_[float, int]) -> float:
         return float(data)
 
 
@@ -572,22 +576,18 @@ class Int(InputWrapper, ResponseType):
     is that it may only represent integers up to 32 bits in size"""
 
     @classmethod
-    def coerce(cls, value):
-        # type: (object) -> Int
+    def coerce(cls: Type[T], value: object) -> Result[T, str]:
         if not isinstance(value, int):
-            raise CouldNotCoerce("Invalid type, must be int")
-        if not MIN_INT < value < MAX_INT:
-            raise CouldNotCoerce(
-                "{} is not representable by a 32-bit integer".format(value)
-            )
-        return cls(int(value))
+            return Err("Invalid type, must be int.")
+        elif not MIN_INT < value < MAX_INT:
+            return Err("Integer beyond 32-bit limit.")
+        return Ok(cls(int(value)))
 
-    def __gql_dump__(self):
+    def __gql_dump__(self) -> str:
         return str(self.value)
 
     @classmethod
-    def __gql_load__(cls, data):
-        # type: (int) -> int
+    def __gql_load__(cls, data: int) -> int:
         return data
 
 
@@ -595,19 +595,17 @@ class Boolean(InputWrapper, ResponseType):
     """A GraphQL boolean object"""
 
     @classmethod
-    def coerce(cls, value):
-        # type: (object) -> Boolean
+    def coerce(cls: Type[T], value: object) -> Result[T, str]:
         if isinstance(value, bool):
-            return cls(value)
+            return Ok(cls(value))
         else:
-            raise CouldNotCoerce("A boolean type is required")
+            return Err("Invalid type, must be bool.")
 
-    def __gql_dump__(self):
+    def __gql_dump__(self) -> str:
         return "true" if self.value else "false"
 
     @classmethod
-    def __gql_load__(cls, data):
-        # type: (bool) -> bool
+    def __gql_load__(cls, data: bool) -> bool:
         return data
 
 
@@ -615,19 +613,17 @@ class StringLike(InputWrapper, ResponseType):
     """Base for string-like types"""
 
     @classmethod
-    def coerce(cls, value):
-        # type: (object) -> StringLike
+    def coerce(cls: Type[T], value: object) -> Result[T, str]:
         if isinstance(value, str):
-            return cls(value)
+            return Ok(cls(value))
         else:
-            raise CouldNotCoerce("A string type is required")
+            return Err("Invalid type, must be str.")
 
-    def __gql_dump__(self):
+    def __gql_dump__(self) -> str:
         return '"{}"'.format(escape(self.value))
 
     @classmethod
-    def __gql_load__(cls, data):
-        # type: (str) -> str
+    def __gql_load__(cls, data: str) -> str:
         return data
 
 
@@ -650,14 +646,22 @@ def _unwrap_list_or_nullable(type_):
 T_inputvalue = TypeVar("T", bound=InputValue)
 
 
+def class_name(cls: Type) -> str:
+    try:
+        return cls.__name__
+    except AttributeError:
+        return str(cls)
+
+
 def validate_value2(
     typ: t.Type[T_inputvalue], value: object
 ) -> Result[T_inputvalue, str]:
     if isinstance(value, typ):
         return Ok(value)
     else:
-        return typ.coerce.map_err(
-            lambda msg: 'Could not coerce to {typ}:\n' + indent(msg, INDENT)
+        return typ.coerce(value).map_err(
+            lambda msg: f"Could not coerce to {class_name(typ)}:\n"
+            + _indent(msg)
         )
         coerced = typ.coerce(value)
         if not isinstance(coerced, Ok):
