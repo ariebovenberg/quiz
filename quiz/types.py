@@ -1,4 +1,5 @@
 """Components for typed GraphQL interactions"""
+from textwrap import indent
 import abc
 import enum
 import math
@@ -6,7 +7,18 @@ import typing as t
 from dataclasses import dataclass
 from itertools import chain, starmap
 from operator import methodcaller
-from typing import Mapping, Type, TypeVar, Generic, Set, Callable
+from typing import (
+    Callable,
+    Generic,
+    Iterable,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+)
 
 from .build import Field, InlineFragment, SelectionSet, dump_inputvalue, escape
 from .utils import JSON, FrozenDict, add_slots
@@ -56,6 +68,7 @@ V = TypeVar("V")
 E = TypeVar("E")
 MIN_INT = -2 << 30
 MAX_INT = (2 << 30) - 1
+INDENT = "  "
 
 
 # Ok/Err container, similar to Result in Rust, or Either.
@@ -65,25 +78,39 @@ class Result(Generic[T, E]):
         "Apply a function to the successful result, leaving errors untouched"
 
     @abc.abstractmethod
+    def map_err(self, f: Callable[[E], V]) -> "Result[U, V]":
+        "Apply a function to the error result, leaving the OK value untouched"
+
+    @abc.abstractmethod
     def map_or_else(
         self, f: Callable[[T], U], fallback: Callable[[E], V]
     ) -> "Result[U, V]":
         """Apply a function to the successful result,
         or apply a fallback to the error result"""
 
+    @abc.abstractmethod
+    def is_ok(self) -> bool:
+        "True if the result is Ok"
 
-@add_slots
-@dataclass(frozen=True)
-class Err(Result[T, E]):
-    value: E
+    @abc.abstractmethod
+    def is_err(self) -> bool:
+        "True if the result is Err"
 
-    def map(self, f: Callable[[T], U]) -> "Result[U, E]":
-        return self
+    @abc.abstractmethod
+    def ok(self) -> Optional[T]:
+        "Return the Ok result if present"
 
-    def map_or_else(
-        self, f: Callable[[T], U], fallback: Callable[[E], V]
-    ) -> "Result[U, V]":
-        return Err(fallback(self.value))
+    @abc.abstractmethod
+    def err(self) -> Optional[E]:
+        "Return the Err result if present"
+
+    @staticmethod
+    def sequence(
+        results: Iterable["Result[T, E]"]
+    ) -> "Result[Sequence[T], Sequence[Tuple[int, E]]]":
+        oks = []
+        for r in enumerate(results):
+            ...
 
 
 @add_slots
@@ -94,10 +121,60 @@ class Ok(Result[T, E]):
     def map(self, f: Callable[[T], U]) -> "Result[U, E]":
         return Ok(f(self.value))
 
+    def map_err(self, f: Callable[[E], V]) -> Result[U, V]:
+        return self
+
     def map_or_else(
         self, f: Callable[[T], U], fallback: Callable[[E], V]
     ) -> "Result[U, V]":
         return Ok(f(self.value))
+
+    def is_ok(self) -> bool:
+        return True
+
+    def is_err(self) -> bool:
+        return False
+
+    def ok(self) -> Optional[T]:
+        return self.value
+
+    def err(self) -> Optional[E]:
+        return None
+
+    def __repr__(self) -> str:
+        return f"Ok({self.value!r})"
+
+
+@add_slots
+@dataclass(frozen=True)
+class Err(Result[T, E]):
+    value: E
+
+    def map(self, f: Callable[[T], U]) -> Result[U, E]:
+        return self
+
+    def map_err(self, f: Callable[[E], V]) -> Result[U, V]:
+        return Err(f(self.value))
+
+    def map_or_else(
+        self, f: Callable[[T], U], fallback: Callable[[E], V]
+    ) -> "Result[U, V]":
+        return Err(fallback(self.value))
+
+    def is_ok(self) -> bool:
+        return False
+
+    def is_err(self) -> bool:
+        return True
+
+    def ok(self) -> Optional[T]:
+        return None
+
+    def err(self) -> Optional[E]:
+        return self.value
+
+    def __repr__(self) -> str:
+        return f"Err({self.value!r})"
 
 
 @add_slots
@@ -142,15 +219,14 @@ class InputWrapper(InputValue):
         return "{}({})".format(self.__class__.__name__, self.value)
 
 
-# TODO: make ABCMeta/generic?
 # TODO: rename to indicate it can be the parser, not the value itself?
-class ResponseType(object):
+class ResponseType:
     """Base class for response value classes.
     These classes are used to load GraphQL responses into (python) types"""
 
-    # TODO: make abstract?
+    # TODO: T can also be another type
     @classmethod
-    def __gql_load__(cls, data):
+    def __gql_load__(cls: Type[T], data: str) -> T:
         """Load an instance from GraphQL"""
         raise NotImplementedError(
             "GraphQL deserialization is not defined for this type"
@@ -158,26 +234,25 @@ class ResponseType(object):
 
 
 class HasFields(type):
-    """metaclass for classes with GraphQL field definitions"""
+    """Metaclass for classes with GraphQL field definitions"""
 
-    def __getitem__(self, selection_set):
-        # type: (SelectionSet) -> InlineFragment
+    def __getitem__(self, selection_set: SelectionSet) -> InlineFragment:
         return InlineFragment(self, validate(self, selection_set))
 
 
-class Namespace(object):
-    def __init__(__self, **kwargs):
+class Namespace:
+    def __init__(__self, **kwargs) -> None:
         __self.__dict__.update(kwargs)
 
-    def __fields__(self):
+    def __fields__(self) -> Mapping[str, object]:
         return {k: v for k, v in self.__dict__.items() if k != "__metadata__"}
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if type(self) == type(other):
             return self.__fields__() == other.__fields__()
         return NotImplemented
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "{}({})".format(
             self.__class__.__qualname__,
             ", ".join(starmap("{}={!r}".format, self.__dict__.items())),
@@ -279,24 +354,23 @@ class Enum(InputValue, ResponseType, enum.Enum):
     """A GraphQL enum value. Accepts strings as inputs"""
 
     @classmethod
-    def coerce(cls, value):
-        # type: (object) -> Enum
-        try:
-            return cls(value)
-        except ValueError:
-            raise CouldNotCoerce(
-                "{!r} is not a valid {.__name__}".format(value, cls)
-            )
+    def coerce(cls: Type[T], value: object) -> Result[T, str]:
+        if isinstance(value, str):
+            try:
+                return Ok(cls(value))
+            except ValueError:
+                return Err(f"'{value}' is not a valid enum option")
+        else:
+            return Err(f"Invalid type {type(value)}")
 
-    def __gql_dump__(self):
-        # type: () -> str
+    def __gql_dump__(self) -> str:
         return self.value
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return ".".join([self.__class__.__qualname__, self.value])
 
     @classmethod
-    def __gql_load__(cls, data):
+    def __gql_load__(cls: Type[T], data: str) -> T:
         return cls(data)
 
 
@@ -357,11 +431,6 @@ class _ListMeta(_Generic):
     def __getitem__(self, arg):
         return type("List[{.__name__}]".format(arg), (List,), {"__arg__": arg})
 
-    def __instancecheck__(self, instance):
-        return isinstance(instance, list) and all(
-            isinstance(i, self.__arg__) for i in instance
-        )
-
 
 # Q: why not typing.List?
 # A: it doesn't support __doc__, __name__, or isinstance()
@@ -370,15 +439,21 @@ class List(InputWrapper, ResponseType, metaclass=_ListMeta):
     __arg__ = object
 
     @classmethod
-    def coerce(cls, data):
-        # type: (object) -> List
+    def coerce(cls: Type[T], data: object) -> Result[T, str]:
         if isinstance(data, list):
-            return cls(list(map(cls.__arg__.coerce, data)))
+            subresults = list(
+                map(lambda x: validate_value2(cls.__arg__, x), data)
+            )
+            if not all(r.is_ok() for r in subresults):
+                raise NotADirectoryError()
+            return Ok(cls([r.value for r in subresults]))
         else:
-            raise CouldNotCoerce("Invalid type, must be a list")
+            return Err(f"Invalid type {type(data)}.")
+            # return cls(list(map(cls.__arg__.coerce, data)))
+        # else:
+        # raise CouldNotCoerce("Invalid type, must be a list")
 
-    def __gql_dump__(self):
-        # type: () -> str
+    def __gql_dump__(self) -> str:
         return "[{}]".format(
             " ".join(map(methodcaller("__gql_dump__"), self.value))
         )
@@ -476,13 +551,12 @@ class Float(InputWrapper, ResponseType):
 
     # TODO: consistent types of exceptions to raise
     @classmethod
-    def coerce(cls, value):
-        # type: (object) -> Float
+    def coerce(cls: Type[T], value: object) -> Result[T, str]:
         if not isinstance(value, (float, int)):
-            raise CouldNotCoerce("Invalid type, must be float or int")
-        if math.isnan(value) or math.isinf(value):
-            raise CouldNotCoerce("Float value cannot be infinite or NaN")
-        return cls(float(value))
+            return Err(f"Can only coerce float or int, not {type(value)!r}")
+        elif math.isnan(value) or math.isinf(value):
+            return Err("Value cannot be infinite or NaN")
+        return Ok(cls(float(value)))
 
     def __gql_dump__(self):
         return str(self.value)
@@ -571,6 +645,25 @@ def _unwrap_list_or_nullable(type_):
     if issubclass(type_, (Nullable, List)):
         return _unwrap_list_or_nullable(type_.__arg__)
     return type_
+
+
+T_inputvalue = TypeVar("T", bound=InputValue)
+
+
+def validate_value2(
+    typ: t.Type[T_inputvalue], value: object
+) -> Result[T_inputvalue, str]:
+    if isinstance(value, typ):
+        return Ok(value)
+    else:
+        return typ.coerce.map_err(
+            lambda msg: 'Could not coerce to {typ}:\n' + indent(msg, INDENT)
+        )
+        coerced = typ.coerce(value)
+        if not isinstance(coerced, Ok):
+            raise NotImplementedError()
+        else:
+            return Ok(coerced.value)
 
 
 def validate_value(

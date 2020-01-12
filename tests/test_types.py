@@ -62,17 +62,18 @@ class TestEnum:
 
     class TestCoerce:
         def test_valid_string(self):
-            result = Command.coerce("SIT")
-            assert result is Command.SIT
+            assert Command.coerce("SIT") == quiz.types.Ok(Command.SIT)
 
         def test_invalid_string(self):
-            with pytest.raises(quiz.CouldNotCoerce, match="FOO"):
-                Command.coerce("FOO")
+            assert Command.coerce("FOO") == quiz.types.Err(
+                "'FOO' is not a valid enum option"
+            )
 
         @pytest.mark.parametrize("value", [object(), None, 1.4, 0])
         def test_invalid_object(self, value):
-            with pytest.raises(quiz.CouldNotCoerce, match="Command"):
-                Command.coerce(value)
+            assert Command.coerce(value) == quiz.types.Err(
+                f"Invalid type {type(value)!r}"
+            )
 
     def test_gql_dump(self):
         assert Command.SIT.__gql_dump__() == "SIT"
@@ -151,36 +152,56 @@ class TestList:
         assert issubclass(quiz.List, quiz.InputValue)
         assert issubclass(quiz.List, quiz.ResponseType)
 
-    def test_isinstancecheck(self, mocker):
-        class MyList(quiz.List):
-            __arg__ = int
-
-        assert isinstance([1, 2], MyList)
-        assert isinstance([], MyList)
-        assert not isinstance(["foo"], MyList)
-        assert not isinstance([3, "bla"], MyList)
-        assert not isinstance((1, 2), MyList)
-
-        assert MyList == quiz.List[int]
-        assert MyList == mocker.ANY
-        assert not MyList != mocker.ANY
-
     class TestCoerce:
-        def test_ok(self):
+        def test_ok_simple(self):
             type_ = quiz.List[quiz.Float]
-            result = type_.coerce([1, 3.4, 8])
-            assert isinstance(result, type_)
-            assert isinstance(result.value, list)
-            assert result.value[1].value == 3.4
+            assert type_.coerce([1, 3.4, 8]) == quiz.types.Ok(
+                type_([quiz.Float(1.0), quiz.Float(3.4), quiz.Float(8)])
+            )
 
-        def test_propagates_error(self):
-            with pytest.raises(quiz.CouldNotCoerce, match="infinite"):
-                quiz.List[quiz.Float].coerce([float("nan")])
+        def test_ok_nested(self):
+            subtype = quiz.List[Command]
+            type_ = quiz.List[subtype]
+            assert type_.coerce(
+                [[], ["SIT", Command.ROLL_OVER]]
+            ) == quiz.types.Ok(
+                type_([subtype([]), subtype([Command.SIT, Command.ROLL_OVER])])
+            )
 
         @pytest.mark.parametrize("value", [object(), "foo", "1.2", (1,)])
-        def test_invalid_type(self, value):
-            with pytest.raises(quiz.CouldNotCoerce, match="type"):
-                quiz.List[quiz.Float].coerce(value)
+        def test_err_simple(self, value):
+            type_ = quiz.List[quiz.Float]
+            assert type_.coerce(value) == quiz.types.Err(
+                f"Invalid type {type(value)}."
+            )
+
+        def test_err_nested(self):
+            subtype = quiz.List[Command]
+            type_ = quiz.List[subtype]
+            assert type_.coerce(
+                [None, ["DRIVE", Command.ROLL_OVER, 4, ''], [], ["SIT"]]
+            ) == Err(
+                dedent(
+                    f'''\
+                    Invalid items in list:
+                      at index 0:
+                        Could not coerce to List[Command]:
+                          Invalid type {type(None)}.
+                      at index 1:
+                        Could not coerce to List[Command]:
+                          Invalid items in list:
+                            at index 0:
+                              Could not coerce to Command:
+                                'DRIVE' is not a valid enum option.
+                            at index 2:
+                              Could not coerce to Command:
+                                Invalid type {int}.
+                            at index 3:
+                              Could not coerce to Command:
+                                '' is not a valid enum option.
+                    '''
+                )
+            )
 
     @pytest.mark.parametrize(
         "value, expect",
@@ -931,21 +952,22 @@ class TestFloat:
         @pytest.mark.parametrize("value", [1, 3.4, -0.1])
         def test_float_or_int(self, value):
             result = quiz.Float.coerce(value)
-            assert result.value == value
-            assert isinstance(result, quiz.Float)
-            assert isinstance(result.value, float)
+            assert result == quiz.types.Ok(quiz.Float(value))
+            assert isinstance(result.value.value, float)
 
         @pytest.mark.parametrize(
             "value", [float("inf"), float("nan"), float("-inf")]
         )
         def test_invalid_float(self, value):
-            with pytest.raises(quiz.CouldNotCoerce, match="infinite or NaN"):
-                quiz.Float.coerce(value)
+            assert quiz.Float.coerce(value) == quiz.types.Err(
+                "Value cannot be infinite or NaN"
+            )
 
         @pytest.mark.parametrize("value", [object(), "foo", "1.2"])
         def test_invalid_type(self, value):
-            with pytest.raises(quiz.CouldNotCoerce, match="type"):
-                quiz.Float.coerce(value)
+            assert quiz.Float.coerce(value) == quiz.types.Err(
+                f"Can only coerce float or int, not {type(value)!r}"
+            )
 
     @pytest.mark.parametrize(
         "value, expect",
