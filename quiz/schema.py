@@ -10,6 +10,7 @@ from itertools import chain
 from operator import methodcaller
 from os import fspath
 from types import new_class
+from typing import Type
 
 from . import types
 from .build import Query
@@ -112,7 +113,7 @@ def _add_fields(obj, classes):
     return obj
 
 
-def _add_input_fields(obj, classes):
+def _add_input_fields(obj: Type[types.InputObject], classes):
     # TODO: fix this duplication of data
     obj.__input_fields__ = {
         f.name: types.InputValueDefinition(
@@ -126,9 +127,7 @@ def _add_input_fields(obj, classes):
             f.name,
             types.InputObjectFieldDescriptor(obj.__input_fields__[f.name]),
         )
-
     del obj.__raw__
-    return obj
 
 
 def resolve_typeref(ref, classes):

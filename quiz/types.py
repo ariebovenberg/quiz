@@ -1,11 +1,12 @@
 """Components for typed GraphQL interactions"""
+import abc
 import enum
 import math
 import typing as t
 from dataclasses import dataclass
 from itertools import chain, starmap
 from operator import methodcaller
-from typing import Mapping, Type, TypeVar, Generic, Set
+from typing import Mapping, Type, TypeVar, Generic, Set, Callable
 
 from .build import Field, InlineFragment, SelectionSet, dump_inputvalue, escape
 from .utils import JSON, FrozenDict, add_slots
@@ -50,9 +51,53 @@ __all__ = [
 ]
 
 T = TypeVar("T")
+U = TypeVar("U")
+V = TypeVar("V")
 E = TypeVar("E")
 MIN_INT = -2 << 30
 MAX_INT = (2 << 30) - 1
+
+
+# Ok/Err container, similar to Result in Rust, or Either.
+class Result(Generic[T, E]):
+    @abc.abstractmethod
+    def map(self, f: Callable[[T], U]) -> "Result[U, E]":
+        "Apply a function to the successful result, leaving errors untouched"
+
+    @abc.abstractmethod
+    def map_or_else(
+        self, f: Callable[[T], U], fallback: Callable[[E], V]
+    ) -> "Result[U, V]":
+        """Apply a function to the successful result,
+        or apply a fallback to the error result"""
+
+
+@add_slots
+@dataclass(frozen=True)
+class Err(Result[T, E]):
+    value: E
+
+    def map(self, f: Callable[[T], U]) -> "Result[U, E]":
+        return self
+
+    def map_or_else(
+        self, f: Callable[[T], U], fallback: Callable[[E], V]
+    ) -> "Result[U, V]":
+        return Err(fallback(self.value))
+
+
+@add_slots
+@dataclass(frozen=True)
+class Ok(Result[T, E]):
+    value: T
+
+    def map(self, f: Callable[[T], U]) -> "Result[U, E]":
+        return Ok(f(self.value))
+
+    def map_or_else(
+        self, f: Callable[[T], U], fallback: Callable[[E], V]
+    ) -> "Result[U, V]":
+        return Ok(f(self.value))
 
 
 @add_slots
@@ -66,23 +111,20 @@ class InputValueDefinition:
 _PRIMITIVE_TYPES = (int, float, bool, str)
 
 
-# TODO: make ABCMeta or generic?
-class InputValue(object):
+class InputValue:
     """Base class for input value classes.
     These values may be used in GraphQL queries (requests)"""
 
     # TODO: make abstract
-    def __gql_dump__(self):
-        # type: () -> str
+    def __gql_dump__(self) -> str:
         """Serialize the object to a GraphQL primitive value"""
         raise NotImplementedError(
             "GraphQL serialization is not defined for this type"
         )
 
-    # TODO: a sensible default implementation
     @classmethod
-    def coerce(cls, value):
-        raise NotImplementedError()
+    def coerce(cls: Type[T], value: object) -> Result[T, str]:
+        return Err(f"No coercion defined to type {cls!r}")
 
 
 class InputWrapper(InputValue):
@@ -170,33 +212,26 @@ class InputObjectFieldDescriptor:
         return ": {.__name__}\n    {}".format(self.value.type, self.value.desc)
 
 
-# TODO: slots?
-class InputObject(object):
+class InputObject:
     """Base class for input objects"""
 
     __input_fields__ = FrozenDict.EMPTY
 
     @classmethod
-    def coerce(cls: Type[T], value: object) -> T:
+    def coerce(cls: Type[T], value: object) -> Result[T, str]:
         if isinstance(value, dict):
             if all(isinstance(k, str) for k in value):
                 result = validate_args(cls.__input_fields__, value)
                 if isinstance(result, Err):
                     raise NotImplementedError()
                 else:
-                    return cls(**result.value)
+                    return Ok(cls(**result.value))
             else:
-                raise CouldNotCoerce(
-                    "Cannot coerce dict with non-string key to InputObject"
-                )
+                return Err("Dict with non-string key")
         else:
-            raise CouldNotCoerce(
-                f"Cannot coerce type {value!r} to InputObject"
-            )
+            return Err(f"Invalid type {type(value)!r}")
 
-        return cls()
-
-    def __init__(__self__, **kwargs):
+    def __init__(__self__, **kwargs) -> None:
         self = __self__  # prevents `self` from potentially clobbering kwargs
         argnames_defined = self.__input_fields__.keys()
         argnames_required = {
@@ -220,12 +255,12 @@ class InputObject(object):
 
         self.__dict__.update(kwargs)
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if type(self) == type(other):
             return self.__dict__ == other.__dict__
         return NotImplemented
 
-    def __gql_dump__(self):
+    def __gql_dump__(self) -> str:
         return "{{{}}}".format(
             " ".join(
                 "{}: {}".format(name, dump_inputvalue(value))
@@ -233,7 +268,7 @@ class InputObject(object):
             )
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "{}({})".format(
             self.__class__.__qualname__,
             ", ".join(starmap("{}={!r}".format, self.__dict__.items())),
@@ -549,23 +584,6 @@ def validate_value(
             return typ.coerce(value)
         except CouldNotCoerce as e:
             return InvalidArgumentValue(name, value, e.reason)
-
-
-class Result(Generic[T, E]):
-    pass
-
-
-@add_slots
-@dataclass(frozen=True)
-class Err(Result[T, E]):
-    items: E
-
-
-# TODO: typing
-@add_slots
-@dataclass(frozen=True)
-class Ok(Result[T, E]):
-    value: T
 
 
 def validate_args(

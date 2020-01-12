@@ -364,25 +364,31 @@ class TestObject:
 
 
 class TestInputObject:
-
     class TestCoerce:
         def test_dict_empty(self):
-            result = OptionalInputObject.coerce({})
-            assert isinstance(result, OptionalInputObject)
+            assert OptionalInputObject.coerce({}) == quiz.types.Ok(
+                OptionalInputObject()
+            )
 
         def test_dict(self):
-            result = SearchFilters.coerce({'field': 'foo', 'order': "ASC"})
-            assert isinstance(result, SearchFilters)
-            assert result.field == 'foo'
+            assert SearchFilters.coerce(
+                {"field": "foo", "order": "ASC"}
+            ) == quiz.types.Ok(
+                SearchFilters(
+                    field="foo", order=quiz.Nullable[Order](Order.ASC)
+                )
+            )
 
         def test_invalid_dict_key(self):
-            with pytest.raises(quiz.CouldNotCoerce, match="non-string key"):
-                SearchFilters.coerce({'field': 'a', 5: 'bla'})
+            assert SearchFilters.coerce(
+                {"field": "A", 5: "bla"}
+            ) == quiz.types.Err("Dict with non-string key")
 
         @pytest.mark.parametrize("value", [object(), "foo", "1.2", None])
         def test_invalid_type(self, value):
-            with pytest.raises(quiz.CouldNotCoerce, match="type"):
-                SearchFilters.coerce(value)
+            assert SearchFilters.coerce(value) == quiz.types.Err(
+                f"Invalid type {type(value)!r}"
+            )
 
     def test_init_full(self):
         search = SearchFilters(field="foo", order=Order.ASC)
