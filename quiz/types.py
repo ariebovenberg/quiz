@@ -517,19 +517,28 @@ class Scalar(InputWrapper, ResponseType):
     """Base class for scalars"""
 
 
+class _Null(object):
+    pass
+
+
+NULL = _Null()
+
+
 class _AnyScalarMeta(type):
     def __instancecheck__(self, instance):
         return isinstance(instance, _PRIMITIVE_TYPES)
 
 
+@dataclass(frozen=True)
 class AnyScalar(Scalar, metaclass=_AnyScalarMeta):
     """A generic scalar, accepting any primitive type"""
-
-    def __init__(self, value):
-        self.value = value
+    # TODO: better typing
+    value: object
 
     @classmethod
-    def coerce(cls, data):
+    def coerce(cls: Type[T], data: object) -> Result[T, str]:
+        scalar_cls = PY_TYPE_TO_GQL_TYPE[type(data)]
+        return scalar_cls.coerce(data).map(cls)
         if data is None or isinstance(data, Scalar):
             return cls(data)
         try:

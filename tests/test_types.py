@@ -253,34 +253,28 @@ class TestAnyScalar:
 
     class TestCoerce:
         def test_float(self):
-            result = FooScalar.coerce(4.5)
-            assert isinstance(result, FooScalar)
-            assert isinstance(result.value, quiz.Float)
-            assert result.value.value == 4.5
-
-            with pytest.raises(quiz.CouldNotCoerce, match="infinite"):
-                FooScalar.coerce(float("inf"))
+            assert FooScalar.coerce(4.5) == quiz.types.Ok(
+                FooScalar(quiz.Float(4.5))
+            )
+            assert FooScalar.coerce(float("inf")) == quiz.types.Err(
+                "Value cannot be infinite or NaN."
+            )
 
         def test_int(self):
-            result = FooScalar.coerce(4)
-            assert isinstance(result, FooScalar)
-            assert isinstance(result.value, quiz.Int)
-            assert result.value.value == 4
-
-            with pytest.raises(quiz.CouldNotCoerce, match="32"):
-                FooScalar.coerce(2 << 31)
+            assert FooScalar.coerce(4) == quiz.types.Ok(FooScalar(quiz.Int(4)))
+            assert FooScalar.coerce(2 << 31) == quiz.types.Err(
+                "Integer beyond 32-bit limit."
+            )
 
         def test_bool(self):
-            result = FooScalar.coerce(True)
-            assert isinstance(result, FooScalar)
-            assert isinstance(result.value, quiz.Boolean)
-            assert result.value.value is True
+            assert FooScalar.coerce(True) == quiz.types.Ok(
+                FooScalar(quiz.Boolean(True))
+            )
 
         def test_string(self):
-            result = FooScalar.coerce("my string")
-            assert isinstance(result, FooScalar)
-            assert isinstance(result.value, quiz.String)
-            assert result.value.value == "my string"
+            assert FooScalar.coerce("my string") == quiz.types.Ok(
+                FooScalar(quiz.String("my string"))
+            )
 
         def test_other_scalar(self):
             class MyScalar(quiz.Scalar):
@@ -1017,7 +1011,9 @@ class TestBoolean:
 
     class TestCoerce:
         def test_bool(self):
-            assert quiz.Boolean.coerce(True) == quiz.types.Ok(quiz.Boolean(True))
+            assert quiz.Boolean.coerce(True) == quiz.types.Ok(
+                quiz.Boolean(True)
+            )
 
         @pytest.mark.parametrize("value", [object(), "foo", 1.2, 1])
         def test_invalid_type(self, value):
