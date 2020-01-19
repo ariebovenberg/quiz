@@ -327,6 +327,8 @@ class Field:
         alias = self.alias + ": " if self.alias else ""
         return alias + self.name + arguments + selection_set
 
+    replace = replace
+
 
 @add_slots
 @dataclass(frozen=True)

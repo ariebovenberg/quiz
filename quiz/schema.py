@@ -15,7 +15,6 @@ from typing import Type
 from . import types
 from .build import Query
 from .execution import execute
-from .types import validate
 from .utils import JSON, FrozenDict, add_slots, merge
 
 __all__ = ["Schema", "INTROSPECTION_QUERY"]
@@ -151,7 +150,9 @@ class _QueryCreator(object):
 
     def __getitem__(self, selection_set):
         cls = self.schema.query_type
-        return Query(cls, selections=validate(cls, selection_set))
+        return Query(
+            cls, selections=types.validate_selection_set(cls, selection_set)
+        )
 
 
 @add_slots

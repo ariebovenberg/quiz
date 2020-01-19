@@ -8,9 +8,19 @@ from functools import partial
 from itertools import chain, starmap
 from operator import methodcaller
 from textwrap import indent
-from typing import Any, Callable, Generic, Iterable
-from typing import List as List_
-from typing import Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    Iterable,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+)
 from typing import Union as Union_
 
 from .build import Field, InlineFragment, SelectionSet, dump_inputvalue, escape
@@ -39,7 +49,7 @@ __all__ = [
     "StringLike",
     "Union",
     # validation
-    "validate",
+    "validate_selection_set",
     "ValidationError",
     "SelectionError",
     "NoSuchField",
@@ -60,6 +70,7 @@ E = TypeVar("E")
 MIN_INT = -2 << 30
 MAX_INT = (2 << 30) - 1
 INDENT = "  "
+NONETYPE = type(None)
 _indent = partial(indent, prefix=INDENT)
 
 
@@ -116,6 +127,21 @@ class Result(Generic[T, E]):
                 errs.append((i, r.err()))
 
         return Err(errs)
+
+    @staticmethod
+    def fields(
+        mapping: Mapping[str, "Result[T, E]"]
+    ) -> "Result[Mapping[str, T], Mapping[str, str]]":
+        if all(r.is_ok() for r in mapping.values()):
+            return Ok({name: result.ok() for name, result in mapping.items()})
+        else:
+            return Err(
+                {
+                    name: result.err()
+                    for name, result in mapping.items()
+                    if result.is_err()
+                }
+            )
 
 
 @add_slots
@@ -372,7 +398,7 @@ class Enum(InputValue, ResponseType, enum.Enum):
         return self.value
 
     def __repr__(self) -> str:
-        return ".".join([self.__class__.__qualname__, self.value])
+        return f"{self.__class__.__qualname__}.{self.value}"
 
     @classmethod
     def __gql_load__(cls: Type[T], data: str) -> T:
@@ -446,7 +472,7 @@ class List(InputWrapper, ResponseType, metaclass=_ListMeta):
     @classmethod
     def coerce(cls: Type[T], data: object) -> Result[T, str]:
         if isinstance(data, list):
-            subresults = map(partial(validate_value2, cls.__arg__), data)
+            subresults = map(partial(validate_value, cls.__arg__), data)
             traversed = Result.sequence(subresults)
             return traversed.map_or_else(
                 cls,
@@ -490,7 +516,7 @@ class Nullable(InputWrapper, ResponseType, metaclass=_NullableMeta):
         if data is None:
             return Ok(cls(None))
         else:
-            return cls.__arg__.coerce(data).map(cls)
+            return validate_value(cls.__arg__, data).map(cls)
         return Ok(cls(data if data is None else cls.__arg__.coerce(data)))
 
     def __gql_dump__(self) -> str:
@@ -517,35 +543,23 @@ class Scalar(InputWrapper, ResponseType):
     """Base class for scalars"""
 
 
-class _Null(object):
-    pass
-
-
-NULL = _Null()
-
-
-class _AnyScalarMeta(type):
-    def __instancecheck__(self, instance):
-        return isinstance(instance, _PRIMITIVE_TYPES)
-
-
 @dataclass(frozen=True)
-class AnyScalar(Scalar, metaclass=_AnyScalarMeta):
+class AnyScalar(Scalar):
     """A generic scalar, accepting any primitive type"""
+
     # TODO: better typing
     value: object
 
     @classmethod
     def coerce(cls: Type[T], data: object) -> Result[T, str]:
-        scalar_cls = PY_TYPE_TO_GQL_TYPE[type(data)]
-        return scalar_cls.coerce(data).map(cls)
-        if data is None or isinstance(data, Scalar):
-            return cls(data)
+        if isinstance(data, (Scalar, NONETYPE)):
+            return Ok(cls(data))
+
         try:
-            gql_type = PY_TYPE_TO_GQL_TYPE[type(data)]
+            scalar_cls = PY_TYPE_TO_GQL_TYPE[type(data)]
         except KeyError:
-            raise CouldNotCoerce("Invalid type, must be a scalar")
-        return cls(gql_type.coerce(data))
+            return Err("Not a valid scalar.")
+        return scalar_cls.coerce(data).map(cls)
 
     def __gql_dump__(self) -> str:
         if self.value is None:
@@ -662,7 +676,7 @@ def class_name(cls: Type) -> str:
         return str(cls)
 
 
-def validate_value2(
+def validate_value(
     typ: t.Type[T_inputvalue], value: object
 ) -> Result[T_inputvalue, str]:
     if isinstance(value, typ):
@@ -673,50 +687,38 @@ def validate_value2(
             + _indent(msg)
         )
         coerced = typ.coerce(value)
-        if not isinstance(coerced, Ok):
+        if not coerced.is_ok():
             raise NotImplementedError()
         else:
             return Ok(coerced.value)
 
 
-def validate_value(
-    name: str, typ: t.Type[InputValue], value: object
-) -> t.Union[InputValue, "InvalidArgumentValue"]:
-    # TODO: proper isinstance
-    if type(value) == typ:
-        return value
-    else:
-        try:
-            return typ.coerce(value)
-        except CouldNotCoerce as e:
-            return InvalidArgumentValue(name, value, e.reason)
-
-
 def validate_args(
-    schema: Mapping[str, InputValueDefinition], actual: Mapping[str, object]
-) -> Result[Mapping[str, object], Set["ValidationError"]]:
-    # -> Result[t.Mapping[str, object]]
-    # TODO: cleanup this logic
+    schema: Mapping[str, InputValueDefinition], given: Mapping[str, object]
+) -> Result[Mapping[str, object], str]:
     required_args = {
         name
         for name, defin in schema.items()
         if not issubclass(defin.type, Nullable)
     }
-    errors = set(
+    errors = sorted(
         chain(
-            map(NoSuchArgument, actual.keys() - schema.keys()),
-            map(MissingArgument, required_args - actual.keys()),
+            map("No argument named `{}`.".format, given.keys() - schema.keys()),
+            map("No value for required argument `{}`.".format, required_args - given.keys()),
         )
     )
     coerced = {
-        name: validate_value(name, schema[name].type, value)
-        for name, value in actual.items()
+        name: validate_value(schema[name].type, given_value)
+        for name, given_value in given.items()
         if name in schema
     }
-    errors.update(
-        v for v in coerced.values() if isinstance(v, InvalidArgumentValue)
-    )
-    return Err(errors) if errors else Ok(coerced)
+    result = Result.fields(coerced)
+    if result.is_err():
+        errors.extend(
+            f"Invalid value for argument `{name}`:\n{_indent(err)}"
+            for name, err in result.err().items()
+        )
+    return Err("\n".join(errors)) if errors else Ok(result.ok())
 
 
 def _validate_args(schema, actual):
@@ -747,45 +749,40 @@ def _validate_args(schema, actual):
     return actual
 
 
-def _validate_field(schema, actual):
-    # type (Optional[FieldDefinition], Field) -> Field
-    # raises:
-    # - NoSuchField
-    # - SelectionsNotSupported
-    # - NoSuchArgument
-    # - RequredArgument
-    # - InvalidArgumentType
-    if schema is None:
-        raise NoSuchField()
-    _validate_args(schema.args, actual.kwargs)
-    if actual.selection_set:
-        type_ = _unwrap_list_or_nullable(schema.type)
-        if not isinstance(type_, HasFields):
-            raise SelectionsNotSupported()
-        validate(type_, actual.selection_set)
-    return actual
+def validate_field(
+    schema: FieldDefinition, actual: Field
+) -> Result[Field, str]:
+    args_result = validate_args(schema.args, actual.kwargs)
+    return args_result.map_or_else(
+        lambda args: actual.replace(kwargs=args),
+        lambda err: f"Invalid arguments:\n{_indent(err)}"
+    )
+    import pdb; pdb.set_trace()
+    # if actual.selection_set:
+    #     type_ = _unwrap_list_or_nullable(schema.type)
+    #     if not isinstance(type_, HasFields):
+    #         raise SelectionsNotSupported()
+    #     validate_selection_set(type_, actual.selection_set)
+    return Ok(actual)
 
 
-def validate(cls, selection_set):
-    """Validate a selection set against a type
+def _get_field(cls: HasFields, name: str) -> Result[FieldDefinition, str]:
+    try:
+        Ok(getattr(cls, name))
+    except AttributeError:
+        return Err(f"No such field `{name}`")
 
-    Parameters
-    ----------
-    cls: type
-        The class to validate against, an ``Object`` or ``Interface``
-    selection_set: SelectionSet
-        The selection set to validate
 
-    Returns
-    -------
-    SelectionSet
-        The validated selection set
-
-    Raises
-    ------
-    SelectionError
-        If the selection set is not valid
-    """
+def validate_selection_set(
+    cls: HasFields, selection_set: SelectionSet
+) -> Result[SelectionSet, str]:
+    """Validate a selection set against a type"""
+    result = {
+        field.name: _get_field(cls, field.name).flatmap(
+            lambda f: _validate_field(f, field)
+        )
+        for field in selection_set
+    }
     for _field in selection_set:
         try:
             _validate_field(getattr(cls, _field.name, None), _field)
@@ -930,7 +927,17 @@ class SelectionsNotSupported(ValidationError):
         return "selections not supported on this object"
 
 
-BUILTIN_SCALARS = {"Boolean": bool, "String": str, "Float": float, "Int": int}
+BUILTIN_SCALARS = {
+    "Boolean": Boolean,
+    "String": String,
+    "Float": Float,
+    "Int": Int,
+}
 
 
-PY_TYPE_TO_GQL_TYPE = {float: Float, int: Int, bool: Boolean, str: String}
+PY_TYPE_TO_GQL_TYPE = {
+    float: Float,
+    int: Int,
+    bool: Boolean,
+    str: String,
+}
