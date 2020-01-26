@@ -291,10 +291,11 @@ class TestSchemaFromRaw:
         assert schema.DateTime.__name__ == "DateTime"
         assert len(schema.__doc__) > 0
 
-        assert schema.Boolean is bool
-        assert schema.String is str
-        assert schema.Float is float
-        assert schema.Int is int
+        assert schema.Boolean is quiz.Boolean
+        assert schema.String is quiz.String
+        assert schema.Float is quiz.Float
+        assert schema.Int is quiz.Int
+        assert schema.ID is quiz.ID
 
         assert schema.URI is URI
 
@@ -302,7 +303,7 @@ class TestSchemaFromRaw:
         schema = quiz.Schema.from_raw(raw_schema, module="foo")
         assert isinstance(schema, quiz.Schema)
         assert issubclass(schema.DateTime, quiz.AnyScalar)
-        assert schema.String is str
+        assert schema.String is quiz.String
         assert "Query" in schema.classes
         assert schema.query_type == schema.classes["Query"]
         assert schema.mutation_type == schema.classes["Mutation"]
@@ -448,7 +449,7 @@ def test_end_to_end(raw_schema):
         (
             """\
  |  viewerDidAuthor
- |      : bool
+ |      : Boolean
  |      Did the viewer author this comment."""
         )
         in obj_doc

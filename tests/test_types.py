@@ -639,11 +639,59 @@ class TestValidateField:
             Dog.name, quiz.Field("name")
         ) == quiz.types.Ok(quiz.Field("name"))
 
-    def test_args_ok(self):
+    def test_arg_simple_ok(self):
         field = quiz.Field("knows_command", kwargs={"command": Command.SIT})
         assert quiz.types.validate_field(
             Dog.knows_command, field
         ) == quiz.types.Ok(field)
+
+    def test_subselection_coerce(self):
+        field = quiz.Field(
+            "friends",
+            kwargs={"include_family": True},
+            selection_set=quiz.SelectionSet(
+                quiz.Field("likes_color", kwargs={"color": "BROWN"}),
+                quiz.Field("name"),
+            ),
+        )
+        expect = quiz.types.Ok(
+            quiz.Field(
+                "friends",
+                kwargs={
+                    "include_family": quiz.Nullable[quiz.Boolean](
+                        quiz.Boolean(True)
+                    )
+                },
+                selection_set=quiz.SelectionSet(
+                    quiz.Field("likes_color", kwargs={"color": Color.BROWN}),
+                    quiz.Field("name"),
+                ),
+            )
+        )
+        actual = quiz.types.validate_field(Dog.friends, field)
+        assert actual == expect
+
+    def test_selection_error(self):
+        field = quiz.Field("friends", kwargs={"include_family": True})
+        expect = quiz.types.Err("Empty selection set.")
+        actual = quiz.types.validate_field(Dog.friends, field)
+        assert actual == expect
+
+    def test_selection_and_args_error(self):
+        field = quiz.Field("friends", kwargs={"include_family": "foo"})
+        expect = quiz.types.Err(
+            dedent(
+                """\
+        Invalid arguments:
+          Invalid value for argument `include_family`:
+            Could not coerce to Nullable[Boolean]:
+              Could not coerce to Boolean:
+                Invalid type, must be bool.
+        Empty selection set."""
+            )
+        )
+        actual = quiz.types.validate_field(Dog.friends, field)
+        assert actual == expect
 
     def test_args_coerce(self):
         field = quiz.Field("knows_command", kwargs={"command": "SIT"})
@@ -655,21 +703,19 @@ class TestValidateField:
 
     def test_args_err(self):
         result = quiz.types.validate_field(
-            Dog.knows_command, quiz.Field(
-                'knows_command', kwargs={
-                    'blabla': 6,
-                    'command': None,
-                }
-            )
+            Dog.knows_command,
+            quiz.Field(
+                "knows_command", kwargs={"blabla": 6, "command": None,}
+            ),
         )
         assert result == quiz.types.Err(
             dedent(
-            '''\
+                """\
             Invalid arguments:
               No argument named `blabla`.
               Invalid value for argument `command`:
                 Could not coerce to Command:
-                  Invalid type <class 'NoneType'>.'''
+                  Invalid type <class 'NoneType'>."""
             )
         )
 

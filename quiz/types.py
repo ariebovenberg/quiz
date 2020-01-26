@@ -107,6 +107,10 @@ class Result(Generic[T, E]):
     def err(self) -> Optional[E]:
         "Return the Err result if present"
 
+    @abc.abstractmethod
+    def flatmap(self, f: Callable[[T], "Result[U, E]"]) -> "Result[U, E]":
+        "Map and flatten result"
+
     @staticmethod
     def sequence(
         results: Iterable["Result[T, E]"],
@@ -172,6 +176,10 @@ class Ok(Result[T, E]):
     def err(self) -> Optional[E]:
         return None
 
+    def flatmap(self, f: Callable[[T], "Result[U, E]"]) -> "Result[U, E]":
+        "Map and flatten result"
+        return f(self.value)
+
     def __repr__(self) -> str:
         return f"Ok({self.value!r})"
 
@@ -203,6 +211,10 @@ class Err(Result[T, E]):
 
     def err(self) -> Optional[E]:
         return self.value
+
+    def flatmap(self, f: Callable[[T], "Result[U, E]"]) -> "Result[U, E]":
+        "Map and flatten result"
+        return self
 
     def __repr__(self) -> str:
         return f"Err({self.value!r})"
@@ -472,8 +484,9 @@ class List(InputWrapper, ResponseType, metaclass=_ListMeta):
     @classmethod
     def coerce(cls: Type[T], data: object) -> Result[T, str]:
         if isinstance(data, list):
-            subresults = map(partial(validate_value, cls.__arg__), data)
-            traversed = Result.sequence(subresults)
+            traversed = Result.sequence(
+                map(partial(validate_value, cls.__arg__), data)
+            )
             return traversed.map_or_else(
                 cls,
                 fallback=lambda errs: "Invalid items in list:\n"
@@ -505,10 +518,8 @@ class _NullableMeta(_Generic):
         )
 
 
-# Q: why not typing.Optional?
-# A: it is not easily distinguished from Union,
-#    and doesn't support __doc__, __name__, or isinstance()
 class Nullable(InputWrapper, ResponseType, metaclass=_NullableMeta):
+    # TODO: remove default
     __arg__ = object
 
     @classmethod
@@ -532,10 +543,7 @@ class UnionMeta(type):
     pass
 
 
-# Q: why not typing.Union?
-# A: it isn't consistent across python versions,
-#    and doesn't support __doc__, __name__, or isinstance()
-class Union(object, metaclass=UnionMeta):
+class Union(metaclass=UnionMeta):
     __args__ = ()
 
 
@@ -701,10 +709,16 @@ def validate_args(
         for name, defin in schema.items()
         if not issubclass(defin.type, Nullable)
     }
+    # TODO: this is a bit inefficient
     errors = sorted(
         chain(
-            map("No argument named `{}`.".format, given.keys() - schema.keys()),
-            map("No value for required argument `{}`.".format, required_args - given.keys()),
+            map(
+                "No argument named `{}`.".format, given.keys() - schema.keys()
+            ),
+            map(
+                "No value for required argument `{}`.".format,
+                required_args - given.keys(),
+            ),
         )
     )
     coerced = {
@@ -749,26 +763,40 @@ def _validate_args(schema, actual):
     return actual
 
 
+# TODO error if no selection on HasFields
 def validate_field(
     schema: FieldDefinition, actual: Field
 ) -> Result[Field, str]:
-    args_result = validate_args(schema.args, actual.kwargs)
-    return args_result.map_or_else(
+    args_result = validate_args(schema.args, actual.kwargs).map_or_else(
         lambda args: actual.replace(kwargs=args),
-        lambda err: f"Invalid arguments:\n{_indent(err)}"
+        lambda err: f"Invalid arguments:\n{_indent(err)}",
     )
-    import pdb; pdb.set_trace()
-    # if actual.selection_set:
-    #     type_ = _unwrap_list_or_nullable(schema.type)
-    #     if not isinstance(type_, HasFields):
-    #         raise SelectionsNotSupported()
-    #     validate_selection_set(type_, actual.selection_set)
-    return Ok(actual)
+    type_ = _unwrap_list_or_nullable(schema.type)
+    if isinstance(type_, HasFields):
+        result = (
+            validate_selection_set(
+                _unwrap_list_or_nullable(schema.type), actual.selection_set
+            )
+            .flatmap(
+                lambda s: args_result.map(lambda r: r.replace(selection_set=s))
+            )
+            .map_err(
+                lambda e: e
+                if args_result.is_ok()
+                else f"{args_result.err()}\n{e}"
+            )
+        )
+    elif actual.selection_set:
+        raise NotImplementedError()
+    else:
+        result = args_result
+
+    return result
 
 
 def _get_field(cls: HasFields, name: str) -> Result[FieldDefinition, str]:
     try:
-        Ok(getattr(cls, name))
+        return Ok(getattr(cls, name))
     except AttributeError:
         return Err(f"No such field `{name}`")
 
@@ -777,18 +805,16 @@ def validate_selection_set(
     cls: HasFields, selection_set: SelectionSet
 ) -> Result[SelectionSet, str]:
     """Validate a selection set against a type"""
-    result = {
-        field.name: _get_field(cls, field.name).flatmap(
-            lambda f: _validate_field(f, field)
+    if len(selection_set) == 0:
+        return Err("Empty selection set.")
+    result = Result.sequence(
+        _get_field(cls, field.name).flatmap(
+            partial(validate_field, actual=field)
         )
         for field in selection_set
-    }
-    for _field in selection_set:
-        try:
-            _validate_field(getattr(cls, _field.name, None), _field)
-        except ValidationError as e:
-            raise SelectionError(cls, _field.name, e)
-    return selection_set
+    )
+    assert result.is_ok(), "not implemented"
+    return result.map(SelectionSet.__make__)
 
 
 # TODO: refactor using singledispatch
@@ -932,6 +958,7 @@ BUILTIN_SCALARS = {
     "String": String,
     "Float": Float,
     "Int": Int,
+    "ID": ID,
 }
 
 

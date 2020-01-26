@@ -53,6 +53,13 @@ class Hobby(q.Object):
 class Human(Sentient, q.Object):
     name = mkfield("name", type=str)
     hobbies = mkfield("hobbies", type=q.Nullable[q.List[q.Nullable[Hobby]]])
+    likes_color = mkfield(
+        "likes_color",
+        args=FrozenDict(
+            {"color": q.InputValueDefinition("color", "", type=Color)}
+        ),
+        type=bool,
+    )
 
 
 class Alien(Sentient, q.Object):
@@ -104,14 +111,24 @@ class Dog(Sentient, q.Object):
     birthday = mkfield("birthday", type=MyDateTime)
     data = mkfield("data", type=q.AnyScalar)
 
+    friends = mkfield(
+        "friends",
+        type=q.Nullable[q.List[Human]],
+        args=FrozenDict(
+            {
+                "include_family": q.InputValueDefinition(
+                    "include_family", "", type=q.Nullable[q.Boolean]
+                )
+            }
+        ),
+    )
+
 
 class OptionalInputObject(q.InputObject):
     """dummy"""
 
     __input_fields__ = {
-        "foo": q.InputValueDefinition(
-            "foo", "the foo", type=q.Nullable[str],
-        ),
+        "foo": q.InputValueDefinition("foo", "the foo", type=q.Nullable[str],),
     }
 
 

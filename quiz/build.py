@@ -2,6 +2,7 @@
 import enum
 import re
 import typing as t
+from typing import Iterable, Sized
 from dataclasses import dataclass, replace
 from functools import singledispatch
 from operator import attrgetter, methodcaller
@@ -28,7 +29,7 @@ INDENT = "  "
 gql = methodcaller("__gql__")
 
 
-class SelectionSet(t.Iterable["Selection"], t.Sized):
+class SelectionSet(Iterable["Selection"], Sized):
     """Sequence of selections
 
     Parameters
@@ -48,18 +49,18 @@ class SelectionSet(t.Iterable["Selection"], t.Sized):
     # This is also why we can't just subclass `tuple`.
     __slots__ = "__selections__"
 
-    def __init__(self, *selections):
+    def __init__(self, *selections: "Selection") -> None:
         self.__selections__ = selections
 
     # TODO: check if actually faster
     # faster, internal, alternative to __init__
     @classmethod
-    def __make__(cls, selections):
+    def __make__(cls, selections: Iterable["Selection"]) -> "SelectionSet":
         instance = cls.__new__(cls)
         instance.__selections__ = tuple(selections)
         return instance
 
-    def __getattr__(self, fieldname):
+    def __getattr__(self, fieldname: str) -> "SelectionSet":
         """Add a new field to the selection set.
 
         Parameters
@@ -92,7 +93,7 @@ class SelectionSet(t.Iterable["Selection"], t.Sized):
         """
         return SelectionSet.__make__(self.__selections__ + (Field(fieldname),))
 
-    def __getitem__(self, selections):
+    def __getitem__(self, selections: "SelectionSet") -> "SelectionSet":
         """Add a sub-selection to the last field in the selection set
 
         Parameters
