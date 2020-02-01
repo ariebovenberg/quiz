@@ -26,19 +26,13 @@ Order = q.Enum("Order", {"ASC": "ASC", "DESC": "DESC"})
 class MyDateTime(q.Scalar):
     """an example datetime"""
 
-    def __init__(self, dtime):
-        self.dtime = dtime
-
     def __gql_dump__(self):
         """The datetime as a timestamp"""
-        return (self.dtime - datetime(1970, 1, 1)).total_seconds()
+        return (self.value - datetime(1970, 1, 1)).total_seconds()
 
     @classmethod
     def __gql_load__(cls, data):
         return cls(datetime.fromtimestamp(data))
-
-    def __eq__(self, other):
-        return self.dtime == other.dtime
 
 
 class Sentient(q.types.Namespace, metaclass=q.Interface):

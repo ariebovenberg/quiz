@@ -467,6 +467,9 @@ class _Generic(type):
             return self.__arg__ == other.__arg__
         return NotImplemented
 
+    def __hash__(self) -> int:
+        return hash(self.__base__) ^ hash(self.__arg__)
+
 
 class _ListMeta(_Generic):
 
@@ -798,7 +801,7 @@ def _get_field(cls: HasFields, name: str) -> Result[FieldDefinition, str]:
     try:
         return Ok(getattr(cls, name))
     except AttributeError:
-        return Err(f"No such field `{name}`")
+        return Err(f"Field does not exist.")
 
 
 def validate_selection_set(
@@ -807,14 +810,19 @@ def validate_selection_set(
     """Validate a selection set against a type"""
     if len(selection_set) == 0:
         return Err("Empty selection set.")
-    result = Result.sequence(
+    return Result.sequence(
         _get_field(cls, field.name).flatmap(
             partial(validate_field, actual=field)
         )
         for field in selection_set
+    ).map_or_else(
+        SelectionSet.__make__,
+        lambda errors: "\n".join(
+            f"Invalid field `{selection_set.__selections__[index].name}`:\n"
+            + _indent(err)
+            for index, err in errors
+        ),
     )
-    assert result.is_ok(), "not implemented"
-    return result.map(SelectionSet.__make__)
 
 
 # TODO: refactor using singledispatch

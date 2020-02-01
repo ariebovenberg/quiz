@@ -720,88 +720,115 @@ class TestValidateField:
         )
 
 
-@pytest.mark.skip
 class TestValidateSelectionSet:
     def test_empty(self):
         selection = SelectionSet()
-        assert quiz.validate(Dog, selection) == SelectionSet()
-
-    def test_simple_valid(self):
-        assert quiz.validate(Dog, _.name) == _.name
-
-    def test_complex_valid(self):
-        selection_set = (
-            _.name.knows_command(command=Command.SIT)
-            .is_housetrained.owner[_.name.hobbies[_.name.cool_factor]]
-            .best_friend[_.name]
-            .age(on_date=MyDateTime(datetime.now()))
+        assert quiz.validate_selection_set(Dog, selection) == quiz.types.Err(
+            "Empty selection set."
         )
-        assert quiz.validate(Dog, selection_set) == selection_set
+
+    def test_single_field(self):
+        assert quiz.validate_selection_set(Dog, _.name) == quiz.types.Ok(
+            _.name
+        )
 
     def test_coerces(self):
         selection_set = _.name.knows_command(command="SIT")
-        assert quiz.validate(Dog, selection_set) == _.name.knows_command(
-            command=Command.SIT
-        )
+        assert quiz.validate_selection_set(
+            Dog, selection_set
+        ) == quiz.types.Ok(_.name.knows_command(command=Command.SIT))
 
     def test_no_such_field(self):
-        with pytest.raises(quiz.SelectionError) as exc:
-            quiz.validate(Dog, _.name.foo.knows_command(command=Command.SIT))
-        assert exc.value == quiz.SelectionError(Dog, "foo", quiz.NoSuchField())
-
-    def test_invalid_argument(self):
-        with pytest.raises(quiz.SelectionError) as exc:
-            quiz.validate(Dog, _.knows_command(foo=1, command=Command.SIT))
-        assert exc.value == quiz.SelectionError(
-            Dog, "knows_command", quiz.NoSuchArgument("foo")
+        result = quiz.validate_selection_set(
+            Dog, _.name.foo.knows_command(command=Command.SIT).blabla
+        )
+        assert result == quiz.types.Err(
+            dedent(
+                """\
+            Invalid field `foo`:
+              Field does not exist.
+            Invalid field `blabla`:
+              Field does not exist."""
+            )
         )
 
-    def test_missing_arguments(self):
-        selection_set = _.knows_command
-        with pytest.raises(quiz.SelectionError) as exc:
-            quiz.validate(Dog, selection_set)
-
-        assert exc.value == quiz.SelectionError(
-            Dog, "knows_command", quiz.MissingArgument("command")
+    def test_nested_argument_errors(self):
+        result = quiz.validate_selection_set(
+            Dog, _.knows_command(foo=1, command=Command.SIT, bla=9)
+        )
+        assert result == quiz.types.Err(
+            dedent(
+                """\
+                Invalid field `knows_command`:
+                  Invalid arguments:
+                    No argument named `bla`.
+                    No argument named `foo`."""
+            )
         )
 
-    def test_invalid_argument_type(self):
-        selection_set = _.knows_command(command="foobar")
-        with pytest.raises(quiz.SelectionError) as exc:
-            quiz.validate(Dog, selection_set)
-
-        assert exc.value == quiz.SelectionError(
-            Dog, "knows_command", quiz.InvalidArgumentType("command", "foobar")
+    def test_complex_valid(self):
+        # fmt: off
+        now = MyDateTime(datetime.now())
+        selection_set = (
+            _.name
+            .knows_command(command='SIT')
+            .is_housetrained
+            .owner[
+                _.name
+                .hobbies[
+                    _.name
+                    .cool_factor
+                ]
+                .best_friend
+            ]
+            .best_friend[_.name]
+            .age(on_date=now)
         )
-
-    def test_invalid_argument_type_optional(self):
-        selection_set = _.is_housetrained(at_other_homes="foo")
-        with pytest.raises(quiz.SelectionError) as exc:
-            quiz.validate(Dog, selection_set)
-        assert exc.value == quiz.SelectionError(
-            Dog,
-            "is_housetrained",
-            quiz.InvalidArgumentType("at_other_homes", "foo"),
+        result = quiz.validate_selection_set(Dog, selection_set)
+        assert result == quiz.types.Ok(
+            _.name
+            .knows_command(command=Command.SIT)
+            .is_housetrained.owner[
+                _.name
+                .hobbies[
+                    _.name
+                    .cool_factor
+                ]
+                .best_friend
+            ]
+            .best_friend[_.name]
+            .age(on_date=quiz.Nullable[MyDateTime](now))
         )
+        # fmt: on
 
-    def test_nested_selection_error(self):
-        with pytest.raises(quiz.SelectionError) as exc:
-            quiz.validate(Dog, _.owner[_.hobbies[_.foo]])
-        assert exc.value == quiz.SelectionError(
-            Dog,
-            "owner",
-            quiz.SelectionError(
-                Human,
-                "hobbies",
-                quiz.SelectionError(Hobby, "foo", quiz.NoSuchField()),
-            ),
+    def test_complex_invalid(self):
+        # fmt: off
+        now = MyDateTime(datetime.now())
+        selection_set = (
+            _.name
+            .knows_command(command='SIT')
+            ('wrong_owner').owner
+            .is_housetrained
+            .owner[
+                _.name
+                .hobbies[
+                    _.name
+                    .foo
+                    .cool_factor
+                ]
+            ]
+            .best_friend[_.name]
+            .age(on_date=now)
         )
-
-    def test_selection_set_on_non_object(self):
-        with pytest.raises(quiz.SelectionError) as exc:
-            quiz.validate(Dog, _.name[_.foo])
-        assert exc.value == quiz.SelectionError(
-            Dog, "name", quiz.SelectionsNotSupported()
+        # fmt: on
+        result = quiz.validate_selection_set(Dog, selection_set)
+        assert result == quiz.types.Err(
+            dedent(
+                '''\
+                Invalid field `wrong_owner`:
+                  
+                '''
+            )
         )
 
     # TODO: check object types always have selection sets
