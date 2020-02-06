@@ -825,13 +825,14 @@ class TestValidateSelectionSet:
         assert result == quiz.types.Err(
             dedent(
                 '''\
-                Invalid field `wrong_owner`:
-                  
-                '''
+                Invalid field `wrong_owner: owner`:
+                  Empty selection set.
+                Invalid field `owner`:
+                  Invalid field `hobbies`:
+                    Invalid field `foo`:
+                      Field does not exist.'''
             )
         )
-
-    # TODO: check object types always have selection sets
 
     # TODO: list input type
 

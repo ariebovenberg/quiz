@@ -804,6 +804,11 @@ def _get_field(cls: HasFields, name: str) -> Result[FieldDefinition, str]:
         return Err(f"Field does not exist.")
 
 
+def _name_with_alias(field: Field) -> str:
+    prefix = field.alias + ": " if field.alias else ""
+    return prefix + field.name
+
+
 def validate_selection_set(
     cls: HasFields, selection_set: SelectionSet
 ) -> Result[SelectionSet, str]:
@@ -818,7 +823,8 @@ def validate_selection_set(
     ).map_or_else(
         SelectionSet.__make__,
         lambda errors: "\n".join(
-            f"Invalid field `{selection_set.__selections__[index].name}`:\n"
+            "Invalid field "
+            f"`{_name_with_alias(selection_set.__selections__[index])}`:\n"
             + _indent(err)
             for index, err in errors
         ),
