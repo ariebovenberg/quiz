@@ -23,7 +23,7 @@ def pytest_addoption(parser):
     )
 
 
-def pytest_collection_modifyitems(config, items):
+def pytest_collection_modifyitems(config, items):  # pragma: no cover
     if config.getoption("--live"):
         # --live given in cli: do not skip live tests
         return
