@@ -59,6 +59,16 @@ class TestExecute:
         }
         assert request.headers == {"Content-Type": "application/json"}
 
+    def test_wrong_type(self):
+        client = MockClient(snug.Response(200, b'{"data": {"foo": 4}}'))
+        with pytest.raises(NotImplementedError, match="not executable: 17"):
+            quiz.execute(
+                17,
+                url="https://my.url/api",
+                client=client,
+                auth=token_auth("foo"),
+            )
+
     def test_errors(self):
         client = MockClient(
             snug.Response(

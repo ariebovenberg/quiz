@@ -281,12 +281,27 @@ class TestAnyScalar:
         def test_other_scalar(self):
             class MyScalar(quiz.Scalar):
                 """an example scalar"""
-
                 def __init__(self, value):
                     self.value = value
 
             value = MyScalar("foo")
             assert FooScalar.coerce(value) == quiz.types.Ok(FooScalar(value))
+
+
+class TestScalar:
+    def test_gql_dump_not_implemented(self):
+        with pytest.raises(
+            NotImplementedError,
+            match="GraphQL serialization is not defined for this scalar",
+        ):
+            quiz.Scalar().__gql_dump__()
+
+    def test_gql_load_not_implemented(self):
+        with pytest.raises(
+            NotImplementedError,
+            match="GraphQL deserialization is not defined for this scalar",
+        ):
+            quiz.Scalar().__gql_load__(None)
 
     @pytest.mark.parametrize(
         "value, expect", [(None, "null"), (quiz.String("foo"), '"foo"')]
@@ -893,6 +908,10 @@ class TestLoadField:
     def test_primitive_type(self):
         result = quiz.types.load_field(int, quiz.Field("age"), 4)
         assert result == 4
+
+    def test_wrong_type(self):
+        with pytest.raises(NotImplementedError):
+            quiz.types.load_field(object, None, None)
 
 
 class TestLoad:

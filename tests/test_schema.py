@@ -405,11 +405,9 @@ class TestSchemaFromUrl:
             quiz.Schema.from_url("https://my.url/graphql", client=client)
 
     @pytest.mark.live
-    def test_live(self):
-        schema = quiz.Schema.from_url(
-            "https://api.graphcms.com/simple/v1/swapi"
-        )
-        assert schema.Starship
+    def test_live(self):  # pragma: no cover
+        schema = quiz.Schema.from_url("https://graphql-pokemon.now.sh/")
+        assert schema.Pokemon
 
 
 class TestSchemaFromPath:

@@ -26,9 +26,8 @@ Order = q.Enum("Order", {"ASC": "ASC", "DESC": "DESC"})
 class MyDateTime(q.Scalar):
     """an example datetime"""
 
-    def __gql_dump__(self):
-        """The datetime as a timestamp"""
-        return (self.value - datetime(1970, 1, 1)).total_seconds()
+    def __init__(self, dtime):
+        self.dtime = dtime
 
     @classmethod
     def __gql_load__(cls, data):
