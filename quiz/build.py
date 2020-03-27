@@ -221,7 +221,7 @@ class SelectionSet(t.Iterable["Selection"], t.Sized):
             self, alias = args
         except ValueError:
             # alias is *not* given --> case 1
-            self, = args
+            (self,) = args
             return self.__add_kwargs(kwargs)
         else:
             # alias is given --> case 2

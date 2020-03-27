@@ -54,6 +54,22 @@ class TestList:
         assert not isinstance((1, 2), MyList)
 
 
+class TestScalar:
+    def test_gql_dump_not_implemented(self):
+        with pytest.raises(
+            NotImplementedError,
+            match="GraphQL serialization is not defined for this scalar",
+        ):
+            quiz.Scalar().__gql_dump__()
+
+    def test_gql_load_not_implemented(self):
+        with pytest.raises(
+            NotImplementedError,
+            match="GraphQL deserialization is not defined for this scalar",
+        ):
+            quiz.Scalar().__gql_load__(None)
+
+
 class TestGenericScalar:
     def test_isinstancecheck(self):
         class MyScalar(quiz.GenericScalar):
@@ -333,6 +349,10 @@ class TestLoadField:
     def test_primitive_type(self):
         result = quiz.types.load_field(int, quiz.Field("age"), 4)
         assert result == 4
+
+    def test_wrong_type(self):
+        with pytest.raises(NotImplementedError):
+            quiz.types.load_field(object, None, None)
 
 
 class TestLoad:

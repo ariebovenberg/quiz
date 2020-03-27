@@ -361,7 +361,10 @@ class Schema(ValueObject):
 
 def _load_types(raw_schema):
     # type RawSchema -> Iterable[TypeSchema]
-    return map(_cast_type, map(_deserialize_type, raw_schema["types"]))
+    return map(
+        lambda typ: KIND_CAST[typ.kind](typ),
+        map(_deserialize_type, raw_schema["types"]),
+    )
 
 
 INTROSPECTION_QUERY = """
@@ -445,6 +448,30 @@ class Kind(enum.Enum):
     ENUM = "ENUM"
     INPUT_OBJECT = "INPUT_OBJECT"
     UNION = "UNION"
+
+
+KIND_CAST = {
+    Kind.SCALAR: lambda typ: Scalar(name=typ.name, desc=typ.desc),
+    Kind.OBJECT: lambda typ: Object(
+        name=typ.name,
+        desc=typ.desc,
+        interfaces=typ.interfaces,
+        input_fields=typ.input_fields,
+        fields=typ.fields,
+    ),
+    Kind.INTERFACE: lambda typ: Interface(
+        name=typ.name, desc=typ.desc, fields=typ.fields
+    ),
+    Kind.ENUM: lambda typ: Enum(
+        name=typ.name, desc=typ.desc, values=typ.enum_values
+    ),
+    Kind.UNION: lambda typ: Union(
+        name=typ.name, desc=typ.desc, types=typ.possible_types
+    ),
+    Kind.INPUT_OBJECT: lambda typ: InputObject(
+        name=typ.name, desc=typ.desc, input_fields=typ.input_fields
+    ),
+}
 
 
 TypeRef = t.NamedTuple(
@@ -574,29 +601,3 @@ InputObject = t.NamedTuple(
     [("name", str), ("desc", str), ("input_fields", t.List[InputValue])],
 )
 TypeSchema = t.Union[Interface, Object, Scalar, Enum, Union, InputObject]
-
-
-def _cast_type(typ):
-    # type: (Type) -> TypeSchema
-    if typ.kind is Kind.SCALAR:
-        return Scalar(name=typ.name, desc=typ.desc)
-    elif typ.kind is Kind.OBJECT:
-        return Object(
-            name=typ.name,
-            desc=typ.desc,
-            interfaces=typ.interfaces,
-            input_fields=typ.input_fields,
-            fields=typ.fields,
-        )
-    elif typ.kind is Kind.INTERFACE:
-        return Interface(name=typ.name, desc=typ.desc, fields=typ.fields)
-    elif typ.kind is Kind.ENUM:
-        return Enum(name=typ.name, desc=typ.desc, values=typ.enum_values)
-    elif typ.kind is Kind.UNION:
-        return Union(name=typ.name, desc=typ.desc, types=typ.possible_types)
-    elif typ.kind is Kind.INPUT_OBJECT:
-        return InputObject(
-            name=typ.name, desc=typ.desc, input_fields=typ.input_fields
-        )
-    else:
-        raise NotImplementedError(type.kind)
