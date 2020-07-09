@@ -134,7 +134,7 @@ Features
 
    .. code-block:: python3
 
-      >>> _ = quiz.SELECTOR
+      >>> from quiz import _
       >>> query = schema.query[
       ...     _
       ...     .repository(owner='octocat', name='Hello-World')[
@@ -239,22 +239,19 @@ Feature                                                            status
 ================================================================== ===========
 Input objects                                                      v0.3.0
 better query validation errors                                     v0.3.0
-more examples in docs                                              v0.3.0
-executing selection sets directly                                  v0.3.0
-introspection fields (i.e. ``__typename``)                         v0.3.0
 custom scalars for existing types (e.g. ``datetime``)              v0.3.0
-improve Object/Interface API                                       v0.3.0
-value object docs                                                  v0.3.0
-Mutations & subscriptions                                          v0.3.0
 Inline fragments                                                   v0.3.0
+more examples in docs                                              v0.4.0
+executing selection sets directly                                  v0.4.0
+introspection fields (i.e. ``__typename``)                         v0.4.0
+Mutations & subscriptions                                          v0.4.0
 Fragments and fragment spreads                                     v0.4.0
-py2 unicode robustness                                             v0.4.0
 Mixing in raw GraphQL                                              planned
 Module autogeneration                                              planned
 Type inference (e.g. enum values)                                  planned
 Variables                                                          planned
 Directives                                                         planned
-Integer 32-bit limit                                               planned
+Non-JSON responses (e.g. XML)                                      planned
 converting names from camelcase to snake-case                      idea
 Autogenerate module .rst from schema                               idea
 Autogenerate module .py from schema                                idea

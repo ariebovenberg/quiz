@@ -1,13 +1,13 @@
 from datetime import datetime
 from textwrap import dedent
 
-import pytest
-import snug
-
 import quiz
-from quiz import SELECTOR as _
+import snug
+from quiz import _
 from quiz.build import SelectionSet, gql
 from quiz.utils import FrozenDict as fdict
+
+import pytest
 
 from .example import (
     Color,
@@ -17,41 +17,275 @@ from .example import (
     Hobby,
     Human,
     MyDateTime,
+    OptionalInputObject,
+    Order,
+    SearchFilters,
     Sentient,
 )
-from .helpers import AlwaysEquals, NeverEquals
+from .helpers import AlwaysEquals, NeverEquals, render_doc
+
+
+class FooScalar(quiz.AnyScalar):
+    """example AnyScalar subclass"""
+
+
+class FooString(quiz.StringLike):
+    """example stringlike class"""
+
+
+class MyEnum(quiz.Enum):
+    OPT1 = "OPT1"
+    OPT2 = "OPT2"
+
+
+EXAMPLE_ARG_SCHEMA = {
+    "foo": quiz.InputValueDefinition("foo", "the foo", type=quiz.Int),
+    "bar": quiz.InputValueDefinition(
+        "bar", "blabla", type=quiz.Nullable[MyEnum]
+    ),
+    "qux": quiz.InputValueDefinition(
+        "qux", "blablabla", type=quiz.Nullable[quiz.String]
+    ),
+    "frobs": quiz.InputValueDefinition(
+        "frobs", "", type=quiz.List[quiz.Nullable[quiz.Float]]
+    ),
+}
 
 
 class TestUnion:
-    def test_instancecheck(self):
-        class MyUnion(quiz.Union):
-            __args__ = (str, int)
-
-        assert isinstance("foo", MyUnion)
-        assert isinstance(5, MyUnion)
-        assert not isinstance(1.3, MyUnion)
+    pass
 
 
-class TestOptional:
-    def test_instancecheck(self):
-        class MyOptional(quiz.Nullable):
-            __arg__ = int
+class TestEnum:
+    def test_mro(self):
+        assert issubclass(quiz.Enum, quiz.InputValue)
+        assert issubclass(quiz.Enum, quiz.ResponseType)
 
-        assert isinstance(5, MyOptional)
-        assert isinstance(None, MyOptional)
-        assert not isinstance(5.4, MyOptional)
+    class TestCoerce:
+        def test_valid_string(self):
+            assert Command.coerce("SIT") == quiz.types.Ok(Command.SIT)
+
+        def test_invalid_string(self):
+            assert Command.coerce("FOO") == quiz.types.Err(
+                "'FOO' is not a valid enum option."
+            )
+
+        @pytest.mark.parametrize("value", [object(), None, 1.4, 0])
+        def test_invalid_object(self, value):
+            assert Command.coerce(value) == quiz.types.Err(
+                f"Invalid type {type(value)!r}."
+            )
+
+    def test_gql_dump(self):
+        assert Command.SIT.__gql_dump__() == "SIT"
+
+    def test_gql_load(self):
+        assert Command.__gql_load__("SIT") is Command.SIT
+
+    def test_repr(self):
+        assert repr(Command.SIT) == "Command.SIT"
+
+
+class TestNullable:
+    def test_mro(self):
+        assert issubclass(quiz.Nullable, quiz.InputValue)
+        assert issubclass(quiz.Nullable, quiz.ResponseType)
+
+    class TestCoerce:
+        def test_none(self):
+            type_ = quiz.Nullable[quiz.Float]
+            assert type_.coerce(None) == quiz.types.Ok(
+                quiz.Nullable[quiz.Float](None)
+            )
+
+        def test_ok_nested(self):
+            type_ = quiz.Nullable[quiz.Float]
+            assert type_.coerce(3.4) == quiz.types.Ok(
+                quiz.Nullable[quiz.Float](quiz.Float(3.4))
+            )
+
+        def test_ok(self):
+            type_ = quiz.Nullable[quiz.Float]
+            assert type_.coerce(quiz.Float(3.4)) == quiz.types.Ok(
+                quiz.Nullable[quiz.Float](quiz.Float(3.4))
+            )
+
+        @pytest.mark.parametrize("value", [object(), "foo", "1.2", (1,)])
+        def test_err_nested(self, value):
+            type_ = quiz.Nullable[quiz.Float]
+            assert type_.coerce(value) == quiz.types.Err(
+                "Could not coerce to Float:\n"
+                "  Can only coerce float or int, not "
+                f"{quiz.types.class_name(type(value))}."
+            )
+
+    @pytest.mark.parametrize(
+        "value, expect",
+        [(None, "null"), (quiz.String("foo\nbar"), '"foo\\nbar"')],
+    )
+    def test_gql_dump(self, value, expect):
+        assert quiz.Nullable[quiz.String](value).__gql_dump__() == expect
+
+    def test_gql_load(self):
+        result = quiz.Nullable[quiz.Float].__gql_load__(1)
+        assert result == 1
+        assert isinstance(result, float)
+        assert quiz.Nullable[quiz.Float].__gql_load__(None) is None
+
+    def test_equality(self, mocker):
+        assert quiz.Nullable[object] == quiz.Nullable[object]
+        assert not quiz.Nullable[object] != quiz.Nullable[object]
+        assert not quiz.Nullable[object] == quiz.Nullable[int]
+        assert quiz.Nullable[object] != quiz.Nullable[int]
+        assert quiz.Nullable[object] == mocker.ANY
+        assert not quiz.Nullable[int] != mocker.ANY
 
 
 class TestList:
-    def test_isinstancecheck(self):
-        class MyList(quiz.List):
-            __arg__ = int
+    def test_mro(self):
+        assert issubclass(quiz.List, quiz.InputValue)
+        assert issubclass(quiz.List, quiz.ResponseType)
 
-        assert isinstance([1, 2], MyList)
-        assert isinstance([], MyList)
-        assert not isinstance(["foo"], MyList)
-        assert not isinstance([3, "bla"], MyList)
-        assert not isinstance((1, 2), MyList)
+    class TestCoerce:
+        def test_ok_simple(self):
+            type_ = quiz.List[quiz.Float]
+            assert type_.coerce([1, 3.4, 8]) == quiz.types.Ok(
+                type_([quiz.Float(1.0), quiz.Float(3.4), quiz.Float(8)])
+            )
+
+        def test_ok_nested(self):
+            subtype = quiz.List[Command]
+            type_ = quiz.List[subtype]
+            assert type_.coerce(
+                [[], ["SIT", Command.ROLL_OVER]]
+            ) == quiz.types.Ok(
+                type_([subtype([]), subtype([Command.SIT, Command.ROLL_OVER])])
+            )
+
+        @pytest.mark.parametrize("value", [object(), "foo", "1.2", (1,)])
+        def test_err_simple(self, value):
+            type_ = quiz.List[quiz.Float]
+            assert type_.coerce(value) == quiz.types.Err(
+                f"Invalid type {type(value)}."
+            )
+
+        def test_err_nested(self):
+            subtype = quiz.List[Command]
+            type_ = quiz.List[subtype]
+            result = type_.coerce(
+                [[], None, ["DRIVE", Command.ROLL_OVER, 4, ""], [], ["SIT"]]
+            )
+            expect = quiz.types.Err(
+                dedent(
+                    f"""\
+                    Invalid items in list:
+                      at index 1:
+                        Could not coerce to List[Command]:
+                          Invalid type {type(None)}.
+                      at index 2:
+                        Could not coerce to List[Command]:
+                          Invalid items in list:
+                            at index 0:
+                              Could not coerce to Command:
+                                'DRIVE' is not a valid enum option.
+                            at index 2:
+                              Could not coerce to Command:
+                                Invalid type {int}.
+                            at index 3:
+                              Could not coerce to Command:
+                                '' is not a valid enum option.
+                    """
+                ).strip()
+            )
+            assert result == expect
+
+    @pytest.mark.parametrize(
+        "value, expect",
+        [
+            ([], "[]"),
+            (
+                [quiz.String("foo\nbar"), quiz.String("bla")],
+                '["foo\\nbar" "bla"]',
+            ),
+        ],
+    )
+    def test_gql_dump(self, value, expect):
+        assert quiz.List[quiz.String](value).__gql_dump__() == expect
+
+    def test_gql_load(self):
+        result = quiz.List[quiz.Float].__gql_load__([1])
+        assert result == [1]
+        assert isinstance(result[0], float)
+
+    def test_class_equality(self, mocker):
+        assert quiz.List[object] == quiz.List[object]
+        assert not quiz.List[object] != quiz.List[object]
+        assert not quiz.List[object] == quiz.List[int]
+        assert quiz.List[object] != quiz.List[int]
+        assert quiz.List[object] == mocker.ANY
+        assert not quiz.List[int] != mocker.ANY
+
+    def test_instance_equality(self, mocker):
+        assert quiz.List[int]([]) == quiz.List[int]([])
+        assert not quiz.List[float]([]) == quiz.List[int]([])
+        assert quiz.List[int]([1, 2]) == quiz.List[int]([1, 2])
+        assert not quiz.List[int]([1, 2]) == quiz.List[int]([1, 2, 3])
+        assert quiz.List[int]([1]) == mocker.ANY
+
+        assert not quiz.List[int]([]) != quiz.List[int]([])
+        assert quiz.List[float]([]) != quiz.List[int]([])
+        assert not quiz.List[int]([1, 2]) != quiz.List[int]([1, 2])
+        assert quiz.List[int]([1, 2]) != quiz.List[int]([1, 2, 3])
+        assert not quiz.List[int]([1]) != mocker.ANY
+
+
+class TestAnyScalar:
+    def test_mro(self):
+        assert issubclass(quiz.AnyScalar, quiz.Scalar)
+        assert issubclass(quiz.AnyScalar, quiz.InputValue)
+        assert issubclass(quiz.AnyScalar, quiz.ResponseType)
+
+    class TestCoerce:
+        def test_float(self):
+            assert FooScalar.coerce(4.5) == quiz.types.Ok(
+                FooScalar(quiz.Float(4.5))
+            )
+            assert FooScalar.coerce(float("inf")) == quiz.types.Err(
+                "Value cannot be infinite or NaN."
+            )
+
+        def test_int(self):
+            assert FooScalar.coerce(4) == quiz.types.Ok(FooScalar(quiz.Int(4)))
+            assert FooScalar.coerce(2 << 31) == quiz.types.Err(
+                "Integer beyond 32-bit limit."
+            )
+
+        def test_bool(self):
+            assert FooScalar.coerce(True) == quiz.types.Ok(
+                FooScalar(quiz.Boolean(True))
+            )
+
+        def test_string(self):
+            assert FooScalar.coerce("my string") == quiz.types.Ok(
+                FooScalar(quiz.String("my string"))
+            )
+
+        def test_null(self):
+            assert FooScalar.coerce(None) == quiz.types.Ok(FooScalar(None))
+
+        def test_invalid_object(self):
+            assert FooScalar.coerce(object()) == quiz.types.Err(
+                "Not a valid scalar."
+            )
+
+        def test_other_scalar(self):
+            class MyScalar(quiz.Scalar):
+                """an example scalar"""
+                def __init__(self, value):
+                    self.value = value
+
+            value = MyScalar("foo")
+            assert FooScalar.coerce(value) == quiz.types.Ok(FooScalar(value))
 
 
 class TestScalar:
@@ -69,24 +303,19 @@ class TestScalar:
         ):
             quiz.Scalar().__gql_load__(None)
 
+    @pytest.mark.parametrize(
+        "value, expect", [(None, "null"), (quiz.String("foo"), '"foo"')]
+    )
+    def test_gql_dump(self, value, expect):
+        assert FooScalar(value).__gql_dump__() == expect
 
-class TestGenericScalar:
-    def test_isinstancecheck(self):
-        class MyScalar(quiz.GenericScalar):
-            """foo"""
-
-        assert issubclass(MyScalar, quiz.Scalar)
-
-        assert isinstance(4, MyScalar)
-        assert isinstance("foo", MyScalar)
-        assert isinstance(0.1, MyScalar)
-        assert isinstance(True, MyScalar)
-
-        assert not isinstance([], MyScalar)
-        assert not isinstance(None, MyScalar)
+    @pytest.mark.parametrize("value", [None, 3.4, "foo"])
+    def test_gql_load(self, value):
+        assert FooScalar.__gql_load__(value) == value
 
 
 class TestObject:
+    @pytest.mark.skip()
     class TestGetItem:
         def test_valid(self):
             selection_set = _.name.knows_command(
@@ -145,13 +374,138 @@ class TestObject:
                 Dog(__foo__=9)
 
 
+class TestInputObject:
+    class TestCoerce:
+        def test_dict_empty(self):
+            assert OptionalInputObject.coerce({}) == quiz.types.Ok(
+                OptionalInputObject()
+            )
+
+        def test_dict(self):
+            assert SearchFilters.coerce(
+                {"field": "foo", "order": "ASC"}
+            ) == quiz.types.Ok(
+                SearchFilters(
+                    field="foo", order=quiz.Nullable[Order](Order.ASC)
+                )
+            )
+
+        def test_invalid_dict_key(self):
+            assert SearchFilters.coerce(
+                {"field": "A", 5: "bla"}
+            ) == quiz.types.Err("Dict with non-string key")
+
+        @pytest.mark.parametrize("value", [object(), "foo", "1.2", None])
+        def test_invalid_type(self, value):
+            assert SearchFilters.coerce(value) == quiz.types.Err(
+                f"Invalid type {type(value)!r}"
+            )
+
+    def test_init_full(self):
+        search = SearchFilters(field="foo", order=Order.ASC)
+        assert search.field == "foo"
+        assert search.order is Order.ASC
+
+        with pytest.raises(AttributeError):
+            search.order = "foo"
+
+    def test_init_partial(self):
+        search = SearchFilters(field="foo")
+        assert search.field == "foo"
+
+        with pytest.raises(quiz.NoValueForField):
+            assert search.order is None
+
+        assert not hasattr(search, "order")
+
+    def test_init_invalid_kwarg(self):
+        with pytest.raises(quiz.NoSuchArgument, match="bla"):
+            SearchFilters(field="foo", bla=4)
+
+    def test_missing_kwarg(self):
+        with pytest.raises(quiz.MissingArgument, match="field"):
+            SearchFilters(order=Order.DESC)
+
+    def test_equality(self):
+        obj = SearchFilters(field="foo")
+        assert obj == SearchFilters(field="foo")
+        assert obj == AlwaysEquals()
+        assert not obj == SearchFilters(field="bla")
+        assert not obj == NeverEquals()
+
+        assert obj != SearchFilters(field="bla")
+        assert obj != NeverEquals()
+        assert not obj != SearchFilters(field="foo")
+        assert not obj != AlwaysEquals()
+
+    def test_repr(self):
+        search = SearchFilters(field="foo")
+        rep = repr(search)
+        assert "SearchFilters" in rep
+
+        assert type(search).__qualname__ in rep
+
+        assert "field=" in rep
+        assert repr("foo") in rep
+        assert "order" not in rep
+
+    def test_help(self):
+        doc = render_doc(SearchFilters)
+
+        assert SearchFilters.__doc__ in doc
+        assert "InputObject" in doc
+
+        # TODO: `Order or None` instead of `Nullable[Order]`
+        assert (
+            """\
+ |  order
+ |      : Nullable[Order]
+ |      the ordering"""
+            in doc
+        )
+
+    def test_kwargs_named_self(self):
+        class Foo(quiz.InputObject):
+            __input_fields__ = {
+                "self": quiz.InputValueDefinition(
+                    "self", "example field", type=int
+                )
+            }
+            self = quiz.InputObjectFieldDescriptor(
+                quiz.InputValueDefinition("self", "example field", type=int)
+            )
+
+        foo = Foo(self=4)
+        assert foo.self == 4
+
+    def test_graphql_dump(self):
+        assert quiz.dump_inputvalue(SearchFilters(field="foo")) == (
+            '{field: "foo"}'
+        )
+
+        other = SearchFilters(field="bla", order=Order.ASC)
+        assert quiz.dump_inputvalue(other) in (
+            # fields may be in any order
+            '{field: "bla" order: ASC}',
+            '{order: ASC field: "bla"}',
+        )
+
+
+@pytest.mark.skip()
 class TestInlineFragment:
     def test_gql(self):
+        # fmt: off
         fragment = Dog[
-            _.name.bark_volume.knows_command(
-                command=Command.SIT
-            ).is_housetrained.owner[_.name]
+            _
+            .name
+            .bark_volume
+            .knows_command(command=Command.SIT)
+            .is_housetrained
+            .owner[
+                _.name
+            ]
         ]
+        # fmt: on
         assert (
             gql(fragment)
             == dedent(
@@ -212,88 +566,293 @@ def test_selections_not_supported_str():
     assert str(exc) == "selections not supported on this object"
 
 
-class TestValidate:
-    def test_empty(self):
-        selection = SelectionSet()
-        assert quiz.validate(Dog, selection) == SelectionSet()
+class TestValidateArgs:
+    @pytest.mark.parametrize(
+        "value, expect",
+        [
+            (
+                {"foo": 3, "frobs": []},
+                {
+                    "foo": quiz.Int(3),
+                    "frobs": quiz.List[quiz.Nullable[quiz.Float]]([]),
+                },
+            ),
+            (
+                {"foo": 3, "frobs": [None, 3.4], "qux": None},
+                {
+                    "foo": quiz.Int(3),
+                    "frobs": quiz.List[quiz.Nullable[quiz.Float]](
+                        [
+                            quiz.Nullable[quiz.Float](None),
+                            quiz.Nullable[quiz.Float](quiz.Float(3.4)),
+                        ]
+                    ),
+                    "qux": quiz.Nullable[quiz.String](None),
+                },
+            ),
+            (
+                {"foo": 5, "frobs": [], "bar": "OPT1"},
+                {
+                    "foo": quiz.Int(5),
+                    "frobs": quiz.List[quiz.Nullable[quiz.Float]]([]),
+                    "bar": quiz.Nullable[MyEnum](MyEnum.OPT1),
+                },
+            ),
+            (
+                {"foo": quiz.Int(4), "frobs": []},
+                {
+                    "foo": quiz.Int(4),
+                    "frobs": quiz.List[quiz.Nullable[quiz.Float]]([]),
+                },
+            ),
+        ],
+    )
+    def test_ok(self, value, expect):
+        result = quiz.types.validate_args(EXAMPLE_ARG_SCHEMA, value)
+        assert result == quiz.types.Ok(expect)
 
-    def test_simple_valid(self):
-        assert quiz.validate(Dog, _.name) == _.name
+    @pytest.mark.parametrize(
+        "value, expect",
+        [
+            (
+                {"bar": MyEnum.OPT1},
+                dedent(
+                    """\
+                    No value for required argument `foo`.
+                    No value for required argument `frobs`."""
+                ),
+            ),
+            (
+                {"bar": MyEnum.OPT2, "frobs": 3.4, "blabla": None},
+                dedent(
+                    """\
+                    No argument named `blabla`.
+                    No value for required argument `foo`.
+                    Invalid value for argument `frobs`:
+                      Could not coerce to List[Nullable[Float]]:
+                        Invalid type <class 'float'>."""
+                ),
+            ),
+            (
+                {"foo": 3, "frobs": [1], "woop": 4.5, "bloop": "foo"},
+                dedent(
+                    """\
+                    No argument named `bloop`.
+                    No argument named `woop`."""
+                ),
+            ),
+        ],
+    )
+    def test_errors(self, value, expect):
+        result = quiz.types.validate_args(EXAMPLE_ARG_SCHEMA, value)
+        assert result == quiz.types.Err(expect)
 
-    def test_complex_valid(self):
-        selection_set = (
-            _.name.knows_command(command=Command.SIT)
-            .is_housetrained.owner[_.name.hobbies[_.name.cool_factor]]
-            .best_friend[_.name]
-            .age(on_date=MyDateTime(datetime.now()))
-        )
-        assert quiz.validate(Dog, selection_set) == selection_set
 
-    def test_no_such_field(self):
-        with pytest.raises(quiz.SelectionError) as exc:
-            quiz.validate(Dog, _.name.foo.knows_command(command=Command.SIT))
-        assert exc.value == quiz.SelectionError(Dog, "foo", quiz.NoSuchField())
+class TestValidateField:
+    def test_simple(self):
+        assert quiz.types.validate_field(
+            Dog.name, quiz.Field("name")
+        ) == quiz.types.Ok(quiz.Field("name"))
 
-    def test_invalid_argument(self):
-        with pytest.raises(quiz.SelectionError) as exc:
-            quiz.validate(Dog, _.knows_command(foo=1, command=Command.SIT))
-        assert exc.value == quiz.SelectionError(
-            Dog, "knows_command", quiz.NoSuchArgument("foo")
-        )
+    def test_arg_simple_ok(self):
+        field = quiz.Field("knows_command", kwargs={"command": Command.SIT})
+        assert quiz.types.validate_field(
+            Dog.knows_command, field
+        ) == quiz.types.Ok(field)
 
-    def test_missing_arguments(self):
-        selection_set = _.knows_command
-        with pytest.raises(quiz.SelectionError) as exc:
-            quiz.validate(Dog, selection_set)
-
-        assert exc.value == quiz.SelectionError(
-            Dog, "knows_command", quiz.MissingArgument("command")
-        )
-
-    def test_invalid_argument_type(self):
-        selection_set = _.knows_command(command="foobar")
-        with pytest.raises(quiz.SelectionError) as exc:
-            quiz.validate(Dog, selection_set)
-
-        assert exc.value == quiz.SelectionError(
-            Dog, "knows_command", quiz.InvalidArgumentType("command", "foobar")
-        )
-
-    def test_invalid_argument_type_optional(self):
-        selection_set = _.is_housetrained(at_other_homes="foo")
-        with pytest.raises(quiz.SelectionError) as exc:
-            quiz.validate(Dog, selection_set)
-        assert exc.value == quiz.SelectionError(
-            Dog,
-            "is_housetrained",
-            quiz.InvalidArgumentType("at_other_homes", "foo"),
-        )
-
-    def test_nested_selection_error(self):
-        with pytest.raises(quiz.SelectionError) as exc:
-            quiz.validate(Dog, _.owner[_.hobbies[_.foo]])
-        assert exc.value == quiz.SelectionError(
-            Dog,
-            "owner",
-            quiz.SelectionError(
-                Human,
-                "hobbies",
-                quiz.SelectionError(Hobby, "foo", quiz.NoSuchField()),
+    def test_subselection_coerce(self):
+        field = quiz.Field(
+            "friends",
+            kwargs={"include_family": True},
+            selection_set=quiz.SelectionSet(
+                quiz.Field("likes_color", kwargs={"color": "BROWN"}),
+                quiz.Field("name"),
             ),
         )
+        expect = quiz.types.Ok(
+            quiz.Field(
+                "friends",
+                kwargs={
+                    "include_family": quiz.Nullable[quiz.Boolean](
+                        quiz.Boolean(True)
+                    )
+                },
+                selection_set=quiz.SelectionSet(
+                    quiz.Field("likes_color", kwargs={"color": Color.BROWN}),
+                    quiz.Field("name"),
+                ),
+            )
+        )
+        actual = quiz.types.validate_field(Dog.friends, field)
+        assert actual == expect
 
-    def test_selection_set_on_non_object(self):
-        with pytest.raises(quiz.SelectionError) as exc:
-            quiz.validate(Dog, _.name[_.foo])
-        assert exc.value == quiz.SelectionError(
-            Dog, "name", quiz.SelectionsNotSupported()
+    def test_selection_error(self):
+        field = quiz.Field("friends", kwargs={"include_family": True})
+        expect = quiz.types.Err("Empty selection set.")
+        actual = quiz.types.validate_field(Dog.friends, field)
+        assert actual == expect
+
+    def test_selection_and_args_error(self):
+        field = quiz.Field("friends", kwargs={"include_family": "foo"})
+        expect = quiz.types.Err(
+            dedent(
+                """\
+        Invalid arguments:
+          Invalid value for argument `include_family`:
+            Could not coerce to Nullable[Boolean]:
+              Could not coerce to Boolean:
+                Invalid type, must be bool.
+        Empty selection set."""
+            )
+        )
+        actual = quiz.types.validate_field(Dog.friends, field)
+        assert actual == expect
+
+    def test_args_coerce(self):
+        field = quiz.Field("knows_command", kwargs={"command": "SIT"})
+        assert quiz.types.validate_field(
+            Dog.knows_command, field
+        ) == quiz.types.Ok(
+            quiz.Field("knows_command", kwargs={"command": Command.SIT})
         )
 
-    # TODO: check object types always have selection sets
+    def test_args_err(self):
+        result = quiz.types.validate_field(
+            Dog.knows_command,
+            quiz.Field(
+                "knows_command", kwargs={"blabla": 6, "command": None,}
+            ),
+        )
+        assert result == quiz.types.Err(
+            dedent(
+                """\
+            Invalid arguments:
+              No argument named `blabla`.
+              Invalid value for argument `command`:
+                Could not coerce to Command:
+                  Invalid type <class 'NoneType'>."""
+            )
+        )
+
+
+class TestValidateSelectionSet:
+    def test_empty(self):
+        selection = SelectionSet()
+        assert quiz.validate_selection_set(Dog, selection) == quiz.types.Err(
+            "Empty selection set."
+        )
+
+    def test_single_field(self):
+        assert quiz.validate_selection_set(Dog, _.name) == quiz.types.Ok(
+            _.name
+        )
+
+    def test_coerces(self):
+        selection_set = _.name.knows_command(command="SIT")
+        assert quiz.validate_selection_set(
+            Dog, selection_set
+        ) == quiz.types.Ok(_.name.knows_command(command=Command.SIT))
+
+    def test_no_such_field(self):
+        result = quiz.validate_selection_set(
+            Dog, _.name.foo.knows_command(command=Command.SIT).blabla
+        )
+        assert result == quiz.types.Err(
+            dedent(
+                """\
+            Invalid field `foo`:
+              Field does not exist.
+            Invalid field `blabla`:
+              Field does not exist."""
+            )
+        )
+
+    def test_nested_argument_errors(self):
+        result = quiz.validate_selection_set(
+            Dog, _.knows_command(foo=1, command=Command.SIT, bla=9)
+        )
+        assert result == quiz.types.Err(
+            dedent(
+                """\
+                Invalid field `knows_command`:
+                  Invalid arguments:
+                    No argument named `bla`.
+                    No argument named `foo`."""
+            )
+        )
+
+    def test_complex_valid(self):
+        # fmt: off
+        now = MyDateTime(datetime.now())
+        selection_set = (
+            _.name
+            .knows_command(command='SIT')
+            .is_housetrained
+            .owner[
+                _.name
+                .hobbies[
+                    _.name
+                    .cool_factor
+                ]
+                .best_friend
+            ]
+            .best_friend[_.name]
+            .age(on_date=now)
+        )
+        result = quiz.validate_selection_set(Dog, selection_set)
+        assert result == quiz.types.Ok(
+            _.name
+            .knows_command(command=Command.SIT)
+            .is_housetrained.owner[
+                _.name
+                .hobbies[
+                    _.name
+                    .cool_factor
+                ]
+                .best_friend
+            ]
+            .best_friend[_.name]
+            .age(on_date=quiz.Nullable[MyDateTime](now))
+        )
+        # fmt: on
+
+    def test_complex_invalid(self):
+        # fmt: off
+        now = MyDateTime(datetime.now())
+        selection_set = (
+            _.name
+            .knows_command(command='SIT')
+            ('wrong_owner').owner
+            .is_housetrained
+            .owner[
+                _.name
+                .hobbies[
+                    _.name
+                    .foo
+                    .cool_factor
+                ]
+            ]
+            .best_friend[_.name]
+            .age(on_date=now)
+        )
+        # fmt: on
+        result = quiz.validate_selection_set(Dog, selection_set)
+        assert result == quiz.types.Err(
+            dedent(
+                '''\
+                Invalid field `wrong_owner: owner`:
+                  Empty selection set.
+                Invalid field `owner`:
+                  Invalid field `hobbies`:
+                    Invalid field `foo`:
+                      Field does not exist.'''
+            )
+        )
 
     # TODO: list input type
 
 
+@pytest.mark.skip()
 class TestLoadField:
     def test_custom_scalar(self):
         result = quiz.types.load_field(MyDateTime, quiz.Field("foo"), 12345)
@@ -303,7 +862,7 @@ class TestLoadField:
     @pytest.mark.parametrize("value", [1, "a string", 0.4, True])
     def test_generic_scalar(self, value):
         result = quiz.types.load_field(
-            quiz.GenericScalar, quiz.Field("data"), value
+            quiz.AnyScalar, quiz.Field("data"), value
         )
         assert type(result) == type(value)  # noqa
         assert result == value
@@ -505,3 +1064,155 @@ class TestFieldDefinition:
 
         with pytest.raises(AttributeError, match="set"):
             f.bla = 3
+
+
+def test_inputwrapper_repr():
+    assert "foobar" in repr(quiz.String("foobar"))
+
+
+class TestFloat:
+    def test_mro(self):
+        assert issubclass(quiz.Float, quiz.InputValue)
+        assert issubclass(quiz.Float, quiz.ResponseType)
+
+    class TestCoerce:
+        @pytest.mark.parametrize("value", [1, 3.4, -0.1])
+        def test_float_or_int(self, value):
+            result = quiz.Float.coerce(value)
+            assert result == quiz.types.Ok(quiz.Float(value))
+            assert isinstance(result.value.value, float)
+
+        @pytest.mark.parametrize(
+            "value", [float("inf"), float("nan"), float("-inf")]
+        )
+        def test_invalid_float(self, value):
+            assert quiz.Float.coerce(value) == quiz.types.Err(
+                "Value cannot be infinite or NaN."
+            )
+
+        @pytest.mark.parametrize("value", [object(), "foo", "1.2"])
+        def test_invalid_type(self, value):
+            assert quiz.Float.coerce(value) == quiz.types.Err(
+                "Can only coerce float or int, not "
+                f"{quiz.types.class_name(type(value))}."
+            )
+
+    @pytest.mark.parametrize(
+        "value, expect",
+        [(1.2, "1.2"), (1.0, "1.0"), (1.234e53, "1.234e+53"), (0.4, "0.4")],
+    )
+    def test_gql_dump(self, value, expect):
+        f = quiz.Float(value)
+        assert f.__gql_dump__() == expect
+
+    class TestGqlLoad:
+        def test_float(self):
+            result = quiz.Float.__gql_load__(3.4)
+            assert result == 3.4
+            assert isinstance(result, float)
+
+        def test_int(self):
+            result = quiz.Float.__gql_load__(2)
+            assert result == 2.0
+            assert isinstance(result, float)
+
+
+class TestInt:
+    def test_mro(self):
+        assert issubclass(quiz.Int, quiz.InputValue)
+        assert issubclass(quiz.Int, quiz.ResponseType)
+
+    class TestCoerce:
+        def test_valid_int(self):
+            assert quiz.Int.coerce(-4234) == quiz.types.Ok(quiz.Int(-4234))
+
+        @pytest.mark.parametrize("value", [2 << 30, (-2 << 30) - 1])
+        def test_invalid_int(self, value):
+            assert quiz.Int.coerce(value) == quiz.types.Err(
+                "Integer beyond 32-bit limit."
+            )
+
+        @pytest.mark.parametrize("value", [object(), "foo", 1.2])
+        def test_invalid_type(self, value):
+            assert quiz.Int.coerce(value) == quiz.types.Err(
+                "Invalid type, must be int."
+            )
+
+    @pytest.mark.parametrize(
+        "value, expect", [(1, "1"), (0, "0"), (-334, "-334")]
+    )
+    def test_gql_dump(self, value, expect):
+        f = quiz.Int(value)
+        assert f.__gql_dump__() == expect
+
+    def test_gql_load(self):
+        assert quiz.Int.__gql_load__(3) == 3
+
+
+class TestBoolean:
+    def test_mro(self):
+        assert issubclass(quiz.Boolean, quiz.InputValue)
+        assert issubclass(quiz.Boolean, quiz.ResponseType)
+
+    class TestCoerce:
+        def test_bool(self):
+            assert quiz.Boolean.coerce(True) == quiz.types.Ok(
+                quiz.Boolean(True)
+            )
+
+        @pytest.mark.parametrize("value", [object(), "foo", 1.2, 1])
+        def test_invalid_type(self, value):
+            assert quiz.Boolean.coerce(value) == quiz.types.Err(
+                "Invalid type, must be bool."
+            )
+
+    @pytest.mark.parametrize(
+        "value, expect", [(True, "true"), (False, "false")]
+    )
+    def test_gql_dump(self, value, expect):
+        assert quiz.Boolean(value).__gql_dump__() == expect
+
+    def test_gql_load(self):
+        assert quiz.Boolean.__gql_load__(True) is True
+
+
+class TestStringLike:
+    def test_mro(self):
+        assert issubclass(quiz.StringLike, quiz.InputValue)
+        assert issubclass(quiz.StringLike, quiz.ResponseType)
+
+    class TestCoerce:
+        def test_valid_string(self):
+            assert FooString.coerce("my valid string") == quiz.types.Ok(
+                FooString("my valid string")
+            )
+
+        @pytest.mark.parametrize("value", [object(), None, 1.2, 1])
+        def test_invalid_type(self, value):
+            assert FooString.coerce(value) == quiz.types.Err(
+                "Invalid type, must be str."
+            )
+
+    @pytest.mark.parametrize(
+        "value, expect",
+        [
+            ("foo", '"foo"'),
+            ("foo\nbar", '"foo\\nbar"'),
+            ('"quoted" --', '"\\"quoted\\" --"'),
+        ],
+    )
+    def test_gql_dump(self, value, expect):
+        assert FooString(value).__gql_dump__() == expect
+
+    def test_gql_load(self):
+        result = FooString.__gql_load__("foo")
+        assert isinstance(result, str)
+        assert result == "foo"
+
+
+def test_string():
+    assert issubclass(quiz.String, quiz.StringLike)
+
+
+def test_id():
+    assert issubclass(quiz.ID, quiz.StringLike)

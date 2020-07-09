@@ -1,6 +1,6 @@
 [tool.black]
 line-length = 79
-target_version = ['py35']
+target_version = ['py36']
 include = '\.pyi?$'
 exclude = '''
 /(
@@ -16,6 +16,7 @@ exclude = '''
 '''
 
 [tool.isort]
+known_third_party=['snug', 'gentools', 'quiz']
 # compatible settings with black
 multi_line_output = 3
 include_trailing_comma = true

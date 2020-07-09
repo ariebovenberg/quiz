@@ -1,31 +1,78 @@
 import enum
 import json
 import pickle
-import pydoc
 import sys
 import types
 
 import pytest
-import snug
-
 import quiz
-from quiz import SELECTOR as _
+import snug
+from quiz import _
 from quiz import schema as s
 
-from .helpers import MockClient
-
-
-def trim_whitespace(txt):
-    return "".join(t.rstrip() + "\n" for t in txt.splitlines())
-
-
-def render_doc(obj):
-    return trim_whitespace(pydoc.render_doc(obj, renderer=pydoc.plaintext))
+from .helpers import MockClient, render_doc
 
 
 @pytest.fixture
 def schema(raw_schema):
     return quiz.Schema.from_raw(raw_schema, module="mymodule")
+
+
+def test_inputobject_as_type():
+    obj_schema = s.InputObject(
+        "MyObject",
+        "a test input object",
+        input_fields=[
+            s.InputValue(
+                "param1",
+                "the first param",
+                s.TypeRef(
+                    None,
+                    s.Kind.LIST,
+                    of_type=s.TypeRef("MyType", s.Kind.OBJECT, of_type=None),
+                ),
+                default=None,
+            ),
+            s.InputValue(
+                "param2",
+                "the second parameter",
+                s.TypeRef("MyOtherType", s.Kind.OBJECT, of_type=None),
+                default=3,
+            ),
+        ],
+    )
+    created = s.inputobject_as_type(obj_schema, module="foo")
+    assert issubclass(created, quiz.InputObject)
+    assert created.__name__ == "MyObject"
+    assert created.__doc__ == "a test input object"
+    assert created.__module__ == "foo"
+
+    assert created.__raw__ == obj_schema
+
+    # test adding the fields later
+    classes = {
+        "MyType": type("MyType", (), {}),
+        "MyOtherType": type("MyOtherType", (), {}),
+    }
+    s._add_input_fields(created, classes)
+
+    assert created.__input_fields__ == {
+        "param1": quiz.InputValueDefinition(
+            "param1",
+            "the first param",
+            type=quiz.Nullable[quiz.List[quiz.Nullable[classes["MyType"]]]],
+        ),
+        "param2": quiz.InputValueDefinition(
+            "param2",
+            "the second parameter",
+            type=quiz.Nullable[classes["MyOtherType"]],
+        ),
+    }
+
+    assert isinstance(created.param1, quiz.InputObjectFieldDescriptor)
+    assert created.param1.value == created.__input_fields__["param1"]
+
+    assert not hasattr(created, "__raw__")
 
 
 class TestEnumAsType:
@@ -130,43 +177,57 @@ class TestInterfaceAsType:
         assert created.__module__ == "mymodule"
 
 
-class TestObjectAsType:
-    def test_simple(self):
-        obj_schema = s.Object(
-            "Foo",
-            "the foo description!",
-            interfaces=[
-                s.TypeRef("Interface1", s.Kind.INTERFACE, None),
-                s.TypeRef("BlaInterface", s.Kind.INTERFACE, None),
-            ],
-            input_fields=None,
-            fields=[
-                s.Field(
-                    "blabla",
-                    type=s.TypeRef("String", s.Kind.SCALAR, None),
-                    args=[],
-                    desc="my description",
-                    is_deprecated=False,
-                    deprecation_reason=None,
-                )
-            ],
-        )
-        interfaces = {
-            "Interface1": type(
-                "Interface1", (quiz.Interface,), {"__module__": "foo"}
-            ),
-            "BlaInterface": type(
-                "BlaInterface", (quiz.Interface,), {"__module__": "foo"}
-            ),
-            "Qux": type("Qux", (quiz.Interface,), {"__module__": "foo"}),
-        }
-        created = s.object_as_type(obj_schema, interfaces, module="foo")
-        assert issubclass(created, quiz.Object)
-        assert created.__name__ == "Foo"
-        assert created.__doc__ == "the foo description!"
-        assert created.__module__ == "foo"
-        assert issubclass(created, interfaces["Interface1"])
-        assert issubclass(created, interfaces["BlaInterface"])
+def test_object_as_type():
+    obj_schema = s.Object(
+        "Foo",
+        "the foo description!",
+        interfaces=[
+            s.TypeRef("Interface1", s.Kind.INTERFACE, None),
+            s.TypeRef("BlaInterface", s.Kind.INTERFACE, None),
+        ],
+        fields=[
+            s.Field(
+                "blabla",
+                type=s.TypeRef("MyObject", s.Kind.OBJECT, None),
+                args=[],
+                desc="my description",
+                is_deprecated=False,
+                deprecation_reason=None,
+            )
+        ],
+    )
+    interfaces = {
+        "Interface1": type(
+            "Interface1", (quiz.Interface,), {"__module__": "foo"}
+        ),
+        "BlaInterface": type(
+            "BlaInterface", (quiz.Interface,), {"__module__": "foo"}
+        ),
+        "Qux": type("Qux", (quiz.Interface,), {"__module__": "foo"}),
+    }
+    created = s.object_as_type(obj_schema, interfaces, module="foo")
+    assert issubclass(created, quiz.Object)
+    assert created.__name__ == "Foo"
+    assert created.__doc__ == "the foo description!"
+    assert created.__module__ == "foo"
+    assert issubclass(created, interfaces["Interface1"])
+    assert issubclass(created, interfaces["BlaInterface"])
+
+    assert created.__raw__ == obj_schema
+
+    # test adding the fields later
+    classes = {"MyObject": type("MyObject", (), {})}
+    s._add_fields(created, classes)
+
+    assert created.blabla == quiz.FieldDefinition(
+        "blabla",
+        "my description",
+        type=quiz.Nullable[classes["MyObject"]],
+        args={},
+        is_deprecated=False,
+        deprecation_reason=None,
+    )
+    assert not hasattr(created, "__raw__")
 
 
 class TestResolveTypeRef:
@@ -226,22 +287,23 @@ class TestSchemaFromRaw:
         schema = quiz.Schema.from_raw(raw_schema, scalars=[URI], module="foo")
 
         # generic scalars
-        assert issubclass(schema.DateTime, quiz.GenericScalar)
+        assert issubclass(schema.DateTime, quiz.AnyScalar)
         assert schema.DateTime.__name__ == "DateTime"
         assert len(schema.__doc__) > 0
 
-        assert schema.Boolean is bool
-        assert schema.String is str
-        assert schema.Float is float
-        assert schema.Int is int
+        assert schema.Boolean is quiz.Boolean
+        assert schema.String is quiz.String
+        assert schema.Float is quiz.Float
+        assert schema.Int is quiz.Int
+        assert schema.ID is quiz.ID
 
         assert schema.URI is URI
 
     def test_defaults(self, raw_schema):
         schema = quiz.Schema.from_raw(raw_schema, module="foo")
         assert isinstance(schema, quiz.Schema)
-        assert issubclass(schema.DateTime, quiz.GenericScalar)
-        assert schema.String is str
+        assert issubclass(schema.DateTime, quiz.AnyScalar)
+        assert schema.String is quiz.String
         assert "Query" in schema.classes
         assert schema.query_type == schema.classes["Query"]
         assert schema.mutation_type == schema.classes["Mutation"]
@@ -256,6 +318,7 @@ class TestSchema:
         assert issubclass(schema.classes["Repository"], quiz.Object)
         assert "Repository" in dir(schema)
         assert "__class__" in dir(schema)
+        assert "query_type" in dir(schema)
 
         with pytest.raises(AttributeError, match="foo"):
             schema.foo
@@ -307,6 +370,12 @@ class TestSchema:
         schema.to_path(MyPath())
         loaded = schema.from_path(MyPath(), module="mymodule")
         assert loaded.classes.keys() == schema.classes.keys()
+
+    def test_repr(self, schema):
+        rep = repr(schema)
+        assert len(rep) < 80
+        assert "Schema" in rep
+        assert schema.module in rep
 
 
 class TestSchemaFromUrl:
@@ -372,30 +441,34 @@ class TestSchemaFromPath:
 
 def test_end_to_end(raw_schema):
     schema = quiz.Schema.from_raw(raw_schema, module="github")
-    doc = render_doc(schema.Issue)
+    obj_doc = render_doc(schema.Issue)
 
     assert (
-        """\
+        (
+            """\
  |  viewerDidAuthor
- |      : bool
+ |      : Boolean
  |      Did the viewer author this comment."""
-        in doc
+        )
+        in obj_doc
     )
     assert (
         """\
  |  publishedAt
- |      : DateTime or None
+ |      : Nullable[DateTime]
  |      Identifies when the comment was published at."""
-        in doc
+        in obj_doc
     )
 
     assert (
-        """\
+        (
+            """\
  |  viewerCannotUpdateReasons
- |      : [CommentCannotUpdateReason]
+ |      : List[CommentCannotUpdateReason]
  |      Reasons why the current viewer can not update this comment."""
-        in doc
+        )
+        in (obj_doc)
     )
 
-    assert schema.Issue.__doc__ in doc
-    assert "Labelable" in doc
+    assert schema.Issue.__doc__ in obj_doc
+    assert "Labelable" in obj_doc

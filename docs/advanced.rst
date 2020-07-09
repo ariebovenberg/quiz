@@ -191,7 +191,7 @@ Custom scalars
 
 GraphQL APIs often use custom scalars to represent data such as dates or URLs.
 By default, custom scalars in the schema
-are defined as :class:`~quiz.types.GenericScalar`,
+are defined as :class:`~quiz.types.AnyScalar`,
 which accepts any of the base scalar types
 (``str``, ``bool``, ``float``, ``int``, ``ID``).
 
@@ -233,18 +233,17 @@ pass it to the schema constructor:
 
 .. _selectionset:
 
-The ``SELECTOR`` API
+The selector API
 --------------------
 
-The :class:`quiz.SELECTOR <quiz.build.SELECTOR>`
+The :class:`quiz._ <quiz.build._>`
 object allows writing GraphQL in python syntax.
 
-It is recommended to import this object as an easy-to-type variable name,
-such as ``_``.
+Import it as follows:
 
 .. code-block:: python3
 
-   import quiz.SELECTOR as _
+    from quiz import _
 
 Fields
 ~~~~~~

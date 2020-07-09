@@ -1,11 +1,9 @@
 from textwrap import dedent
 
 import pytest
-from hypothesis import given, strategies
-
 import quiz
-from quiz import SELECTOR as _
-from quiz import Field, InlineFragment, SelectionSet, gql
+from hypothesis import given, strategies
+from quiz import Field, InlineFragment, SelectionSet, _, gql
 from quiz.utils import FrozenDict as fdict
 
 from .example import Dog
@@ -203,39 +201,42 @@ class TestSelectionSet:
         )
 
 
-class TestArgumentAsGql:
+class TestDumpInputvalue:
     def test_string(self):
-        assert quiz.argument_as_gql('foo\nb"ar') == '"foo\\nb\\"ar"'
+        assert quiz.dump_inputvalue('foo\nb"ar') == '"foo\\nb\\"ar"'
 
     def test_invalid(self):
         class MyClass(object):
             pass
 
         with pytest.raises(TypeError, match="MyClass"):
-            quiz.argument_as_gql(MyClass())
+            quiz.dump_inputvalue(MyClass())
 
     def test_int(self):
-        assert quiz.argument_as_gql(4) == "4"
+        assert quiz.dump_inputvalue(4) == "4"
 
     def test_none(self):
-        assert quiz.argument_as_gql(None) == "null"
+        assert quiz.dump_inputvalue(None) == "null"
 
     def test_bool(self):
-        assert quiz.argument_as_gql(True) == "true"
-        assert quiz.argument_as_gql(False) == "false"
+        assert quiz.dump_inputvalue(True) == "true"
+        assert quiz.dump_inputvalue(False) == "false"
 
     @pytest.mark.parametrize(
         "value, expect", [(1.2, "1.2"), (1.0, "1.0"), (1.234e53, "1.234e+53")]
     )
     def test_float(self, value, expect):
-        assert quiz.argument_as_gql(value) == expect
+        assert quiz.dump_inputvalue(value) == expect
 
     def test_enum(self):
         class MyEnum(quiz.Enum):
             FOO = "FOOVALUE"
             BLA = "QUX"
 
-        assert quiz.argument_as_gql(MyEnum.BLA) == "QUX"
+        assert quiz.dump_inputvalue(MyEnum.BLA) == "QUX"
+
+    def test_list(self):
+        assert quiz.dump_inputvalue(["foo", "bar"]) == '["foo" "bar"]'
 
     def test_custom_scalar(self):
         class MyCustomScalar(quiz.Scalar):
@@ -247,7 +248,7 @@ class TestArgumentAsGql:
             def __gql_dump__(self):
                 return self.value.upper()
 
-        assert quiz.argument_as_gql(MyCustomScalar("Hello")) == "HELLO"
+        assert quiz.dump_inputvalue(MyCustomScalar("Hello")) == "HELLO"
 
 
 class TestQuery:

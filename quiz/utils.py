@@ -1,9 +1,8 @@
 """Common utilities and boilerplate"""
 import sys
 import typing as t
-from collections import namedtuple
-from functools import wraps
-from itertools import chain, starmap
+from dataclasses import fields
+from itertools import chain
 from operator import attrgetter, methodcaller
 
 __all__ = ["JSON", "Empty"]
@@ -24,7 +23,7 @@ def identity(obj):
 
 class FrozenDict(t.Mapping[T1, T2]):
     # see https://stackoverflow.com/questions/45864273
-    if not (3, 7) > sys.version_info > (3, 4):  # pragma: no cover
+    if sys.version_info > (3, 7):  # pragma: no cover
         __slots__ = "_inner"
 
     def __init__(self, inner):
@@ -71,113 +70,6 @@ def init_last(items):
         raise Empty
 
 
-def _make_init_fn(ntuple):
-    @wraps(ntuple.__new__)
-    def __init__(self, *args, **kwargs):
-        self._values = ntuple(*args, **kwargs)
-
-    return __init__
-
-
-class _ValueObjectMeta(type(t.Generic)):
-    """Metaclass for ``ValueObject``"""
-
-    # TODO: add parameters to __doc__
-    def __new__(self, name, bases, dct):
-        # skip the ``ValueObject`` class itself
-        if bases != (object,):
-            fields = dct["__fields__"]
-            fieldnames = [n for n, _, _ in dct["__fields__"]]
-            assert "replace" not in fieldnames
-            ntuple = namedtuple("_" + name, fieldnames)
-            ntuple.__new__.__defaults__ = dct.get("__defaults__", ())
-            dct.update(
-                {
-                    "__namedtuple_cls__": ntuple,
-                    "__slots__": "_values",
-                    # For the signature to appear correctly in
-                    # introspection and docs,
-                    # we create the __init__ function for
-                    # each ValueObject class individually
-                    "__init__": _make_init_fn(ntuple),
-                }
-            )
-            dct.update(
-                (name, property(attrgetter("_values." + name), doc=doc))
-                for name, _, doc in fields
-            )
-        return super(_ValueObjectMeta, self).__new__(self, name, bases, dct)
-
-
-class ValueObject(object, metaclass=_ValueObjectMeta):
-    """Base class for "value object"-like classes,
-    similar to frozen dataclasses in python 3.7+.
-
-    Example
-    -------
-
-    >>> class Foo(ValueObject, ...):
-    ...     __slots__ = '_values'  # optional
-    ...     __fields__ = [
-    ...         ('foo', int, 'the foo'),
-    ...         ('bla', str, 'description for bla'),
-    ...     ]
-    ...
-    >>> f = Foo(4, bla='foo')
-    >>> f
-    Foo(foo=4, bla='foo')
-
-    """
-
-    __slots__ = ()
-
-    def replace(self, **kwargs):
-        """Create a new instance, with certain fields replaced with new values
-
-        Parameters
-        ----------
-        **kwargs
-            Updated field values
-
-        Example
-        -------
-        >>> my_object
-        MyObject(a=5, b="qux")
-        >>> my_object.replace(b="new!")
-        MyObject(a=5, b="new!")
-
-        """
-        new = type(self).__new__(type(self))
-        new._values = self._values._replace(**kwargs)
-        return new
-
-    def __eq__(self, other):
-        if type(self) is type(other):
-            return self._values == other._values
-        return NotImplemented
-
-    def __ne__(self, other):
-        if type(self) is type(other):
-            return self._values != other._values
-        return NotImplemented
-
-    def __repr__(self):
-        try:
-            return "{}({})".format(
-                self.__class__.__qualname__,
-                ", ".join(
-                    starmap(
-                        "{}={!r}".format,
-                        zip(self._values._fields, self._values),
-                    )
-                ),
-            )
-        except Exception:
-            return object.__repr__(self)
-
-    __hash__ = property(attrgetter("_values.__hash__"))
-
-
 class compose(object):
     """compose a function from a chain of functions
     Parameters
@@ -201,3 +93,42 @@ class compose(object):
         for func in reversed(tail):
             value = func(value)
         return value
+
+
+def _dataclass_getstate(self):
+    return [getattr(self, f.name) for f in fields(self)]
+
+
+def _dataclass_setstate(self, state):
+    for field, value in zip(fields(self), state):
+        # use setattr because dataclass may be frozen
+        object.__setattr__(self, field.name, value)
+
+
+# adapted from github.com/ericvsmith/dataclasses
+def add_slots(cls):
+    # Need to create a new class, since we can't set __slots__
+    #  after a class has been created.
+
+    # Make sure __slots__ isn't already set.
+    if "__slots__" in cls.__dict__:  # pragma: no cover
+        raise TypeError(f"{cls.__name__} already specifies __slots__")
+
+    # Create a new dict for our new class.
+    cls_dict = dict(cls.__dict__)
+    field_names = tuple(f.name for f in fields(cls))
+    cls_dict["__slots__"] = field_names
+    for field_name in field_names:
+        # Remove our attributes, if present. They'll still be
+        #  available in _MARKER.
+        cls_dict.pop(field_name, None)
+    # Remove __dict__ itself.
+    cls_dict.pop("__dict__", None)
+    # And finally create the class.
+    qualname = getattr(cls, "__qualname__", None)
+    cls = type(cls)(cls.__name__, cls.__bases__, cls_dict)
+    if qualname is not None:  # pragma: no cover
+        cls.__qualname__ = qualname
+    cls.__getstate__ = _dataclass_getstate
+    cls.__setstate__ = _dataclass_setstate
+    return cls

@@ -4,17 +4,18 @@ import json
 import sys
 import typing as t
 from collections import defaultdict
+from dataclasses import dataclass, fields
 from functools import partial
 from itertools import chain
 from operator import methodcaller
+from os import fspath
 from types import new_class
+from typing import Type
 
 from . import types
 from .build import Query
-from .compat import fspath
 from .execution import execute
-from .types import validate
-from .utils import JSON, FrozenDict, ValueObject, merge
+from .utils import JSON, FrozenDict, add_slots, merge
 
 __all__ = ["Schema", "INTROSPECTION_QUERY"]
 
@@ -75,9 +76,13 @@ def union_as_type(typ, objs):
     )
 
 
-def inputobject_as_type(typ):
-    # type InputObject -> type
-    return type(str(typ.name), (types.InputObject,), {"__doc__": typ.desc})
+def inputobject_as_type(typ, module):
+    # type (InputObject, str) -> Type[types.InputObject]
+    return type(
+        str(typ.name),
+        (types.InputObject,),
+        {"__doc__": typ.desc, "__raw__": typ, "__module__": module},
+    )
 
 
 def _add_fields(obj, classes):
@@ -90,7 +95,7 @@ def _add_fields(obj, classes):
                 desc=f.desc,
                 args=FrozenDict(
                     {
-                        i.name: types.InputValue(
+                        i.name: types.InputValueDefinition(
                             name=i.name,
                             desc=i.desc,
                             type=resolve_typeref(i.type, classes),
@@ -105,6 +110,23 @@ def _add_fields(obj, classes):
         )
     del obj.__raw__
     return obj
+
+
+def _add_input_fields(obj: Type[types.InputObject], classes):
+    # TODO: fix this duplication of data
+    obj.__input_fields__ = {
+        f.name: types.InputValueDefinition(
+            f.name, f.desc, type=resolve_typeref(f.type, classes)
+        )
+        for f in obj.__raw__.input_fields
+    }
+    for f in obj.__raw__.input_fields:
+        setattr(
+            obj,
+            f.name,
+            types.InputObjectFieldDescriptor(obj.__input_fields__[f.name]),
+        )
+    del obj.__raw__
 
 
 def resolve_typeref(ref, classes):
@@ -128,32 +150,26 @@ class _QueryCreator(object):
 
     def __getitem__(self, selection_set):
         cls = self.schema.query_type
-        return Query(cls, selections=validate(cls, selection_set))
+        return Query(
+            cls, selections=types.validate_selection_set(cls, selection_set)
+        )
 
 
-class Schema(ValueObject):
+@add_slots
+@dataclass(frozen=True, repr=False)
+class Schema:
     """A GraphQL schema.
 
     Use :meth:`~Schema.from_path`, :meth:`~Schema.from_url`,
     or :meth:`~Schema.from_raw` to instantiate.
     """
 
-    __fields__ = [
-        ("classes", ClassDict, "Mapping of classes in the schema"),
-        ("query_type", type, "The query type of the schema"),
-        ("mutation_type", t.Optional[type], "The mutation type of the schema"),
-        (
-            "subscription_type",
-            t.Optional[type],
-            "The subscription type of the schema",
-        ),
-        (
-            "module",
-            t.Optional[str],
-            "The module to which the classes are namespaced",
-        ),
-        ("raw", RawSchema, "The raw schema (JSON). To be deprecated"),
-    ]
+    classes: ClassDict
+    query_type: type
+    mutation_type: t.Optional[type]
+    subscription_type: t.Optional[type]
+    module: t.Optional[str]
+    raw: RawSchema
 
     def __getattr__(self, name):
         try:
@@ -162,7 +178,16 @@ class Schema(ValueObject):
             raise AttributeError(name)
 
     def __dir__(self):
-        return list(self.classes) + dir(super(Schema, self))
+        return list(
+            chain(
+                self.classes,
+                (f.name for f in fields(self.__class__)),
+                dir(super(Schema, self)),
+            )
+        )
+
+    def __repr__(self):
+        return "quiz.Schema(module={})".format(self.module)
 
     def populate_module(self):
         """Populate the schema's module with the schema's classes
@@ -191,7 +216,7 @@ class Schema(ValueObject):
         Example
         -------
 
-        >>> from quiz import SELECTOR as _
+        >>> from quiz import _
         >>> str(schema.query[
         ...     _
         ...     .field1
@@ -216,8 +241,8 @@ class Schema(ValueObject):
             The name of the module to use when creating the schema's classes.
         scalars: ~typing.Iterable[~typing.Type[Scalar]]
             :class:`~quiz.types.Scalar` classes to use in the schema.
-            Scalars in the schema, but not in this sequence, will be defined as
-            :class:`~quiz.types.GenericScalar` subclasses.
+            Scalars in the schema, but not in this collection, will be defined
+            as :class:`~quiz.types.AnyScalar` subclasses.
 
         Returns
         -------
@@ -258,8 +283,8 @@ class Schema(ValueObject):
             The name of the module to use when creating classes
         scalars: ~typing.Iterable[~typing.Type[Scalar]]
             :class:`~quiz.types.Scalar` classes to use in the schema.
-            Scalars in the schema, but not in this sequence, will be defined as
-            :class:`~quiz.types.GenericScalar` subclasses.
+            Scalars in the schema, but not in this collection, will be defined
+            as :class:`~quiz.types.AnyScalar` subclasses.
 
         Returns
         -------
@@ -275,9 +300,7 @@ class Schema(ValueObject):
         scalars_by_name.update(
             (
                 tp.name,
-                type(
-                    str(tp.name), (types.GenericScalar,), {"__doc__": tp.desc}
-                ),
+                type(str(tp.name), (types.AnyScalar,), {"__doc__": tp.desc}),
             )
             for tp in by_kind[Scalar]
             if tp.name not in scalars_by_name
@@ -299,16 +322,21 @@ class Schema(ValueObject):
             map(partial(union_as_type, objs=objs), by_kind[Union])
         )
         input_objects = _namedict(
-            map(inputobject_as_type, by_kind[InputObject])
+            map(
+                partial(inputobject_as_type, module=module),
+                by_kind[InputObject],
+            )
         )
 
         classes = merge(
             scalars_by_name, interfaces, enums, objs, unions, input_objects
         )
 
-        # we can only add fields after all classes have been created.
+        # we can only add these after all classes have been created.
         for obj in chain(objs.values(), interfaces.values()):
             _add_fields(obj, classes)
+        for obj in input_objects.values():
+            _add_input_fields(obj, classes)
 
         return cls(
             classes,
@@ -336,7 +364,7 @@ class Schema(ValueObject):
         scalars: ~typing.Iterable[~typing.Type[Scalar]]
             :class:`~quiz.types.Scalar` classes to use in the schema.
             Scalars in the schema, but not in this sequence, will be defined as
-            :class:`~quiz.types.GenericScalar` subclasses.
+            :class:`~quiz.types.AnyScalar` subclasses.
 
         module: ~typing.Optional[str], optional
             The module name to set on the generated classes
@@ -450,6 +478,56 @@ class Kind(enum.Enum):
     UNION = "UNION"
 
 
+@add_slots
+@dataclass(frozen=True)
+class TypeRef:
+    name: t.Optional[str]
+    kind: Kind
+    of_type: t.Optional["TypeRef"]
+
+
+@add_slots
+@dataclass(frozen=True)
+class InputValue:
+    name: str
+    desc: str
+    type: TypeRef
+    default: object
+
+
+@add_slots
+@dataclass(frozen=True)
+class Field:
+    name: str
+    type: TypeRef
+    args: t.List[InputValue]
+    desc: str
+    is_deprecated: bool
+    deprecation_reason: t.Optional[str]
+
+
+@add_slots
+@dataclass(frozen=True)
+class Type:
+    name: t.Optional[str]
+    kind: Kind
+    desc: str
+    fields: t.Optional[t.List[Field]]
+    input_fields: t.Optional[t.List["InputValue"]]
+    interfaces: t.Optional[t.List[TypeRef]]
+    possible_types: t.Optional[t.List[TypeRef]]
+    enum_values: t.Optional[t.List["EnumValue"]]
+
+
+@add_slots
+@dataclass(frozen=True)
+class EnumValue:
+    name: str
+    desc: str
+    is_deprecated: bool
+    deprecation_reason: t.Optional[str]
+
+
 KIND_CAST = {
     Kind.SCALAR: lambda typ: Scalar(name=typ.name, desc=typ.desc),
     Kind.OBJECT: lambda typ: Object(
@@ -472,53 +550,6 @@ KIND_CAST = {
         name=typ.name, desc=typ.desc, input_fields=typ.input_fields
     ),
 }
-
-
-TypeRef = t.NamedTuple(
-    "TypeRef",
-    [
-        ("name", t.Optional[str]),
-        ("kind", Kind),
-        ("of_type", t.Optional["TypeRef"]),
-    ],
-)
-InputValue = t.NamedTuple(
-    "InputValue",
-    [("name", str), ("desc", str), ("type", TypeRef), ("default", object)],
-)
-Field = t.NamedTuple(
-    "Field",
-    [
-        ("name", str),
-        ("type", TypeRef),
-        ("args", t.List[InputValue]),
-        ("desc", str),
-        ("is_deprecated", bool),
-        ("deprecation_reason", t.Optional[str]),
-    ],
-)
-Type = t.NamedTuple(
-    "Type",
-    [
-        ("name", t.Optional[str]),
-        ("kind", Kind),
-        ("desc", str),
-        ("fields", t.Optional[t.List[Field]]),
-        ("input_fields", t.Optional[t.List["InputValue"]]),
-        ("interfaces", t.Optional[t.List[TypeRef]]),
-        ("possible_types", t.Optional[t.List[TypeRef]]),
-        ("enum_values", t.Optional[t.List]),
-    ],
-)
-EnumValue = t.NamedTuple(
-    "EnumValue",
-    [
-        ("name", str),
-        ("desc", str),
-        ("is_deprecated", bool),
-        ("deprecation_reason", t.Optional[str]),
-    ],
-)
 
 
 def make_inputvalue(conf):
@@ -576,28 +607,52 @@ def _deserialize_type(conf):
     )
 
 
-Interface = t.NamedTuple(
-    "Interface", [("name", str), ("desc", str), ("fields", t.List[Field])]
-)
-Object = t.NamedTuple(
-    "Object",
-    [
-        ("name", str),
-        ("desc", str),
-        ("interfaces", t.List[TypeRef]),
-        ("input_fields", t.Optional[t.List[InputValue]]),
-        ("fields", t.List[Field]),
-    ],
-)
-Scalar = t.NamedTuple("Scalar", [("name", str), ("desc", str)])
-Enum = t.NamedTuple(
-    "Enum", [("name", str), ("desc", str), ("values", t.List[EnumValue])]
-)
-Union = t.NamedTuple(
-    "Union", [("name", str), ("desc", str), ("types", t.List[TypeRef])]
-)
-InputObject = t.NamedTuple(
-    "InputObject",
-    [("name", str), ("desc", str), ("input_fields", t.List[InputValue])],
-)
+@add_slots
+@dataclass(frozen=True)
+class Interface:
+    name: str
+    desc: str
+    fields: t.List[Field]
+
+
+@add_slots
+@dataclass(frozen=True)
+class Object:
+    name: str
+    desc: str
+    interfaces: t.List[TypeRef]
+    fields: t.List[Field]
+
+
+@add_slots
+@dataclass(frozen=True)
+class Scalar:
+    name: str
+    desc: str
+
+
+@add_slots
+@dataclass(frozen=True)
+class Enum:
+    name: str
+    desc: str
+    values: t.List[EnumValue]
+
+
+@add_slots
+@dataclass(frozen=True)
+class Union:
+    name: str
+    desc: str
+    types: t.List[TypeRef]
+
+
+@add_slots
+@dataclass(frozen=True)
+class InputObject:
+    name: str
+    desc: str
+    input_fields: t.List[InputValue]
+
+
 TypeSchema = t.Union[Interface, Object, Scalar, Enum, Union, InputObject]

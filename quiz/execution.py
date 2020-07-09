@@ -1,6 +1,7 @@
 """Components for executing GraphQL operations"""
 import json
 import typing as t
+from dataclasses import dataclass
 from functools import partial
 
 import snug
@@ -8,7 +9,7 @@ from gentools import irelay
 
 from .build import Query
 from .types import load
-from .utils import JSON, ValueObject
+from .utils import JSON, add_slots
 
 __all__ = [
     "execute",
@@ -179,17 +180,13 @@ def async_executor(**kwargs):
     return partial(execute_async, **kwargs)
 
 
-class ErrorResponse(ValueObject, Exception):
+@add_slots
+@dataclass(frozen=True)
+class ErrorResponse(Exception):
     """A response containing errors"""
 
-    __fields__ = [
-        ("data", t.Dict[str, JSON], "Data returned in the response"),
-        (
-            "errors",
-            t.List[t.Dict[str, JSON]],
-            "Errors returned in the response",
-        ),
-    ]
+    data: t.Dict[str, JSON]
+    errors: t.List[t.Dict[str, JSON]]
 
 
 class RawResult(dict):
@@ -206,22 +203,22 @@ class RawResult(dict):
         self.__metadata__ = meta
 
 
-class QueryMetadata(ValueObject):
+@add_slots
+@dataclass(frozen=True)
+class QueryMetadata(object):
     """HTTP metadata for query"""
 
-    __fields__ = [
-        ("response", snug.Response, "The response object"),
-        ("request", snug.Request, "The original request"),
-    ]
+    response: snug.Response
+    request: snug.Request
 
 
-class HTTPError(ValueObject, Exception):
+@add_slots
+@dataclass(frozen=True)
+class HTTPError(Exception):
     """Indicates a response with a non 2xx status code"""
 
-    __fields__ = [
-        ("response", snug.Response, "The response object"),
-        ("request", snug.Request, "The original request"),
-    ]
+    response: snug.Response
+    request: snug.Request
 
     def __str__(self):
         return (
