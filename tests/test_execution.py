@@ -13,9 +13,6 @@ from .helpers import MockClient
 _ = quiz.SELECTOR
 
 
-snug.send_async.register(MockClient, asyncio.coroutine(MockClient.send))
-
-
 def token_auth(token):
     return snug.header_adder({"Authorization": "token {}".format(token)})
 

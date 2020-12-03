@@ -10,7 +10,17 @@ class MockClient:
         return self.response
 
 
+class MockAsyncClient:
+    def __init__(self, response):
+        self.response = response
+
+    async def send(self, req):
+        self.request = req
+        return self.response
+
+
 snug.send.register(MockClient, MockClient.send)
+snug.send_async.register(MockAsyncClient, MockAsyncClient.send)
 
 
 class AlwaysEquals:

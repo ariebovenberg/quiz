@@ -1,8 +1,6 @@
 from datetime import datetime
 from functools import partial
 
-import six
-
 import quiz as q
 from quiz.utils import FrozenDict
 
@@ -38,30 +36,29 @@ class MyDateTime(q.Scalar):
         return self.dtime == other.dtime
 
 
-@six.add_metaclass(q.Interface)
-class Sentient(q.types.Namespace):
-    name = mkfield("name", type=six.text_type)
+class Sentient(q.types.Namespace, metaclass=q.Interface):
+    name = mkfield("name", type=str)
 
 
 class Hobby(q.Object):
-    name = mkfield("name", type=six.text_type)
+    name = mkfield("name", type=str)
     cool_factor = mkfield("description", type=int)
 
 
 class Human(Sentient, q.Object):
-    name = mkfield("name", type=six.text_type)
+    name = mkfield("name", type=str)
     hobbies = mkfield("hobbies", type=q.Nullable[q.List[q.Nullable[Hobby]]])
 
 
 class Alien(Sentient, q.Object):
-    name = mkfield("name", type=six.text_type)
-    home_planet = mkfield("home_planer", type=q.Nullable[six.text_type])
+    name = mkfield("name", type=str)
+    home_planet = mkfield("home_planer", type=q.Nullable[str])
 
 
 class Dog(Sentient, q.Object):
     """An example type"""
 
-    name = mkfield("name", type=six.text_type)
+    name = mkfield("name", type=str)
     color = mkfield("color", type=q.Nullable[Color])
     is_housetrained = mkfield(
         "is_housetrained",

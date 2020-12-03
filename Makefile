@@ -24,4 +24,4 @@ docs:
 
 format:
 	black quiz tests
-	isort -rc quiz tests
+	isort quiz tests
