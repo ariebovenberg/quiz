@@ -4,6 +4,11 @@ Release history
 development
 +++++++++++
 
+0.2.2 (2020-12-05)
+++++++++++++++++++
+
+- Official Python 3.9 support
+
 0.2.1 (2020-09-11)
 ++++++++++++++++++
 

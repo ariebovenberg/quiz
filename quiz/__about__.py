@@ -1,4 +1,4 @@
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 __author__ = "Arie Bovenberg"
 __copyright__ = "2019, Arie Bovenberg"
 __license__ = "Apache 2.0"

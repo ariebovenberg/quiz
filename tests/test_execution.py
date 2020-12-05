@@ -1,4 +1,3 @@
-import asyncio
 import json
 from collections.abc import Mapping
 
@@ -8,7 +7,7 @@ import snug
 import quiz
 
 from .example import Dog, DogQuery
-from .helpers import MockClient
+from .helpers import MockClient, MockAsyncClient
 
 _ = quiz.SELECTOR
 
@@ -129,7 +128,7 @@ def test_executor():
 class TestExecuteAsync:
     def test_success(self, event_loop):
         response = snug.Response(200, b'{"data": {"foo": 4, "bar": ""}}')
-        client = MockClient(response)
+        client = MockAsyncClient(response)
         future = quiz.execute_async(
             "my query",
             url="https://my.url/api",
@@ -163,7 +162,7 @@ class TestExecuteAsync:
 
     def test_non_string(self, event_loop):
         query = quiz.Query(DogQuery, _.dog[_.name.bark_volume])
-        client = MockClient(
+        client = MockAsyncClient(
             snug.Response(
                 200,
                 json.dumps(
@@ -187,7 +186,7 @@ class TestExecuteAsync:
         assert request.headers == {"Content-Type": "application/json"}
 
     def test_errors(self, event_loop):
-        client = MockClient(
+        client = MockAsyncClient(
             snug.Response(
                 200,
                 json.dumps(
