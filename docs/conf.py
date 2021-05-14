@@ -6,32 +6,17 @@
 # full list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
 
-# -- Path setup --------------------------------------------------------------
-
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#
-import os
-import sys
 from collections import OrderedDict
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-
-import quiz  # noqa isort:skip
-
-
 # -- Project information -----------------------------------------------------
+import importlib.metadata
 
-project = quiz.__name__.title()
-copyright = quiz.__copyright__
-author = quiz.__author__
+metadata = importlib.metadata.metadata("quiz")
 
-# The short X.Y version
-version = quiz.__version__
-# The full version, including alpha/beta/rc tags
-release = quiz.__version__
+project = metadata["Name"]
+author = metadata["Author"]
 
+version = metadata["Version"]
 
 # -- General configuration ---------------------------------------------------
 
@@ -87,7 +72,7 @@ html_theme_options = {
     'logo': 'quiz-logo.png',
     'logo_name': True,
     'logo_text_align': 'center',
-    "description": quiz.__description__,
+    "description": metadata['Description'],
     'description_font_style': 'italic',
     "github_user": 'ariebovenberg',
     "github_repo": 'quiz',
@@ -96,7 +81,6 @@ html_theme_options = {
     "github_type": 'star',
     'fixed_sidebar': True,
     'code_font_size': '0.8em',
-    'travis_button': True,
     'extra_nav_links': OrderedDict([
         ('quiz @ PyPI', 'http://pypi.python.org/pypi/quiz'),
         ('quiz @ GitHub', 'http://github.com/ariebovenberg/quiz'),
