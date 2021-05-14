@@ -1,7 +1,16 @@
+version: 2
+
+sphinx:
+  builder: html
+  configuration: docs/conf.py
+  fail_on_warning: true
+
 build:
-    image: latest
-formats: []
-requirements_file: requirements/docs.txt
+  image: latest
+
 python:
-    version: 3.6
-    setup_py_install: true
+  version: 3.8
+  install:
+    - requirements: docs/requirements.txt
+    - method: pip
+      path: .

@@ -7,7 +7,7 @@ import snug
 import quiz
 
 from .example import Dog, DogQuery
-from .helpers import MockClient, MockAsyncClient
+from .helpers import MockAsyncClient, MockClient
 
 _ = quiz.SELECTOR
 

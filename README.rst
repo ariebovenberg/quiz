@@ -7,10 +7,6 @@
 
    <br/>
 
-   <a href="https://travis-ci.org/ariebovenberg/quiz" class="reference external image-reference">
-         <img src="https://img.shields.io/travis/ariebovenberg/quiz.svg?style=flat-square&logo=travis" alt="Build status">
-   </a>
-
    <a href="https://codecov.io/gh/ariebovenberg/quiz" class="reference external image-reference">
          <img src="https://img.shields.io/codecov/c/github/ariebovenberg/quiz.svg?style=flat-square&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAaCAMAAACaYWzBAAABX1BMVEUAAAD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8P/Ub/AAAAdHRSTlMAAQIDBAUGBw0PERIVFhcZGhsgISQmKSorLS8zODk6PUFDR0lLTE1YXF5fYGRlaHB1dnd4eXt/g4eKjJKVlpeYmZqcnqOkpaanqqusrq+xsrW3ubu8vb7Hzc7Q1dfZ3N3e3+Dh4ujp6uzt7/Hz9fb3+Pv9/mHMvTIAAAFPSURBVHgBbdDXcxJRGIbx55zvnI1ijJI1YuxiEkWNsRjsKPYiFuxFsRdREH3//5Hd2YvMLL/bZ76L9yMTYe74o95g+L57qgaRQiC9qbF+X2N35zBHxmj80bC9mFYqs/sv/NLfZXxWAiekq5soTLekJgaRw9IyxOCd8yHCIekoEbaMdITEKFhCQ/9qwB1dIWGNhIu6D9s0qDJlnoIPU8z0tZ1VXSITDMACmfNq8liL0/X6jnXgIcCGXUsLmxf0jA96q7Fv7RQz5m/kI9/pI1+lTw/vvZC0F1YkPb/V6Uk/0Ot6ANJrn2c4KbVmAbfvlTgNmDmosidf6s2AVYpnmoenOlssjUBw5Iyt+lnByLkAhchB3SZQEjmmM8RJYUXnJoXAkp5glHg2/laNZNLJZXUh8a588l3XHWWB3SO9aVTXW7nMv5TUwblS4cCDLzsx4D/omEB2BXPuawAAAABJRU5ErkJggg==" alt="Test coverage">
    </a>

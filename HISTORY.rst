@@ -4,6 +4,11 @@ Release history
 development
 +++++++++++
 
+0.2.3 (2021-05-14)
+++++++++++++++++++
+
+- Move to use poetry, github actions
+
 0.2.2 (2020-12-05)
 ++++++++++++++++++
 

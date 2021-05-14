@@ -337,8 +337,8 @@ class TestSchemaFromUrl:
 
     @pytest.mark.live
     def test_live(self):  # pragma: no cover
-        schema = quiz.Schema.from_url("https://graphql-pokemon.now.sh/")
-        assert schema.Pokemon
+        schema = quiz.Schema.from_url("https://graphqlzero.almansi.me/api")
+        assert schema.User
 
 
 class TestSchemaFromPath:
