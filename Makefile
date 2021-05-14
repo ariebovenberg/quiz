@@ -17,5 +17,5 @@ docs:
 	make -C docs/ html
 
 format:
-	black quiz tests
-	isort quiz tests
+	black src tests
+	isort src tests

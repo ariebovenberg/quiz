@@ -6,33 +6,3 @@ updates:
     interval: daily
     time: "04:00"
   open-pull-requests-limit: 10
-  ignore:
-  - dependency-name: sphinx
-    versions:
-    - ">= 2.0.0.a, < 2.0.1"
-  - dependency-name: sphinx
-    versions:
-    - ">= 2.0.1.a, < 2.0.2"
-  - dependency-name: sphinx
-    versions:
-    - ">= 2.1.a, < 2.2"
-  - dependency-name: sphinx
-    versions:
-    - ">= 2.2.a, < 2.3"
-  - dependency-name: sphinx
-    versions:
-    - ">= 2.3.a, < 2.4"
-  - dependency-name: sphinx
-    versions:
-    - ">= 2.4.a, < 2.5"
-  - dependency-name: tox
-    versions:
-    - "< 3.6, >= 3.5.a"
-  - dependency-name: hypothesis
-    versions:
-    - 6.0.4
-    - 6.2.0
-    - 6.3.3
-    - 6.8.3
-    - 6.8.9
-    - 6.9.2
