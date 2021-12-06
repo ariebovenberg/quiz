@@ -132,7 +132,7 @@ python-versions = ">=2.7"
 
 [[package]]
 name = "hypothesis"
-version = "6.30.0"
+version = "6.30.1"
 description = "A library for property-based testing"
 category = "dev"
 optional = false
@@ -488,7 +488,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=1.2.3)", "pytest-flake8", "pyt
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6"
-content-hash = "96fcb8ae802fc6298695fa6d8e311d7d405c5b5f42d5330bc38a5a9f4cb87558"
+content-hash = "33953f534e2b7160a01dd72460fb001119beb4cd432d704ec7d0bbcdecb00832"
 
 [metadata.files]
 appdirs = [
@@ -584,8 +584,8 @@ gentools = [
     {file = "gentools-1.1.0.tar.gz", hash = "sha256:cae5a8b639b19e1f61bc13235ede24dbd587c50843f67604cfaec2e56d352b3d"},
 ]
 hypothesis = [
-    {file = "hypothesis-6.30.0-py3-none-any.whl", hash = "sha256:feaa4c1aae9312b3b04a528ca0454e2e28b02b3a677f8ea4400894d4f8a04b2e"},
-    {file = "hypothesis-6.30.0.tar.gz", hash = "sha256:6d81d409b4a1a3ff9458de5f2cf7ee37b1dd51473aacc79f257c62e2369a5fd7"},
+    {file = "hypothesis-6.30.1-py3-none-any.whl", hash = "sha256:adb42a52bc3c1300d0a0a221870ce5c264bee2e54b0473de6767c3ae02649b5f"},
+    {file = "hypothesis-6.30.1.tar.gz", hash = "sha256:25e0e581f999281ff765aba3c3f1e3ce289e82a1ff1b9de2c5082b37113aa448"},
 ]
 importlib-metadata = [
     {file = "importlib_metadata-1.7.0-py2.py3-none-any.whl", hash = "sha256:dc15b2969b4ce36305c51eebe62d418ac7791e9a157911d58bfb1f9ccd8e2070"},
