@@ -132,7 +132,7 @@ python-versions = ">=2.7"
 
 [[package]]
 name = "hypothesis"
-version = "6.30.1"
+version = "6.31.0"
 description = "A library for property-based testing"
 category = "dev"
 optional = false
@@ -147,7 +147,7 @@ all = ["black (>=19.10b0)", "click (>=7.0)", "django (>=2.2)", "dpcontracts (>=0
 cli = ["click (>=7.0)", "black (>=19.10b0)", "rich (>=9.0.0)"]
 codemods = ["libcst (>=0.3.16)"]
 dateutil = ["python-dateutil (>=1.4)"]
-django = ["pytz (>=2014.1)", "django (>=2.2)"]
+django = ["django (>=2.2)"]
 dpcontracts = ["dpcontracts (>=0.4)"]
 ghostwriter = ["black (>=19.10b0)"]
 lark = ["lark-parser (>=0.6.5)"]
@@ -488,7 +488,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=1.2.3)", "pytest-flake8", "pyt
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6"
-content-hash = "33953f534e2b7160a01dd72460fb001119beb4cd432d704ec7d0bbcdecb00832"
+content-hash = "def0850042a29041140424d6a2f29cc67fa46126c194abf24376c76cd09c8284"
 
 [metadata.files]
 appdirs = [
@@ -584,8 +584,8 @@ gentools = [
     {file = "gentools-1.1.0.tar.gz", hash = "sha256:cae5a8b639b19e1f61bc13235ede24dbd587c50843f67604cfaec2e56d352b3d"},
 ]
 hypothesis = [
-    {file = "hypothesis-6.30.1-py3-none-any.whl", hash = "sha256:adb42a52bc3c1300d0a0a221870ce5c264bee2e54b0473de6767c3ae02649b5f"},
-    {file = "hypothesis-6.30.1.tar.gz", hash = "sha256:25e0e581f999281ff765aba3c3f1e3ce289e82a1ff1b9de2c5082b37113aa448"},
+    {file = "hypothesis-6.31.0-py3-none-any.whl", hash = "sha256:20b55b628cb772c754a119c0ad572e84de06a5b94cfc79134f0a4ee70516c3ce"},
+    {file = "hypothesis-6.31.0.tar.gz", hash = "sha256:cc2e8757b5ef12fca27bf254dd53c449db074b1963243c4ee6f2b984aa02815e"},
 ]
 importlib-metadata = [
     {file = "importlib_metadata-1.7.0-py2.py3-none-any.whl", hash = "sha256:dc15b2969b4ce36305c51eebe62d418ac7791e9a157911d58bfb1f9ccd8e2070"},
