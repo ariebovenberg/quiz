@@ -1,4 +1,5 @@
 import inspect
+import sys
 
 import pytest
 
@@ -97,7 +98,10 @@ class TestValueObject:
         with pytest.raises(AttributeError, match="blabla"):
             instance.blabla
 
-        with pytest.raises(AttributeError, match="can't set"):
+        with pytest.raises(
+            AttributeError,
+            match="can't set" if sys.version_info < (3, 11) else "no setter",
+        ):
             instance.foo = 6
 
         assert repr(instance) == "my_module.Foo(foo=4, bla='foo')"

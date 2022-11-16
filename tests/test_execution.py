@@ -1,3 +1,4 @@
+import asyncio
 import json
 from collections.abc import Mapping
 
@@ -126,16 +127,16 @@ def test_executor():
 
 
 class TestExecuteAsync:
-    def test_success(self, event_loop):
+    def test_success(self):
         response = snug.Response(200, b'{"data": {"foo": 4, "bar": ""}}')
         client = MockAsyncClient(response)
-        future = quiz.execute_async(
+        coro = quiz.execute_async(
             "my query",
             url="https://my.url/api",
             auth=token_auth("foo"),
             client=client,
         )
-        result = event_loop.run_until_complete(future)
+        result = asyncio.run(coro)
         assert isinstance(result, quiz.RawResult)
         assert result == {"foo": 4, "bar": ""}
         assert len(result) == 2
@@ -160,7 +161,7 @@ class TestExecuteAsync:
             "Content-Type": "application/json",
         }
 
-    def test_non_string(self, event_loop):
+    def test_non_string(self):
         query = quiz.Query(DogQuery, _.dog[_.name.bark_volume])
         client = MockAsyncClient(
             snug.Response(
@@ -171,10 +172,10 @@ class TestExecuteAsync:
             )
         )
 
-        future = quiz.execute_async(
+        coro = quiz.execute_async(
             query, url="https://my.url/api", client=client
         )
-        result = event_loop.run_until_complete(future)
+        result = asyncio.run(coro)
         assert result == DogQuery(dog=Dog(name="Fred", bark_volume=8))
 
         request = client.request
@@ -185,7 +186,7 @@ class TestExecuteAsync:
         }
         assert request.headers == {"Content-Type": "application/json"}
 
-    def test_errors(self, event_loop):
+    def test_errors(self):
         client = MockAsyncClient(
             snug.Response(
                 200,
@@ -194,14 +195,14 @@ class TestExecuteAsync:
                 ).encode(),
             )
         )
-        future = quiz.execute_async(
+        coro = quiz.execute_async(
             "my query",
             url="https://my.url/api",
             client=client,
             auth=token_auth("foo"),
         )
         with pytest.raises(quiz.ErrorResponse) as exc:
-            event_loop.run_until_complete(future)
+            asyncio.run(coro)
 
         assert exc.value == quiz.ErrorResponse(
             {"foo": 4}, [{"message": "foo"}]
