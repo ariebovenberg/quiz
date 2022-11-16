@@ -1,49 +1,23 @@
+🎱 Quiz
+=======
 
-.. raw:: html
+.. image:: https://img.shields.io/pypi/v/quiz.svg?style=flat-square
+   :target: https://pypi.python.org/pypi/quiz
 
-   <p align="center">
+.. image:: https://img.shields.io/pypi/l/quiz.svg?style=flat-square
+   :target: https://pypi.python.org/pypi/quiz
 
-   <img src="https://raw.githubusercontent.com/ariebovenberg/quiz/master/docs/_static/quiz-logo.png" height="150">
+.. image:: https://img.shields.io/pypi/pyversions/quiz.svg?style=flat-square
+   :target: https://pypi.python.org/pypi/quiz
 
-   <br/>
+.. image:: https://img.shields.io/readthedocs/quiz.svg?style=flat-square
+   :target: http://quiz.readthedocs.io/
 
-   <a href="https://codecov.io/gh/ariebovenberg/quiz" class="reference external image-reference">
-         <img src="https://img.shields.io/codecov/c/github/ariebovenberg/quiz.svg?style=flat-square&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAaCAMAAACaYWzBAAABX1BMVEUAAAD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8P/Ub/AAAAdHRSTlMAAQIDBAUGBw0PERIVFhcZGhsgISQmKSorLS8zODk6PUFDR0lLTE1YXF5fYGRlaHB1dnd4eXt/g4eKjJKVlpeYmZqcnqOkpaanqqusrq+xsrW3ubu8vb7Hzc7Q1dfZ3N3e3+Dh4ujp6uzt7/Hz9fb3+Pv9/mHMvTIAAAFPSURBVHgBbdDXcxJRGIbx55zvnI1ijJI1YuxiEkWNsRjsKPYiFuxFsRdREH3//5Hd2YvMLL/bZ76L9yMTYe74o95g+L57qgaRQiC9qbF+X2N35zBHxmj80bC9mFYqs/sv/NLfZXxWAiekq5soTLekJgaRw9IyxOCd8yHCIekoEbaMdITEKFhCQ/9qwB1dIWGNhIu6D9s0qDJlnoIPU8z0tZ1VXSITDMACmfNq8liL0/X6jnXgIcCGXUsLmxf0jA96q7Fv7RQz5m/kI9/pI1+lTw/vvZC0F1YkPb/V6Uk/0Ot6ANJrn2c4KbVmAbfvlTgNmDmosidf6s2AVYpnmoenOlssjUBw5Iyt+lnByLkAhchB3SZQEjmmM8RJYUXnJoXAkp5glHg2/laNZNLJZXUh8a588l3XHWWB3SO9aVTXW7nMv5TUwblS4cCDLzsx4D/omEB2BXPuawAAAABJRU5ErkJggg==" alt="Test coverage">
-   </a>
+.. image:: https://img.shields.io/codecov/c/github/ariebovenberg/quiz.svg?style=flat-square&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAaCAMAAACaYWzBAAABX1BMVEUAAAD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8P/Ub/AAAAdHRSTlMAAQIDBAUGBw0PERIVFhcZGhsgISQmKSorLS8zODk6PUFDR0lLTE1YXF5fYGRlaHB1dnd4eXt/g4eKjJKVlpeYmZqcnqOkpaanqqusrq+xsrW3ubu8vb7Hzc7Q1dfZ3N3e3+Dh4ujp6uzt7/Hz9fb3+Pv9/mHMvTIAAAFPSURBVHgBbdDXcxJRGIbx55zvnI1ijJI1YuxiEkWNsRjsKPYiFuxFsRdREH3//5Hd2YvMLL/bZ76L9yMTYe74o95g+L57qgaRQiC9qbF+X2N35zBHxmj80bC9mFYqs/sv/NLfZXxWAiekq5soTLekJgaRw9IyxOCd8yHCIekoEbaMdITEKFhCQ/9qwB1dIWGNhIu6D9s0qDJlnoIPU8z0tZ1VXSITDMACmfNq8liL0/X6jnXgIcCGXUsLmxf0jA96q7Fv7RQz5m/kI9/pI1+lTw/vvZC0F1YkPb/V6Uk/0Ot6ANJrn2c4KbVmAbfvlTgNmDmosidf6s2AVYpnmoenOlssjUBw5Iyt+lnByLkAhchB3SZQEjmmM8RJYUXnJoXAkp5glHg2/laNZNLJZXUh8a588l3XHWWB3SO9aVTXW7nMv5TUwblS4cCDLzsx4D/omEB2BXPuawAAAABJRU5ErkJggg==
+   :target: https://codecov.io/gh/ariebovenberg/quiz
 
-   <img src="https://img.shields.io/badge/dependabot-enabled-brightgreen.svg?longCache=true&logo=dependabot&style=flat-square" alt="Dependabot">
-
-   <a href="http://quiz.readthedocs.io/" class="reference external image-reference">
-         <img src="https://img.shields.io/readthedocs/quiz.svg?style=flat-square&logo=read-the-docs&logoColor=white" alt="Documentation status">
-   </a>
-
-   <br/>
-
-   <a href="https://pypi.python.org/pypi/quiz" class="reference external image-reference">
-         <img src="https://img.shields.io/pypi/status/quiz.svg?style=flat-square&colorB=orange&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAMAAADXqc3KAAABIFBMVEUAAAAAAAD///+AgID///+qqqr////////////V1dX///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////9biOZSAAAAX3RSTlMAAQECAgMDBAUGBggJCg4QERITFBceICQpLC0uMDM0QUJFRkdISktPUlNUXF5hbW5vcHZ7fYCBgoSGjI+Ql5iam6Cio6SlsLW5u73CxcjK1Nvd3+3z9Pb3+Pn6+/z9/ugrIWMAAAEFSURBVHgBZc7nUupgGEXhRQ4niVHArtgFFcTeiwKigtg7BkT2/d+FI6Lmmzwz+ZHsyZqXEMt8sadz2Uwmu5juNhaXCXXM4xl/9CxcaHtNt9kEUYJsNjWIikQwuexrfEBl3NCwq9G4znAwOex8DaehwWNPY706x8MQJf5c6488aRgHs3SiFUipyj/LCM3oiohLSUt4wdD/B41gWyReX/qwjVu3iNl2jGWVcP6+J3VNR1kpvJ8QN7o8KuYLhXzxuKLHrk7MY12+fr3pEBfAZqimZtOvt/nvH9IUTrtUUV0BDd2BhUtOjVaQfG3g4lBVvWVo6B5wWFXIwfddyblZQ3oSLNpPiMUn8+xFVjc7sxcAAAAASUVORK5CYII=&logoColor=white" alt="Development status">
-   </a>
-
-   <a href="https://pypi.python.org/pypi/quiz" class="reference external image-reference">
-         <img src="https://img.shields.io/pypi/v/quiz.svg?style=flat-square&logo=python&logoColor=white" alt="Latest version">
-   </a>
-
-   <a href="https://pypi.python.org/pypi/quiz" class="reference external image-reference">
-         <img src="https://img.shields.io/pypi/l/quiz.svg?style=flat-square&logo=github&logoColor=white&colorB=blue" alt="License">
-   </a>
-
-   <a href="https://pypi.python.org/pypi/quiz" class="reference external image-reference">
-         <img src="https://img.shields.io/pypi/pyversions/quiz.svg?style=flat-square&logo=python&logoColor=white" alt="Supported python versions">
-   </a>
-
-   <a href="https://github.com/psf/black" class="reference external image-reference">
-         <img src="https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square&logo=python&logoColor=white" alt="Black code style">
-   </a>
-
-   </p>
-
-
-Quiz
-====
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square
+   :target: https://github.com/psf/black
 
 Capable GraphQL client for Python.
 
