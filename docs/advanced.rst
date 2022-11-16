@@ -93,13 +93,12 @@ Here is a simple example:
 .. code-block:: python3
 
    >>> import asyncio
-   >>> future = quiz.execute_async(
+   >>> coro = quiz.execute_async(
    ...     query,
    ...     url='https://api.github.com/graphql',
    ...     auth=('me', 'password'),
    ... )
-   >>> loop = asyncio.get_event_loop()
-   >>> loop.run_until_complete(future)
+   >>> asyncio.run(coro)
    ...
 
 The async HTTP client used by default is very rudimentary.
@@ -117,8 +116,7 @@ Here is an example usage:
   ...             auth=('me', 'password'),
   ...             client=s,
   ...          )
-  >>> loop = asyncio.get_event_loop()
-  >>> loop.run_until_complete(mycode())
+  >>> asyncio.run(mycode())
   ...
 
 .. note::

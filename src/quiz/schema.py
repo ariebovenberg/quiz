@@ -7,11 +7,11 @@ from collections import defaultdict
 from functools import partial
 from itertools import chain
 from operator import methodcaller
+from os import fspath
 from types import new_class
 
 from . import types
 from .build import Query
-from .compat import fspath
 from .execution import execute
 from .types import validate
 from .utils import JSON, FrozenDict, ValueObject, merge

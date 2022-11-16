@@ -4,6 +4,12 @@ Release history
 development
 +++++++++++
 
+0.3.0 (2022-11-16)
+++++++++++++++++++
+
+- Official Python 3.10 and 3.11 support, drop 3.6
+- Update docs theme
+
 0.2.3 (2021-05-14)
 ++++++++++++++++++
 
