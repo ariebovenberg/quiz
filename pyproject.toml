@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "quiz"
-version = "0.3.0"
+version = "0.3.1"
 description = "Capable GraphQL client"
 authors = ["Arie Bovenberg <a.c.bovenberg@gmail.com>"]
 license = "MIT"
