@@ -127,7 +127,7 @@ importlib-metadata = {version = ">=1,<5", markers = "python_version < \"3.8\""}
 
 [[package]]
 name = "hypothesis"
-version = "6.57.1"
+version = "6.58.0"
 description = "A library for property-based testing"
 category = "dev"
 optional = false
@@ -471,7 +471,7 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "f131adf3b0eef8b4b20bfe6ce17d79623d94982003e761ec39fb40c99b896935"
+content-hash = "c9393e4b9a0ce4100e9a6befed3df98c341ee924f1e533b7b3a366f907f69256"
 
 [metadata.files]
 attrs = [
@@ -582,8 +582,8 @@ gentools = [
     {file = "gentools-1.2.0.tar.gz", hash = "sha256:a5f2fd620af17ac164bbeada204fe8ab6c9880730d0a108a43ff1f78a20ac814"},
 ]
 hypothesis = [
-    {file = "hypothesis-6.57.1-py3-none-any.whl", hash = "sha256:91c22db726ffd68f2658e273af111a6fcae2e53fa430580862e8522686b5c071"},
-    {file = "hypothesis-6.57.1.tar.gz", hash = "sha256:1d8ed5136f368e343f39172b06f68aa7fd1312cf643c332ab18a75d56789fa90"},
+    {file = "hypothesis-6.58.0-py3-none-any.whl", hash = "sha256:c2ffa10c94ff1a4a12f4ff515d78a4a3060a7c5b9968331d7b2707576a29570d"},
+    {file = "hypothesis-6.58.0.tar.gz", hash = "sha256:89d9aa676dac7275755371d42d65fc81366ff0e0289ab525aa2bb3dcf7c98b9f"},
 ]
 importlib-metadata = [
     {file = "importlib_metadata-4.2.0-py3-none-any.whl", hash = "sha256:057e92c15bc8d9e8109738a48db0ccb31b4d9d5cfbee5a8670879a30be66304b"},
