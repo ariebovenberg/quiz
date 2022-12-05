@@ -41,7 +41,7 @@ tox = "^3.25.1"
 black = "^22.10"
 pytest-cov = "^4.0.0"
 pytest-mock = "^3.6.1"
-hypothesis = "^6.58.0"
+hypothesis = "^6.60.0"
 
 [tool.black]
 line-length = 79
