@@ -34,7 +34,7 @@ snug = "^2.2.0"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^5.0.4"
-isort = "^5.11.4"
+isort = "^5.11.5"
 mypy = "^0.991"
 pytest = "^7.2.1"
 tox = "^3.28.0"
