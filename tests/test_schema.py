@@ -285,7 +285,6 @@ class TestSchema:
             schema.populate_module()
 
     def test_query(self, schema):
-
         query = schema.query[_.license(key="MIT")]
         assert query == quiz.Query(
             cls=schema.Query,
@@ -297,7 +296,6 @@ class TestSchema:
             schema.query[_.foo]
 
     def test_to_path(self, schema, tmpdir):
-
         path = str(tmpdir / "myschema.json")
 
         class MyPath(object):
@@ -351,7 +349,6 @@ class TestSchemaFromPath:
         assert schema.module is None
 
     def test_success(self, raw_schema, tmpdir):
-
         schema_file = tmpdir / "myfile.json"
         with schema_file.open("w") as wfile:
             json.dump(raw_schema, wfile)
