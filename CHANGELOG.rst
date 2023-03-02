@@ -4,6 +4,11 @@ Release history
 development
 +++++++++++
 
+0.3.2 (2023-03-02)
+++++++++++++++++++
+
+- Relax version constraint on ``importlib-metadata`` backport
+
 0.3.1 (2022-11-17)
 ++++++++++++++++++
 
