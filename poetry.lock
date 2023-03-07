@@ -200,18 +200,18 @@ pyflakes = ">=2.5.0,<2.6.0"
 
 [[package]]
 name = "gentools"
-version = "1.2.0"
+version = "1.2.1"
 description = "Tools for generators, generator functions, and generator-based coroutines"
 category = "main"
 optional = false
 python-versions = ">=3.7,<4.0"
 files = [
-    {file = "gentools-1.2.0-py3-none-any.whl", hash = "sha256:7a32101a8afe1eb3fe2e177ae28b7fa6a52c3e94c31d0c81e593a62c15d24a3f"},
-    {file = "gentools-1.2.0.tar.gz", hash = "sha256:a5f2fd620af17ac164bbeada204fe8ab6c9880730d0a108a43ff1f78a20ac814"},
+    {file = "gentools-1.2.1-py3-none-any.whl", hash = "sha256:5c2009b5da6ff66a763fc368d0f654e1b3d47ad8eafabb8d3ea813d6285ebd09"},
+    {file = "gentools-1.2.1.tar.gz", hash = "sha256:1f400331df1f442b5a71976c0feb56dcd7503b0fddaf8c883642a09b9e98bb92"},
 ]
 
 [package.dependencies]
-importlib-metadata = {version = ">=1,<5", markers = "python_version < \"3.8\""}
+importlib-metadata = {version = "*", markers = "python_version < \"3.8\""}
 
 [[package]]
 name = "hypothesis"
