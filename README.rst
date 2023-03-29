@@ -199,39 +199,3 @@ Generate the docs with:
 
 
 Pull requests welcome!
-
-
-Preliminary roadmap
--------------------
-
-================================================================== ===========
-Feature                                                            status
-================================================================== ===========
-Input objects                                                      planned
-better query validation errors                                     planned
-more examples in docs                                              planned
-executing selection sets directly                                  planned
-introspection fields (i.e. ``__typename``)                         planned
-custom scalars for existing types (e.g. ``datetime``)              planned
-improve Object/Interface API                                       planned
-value object docs                                                  planned
-Mutations & subscriptions                                          planned
-Inline fragments                                                   planned
-Fragments and fragment spreads                                     planned
-py2 unicode robustness                                             planned
-Mixing in raw GraphQL                                              planned
-Module autogeneration                                              planned
-Type inference (e.g. enum values)                                  planned
-Variables                                                          planned
-Directives                                                         planned
-Integer 32-bit limit                                               planned
-converting names from camelcase to snake-case                      idea
-Autogenerate module .rst from schema                               idea
-Autogenerate module .py from schema                                idea
-Escaping python keywords                                           idea
-Handling markdown in descriptions                                  idea
-Warnings when using deprecated fields                              idea
-Handle optional types descriptions in schema                       idea
-Returning multiple validation errors at the same time              idea
-Explicit ordering                                                  idea
-================================================================== ===========
