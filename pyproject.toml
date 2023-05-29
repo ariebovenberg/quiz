@@ -40,7 +40,7 @@ pytest = "^7.3.1"
 black = "^23.3.0"
 pytest-cov = "^4.1.0"
 pytest-mock = "^3.6.1"
-hypothesis = "^6.75.3"
+hypothesis = "^6.75.6"
 
 [tool.black]
 line-length = 79
