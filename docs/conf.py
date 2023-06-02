@@ -30,7 +30,7 @@ html_theme = "furo"
 highlight_language = "python3"
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
-    "gentools": ("http://gentools.readthedocs.org/en/latest/", None),
-    "aiohttp": ("http://aiohttp.readthedocs.org/en/latest/", None),
-    "requests": ("http://requests.readthedocs.org/en/latest/", None),
+    "gentools": ("https://gentools.readthedocs.io/en/latest/", None),
+    "aiohttp": ("https://docs.aiohttp.org/en/latest/", None),
+    "requests": ("https://requests.readthedocs.io/en/latest/", None),
 }
