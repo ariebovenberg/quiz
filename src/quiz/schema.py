@@ -1,4 +1,5 @@
 """Functionality relating to the raw GraphQL schema"""
+
 import enum
 import json
 import sys

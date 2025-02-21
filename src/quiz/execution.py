@@ -1,4 +1,5 @@
 """Components for executing GraphQL operations"""
+
 import json
 import typing as t
 from functools import partial
