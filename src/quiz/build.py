@@ -1,4 +1,5 @@
 """Main module for constructing graphQL queries"""
+
 import enum
 import re
 import typing as t

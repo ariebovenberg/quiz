@@ -1,4 +1,5 @@
 """Common utilities and boilerplate"""
+
 import sys
 import typing as t
 from collections import namedtuple

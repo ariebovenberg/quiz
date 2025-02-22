@@ -1,10 +1,11 @@
 """Components for typed GraphQL interactions"""
+
 import enum
 import typing as t
 from itertools import starmap
 
-from .build import Field, InlineFragment, SelectionSet
-from .utils import JSON, FrozenDict, ValueObject
+from .build import Field, InlineFragment, SelectionSet  # noqa
+from .utils import JSON, FrozenDict, ValueObject  # noqa
 
 __all__ = [
     # types
@@ -57,7 +58,7 @@ class Namespace(object):
         return {k: v for k, v in self.__dict__.items() if k != "__metadata__"}
 
     def __eq__(self, other):
-        if type(self) == type(other):
+        if type(self) == type(other):  # noqa
             return self.__fields__() == other.__fields__()
         return NotImplemented
 
