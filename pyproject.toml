@@ -37,7 +37,7 @@ isort = "^6"
 mypy = "^1.17"
 pytest = "^8"
 black = "^25"
-pytest-cov = "^6"
+pytest-cov = "^7"
 pytest-mock = "^3"
 hypothesis = "^6.138.15"
 
