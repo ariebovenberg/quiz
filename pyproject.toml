@@ -34,7 +34,7 @@ snug = "^2.2.0"
 [tool.poetry.dev-dependencies]
 flake8 = "^7"
 isort = "^6"
-mypy = "^1.17"
+mypy = "^1.18"
 pytest = "^8"
 black = "^25"
 pytest-cov = "^7"
