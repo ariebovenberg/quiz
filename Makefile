@@ -1,4 +1,4 @@
-.PHONY: docs test build publish clean
+.PHONY: test build publish clean
 
 init:
 	poetry install
@@ -11,10 +11,6 @@ coverage:
 
 clean:
 	find . | grep -E "(__pycache__|\.pyc|\.pyo$$)" | xargs rm -rf
-
-docs:
-	@touch docs/api.rst
-	make -C docs/ html
 
 format:
 	black src tests

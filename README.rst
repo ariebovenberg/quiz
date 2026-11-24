@@ -1,6 +1,11 @@
 🎱 Quiz
 =======
 
+**Archived:** this project is no longer maintained, and no further
+releases or fixes are planned. The code stays available as-is.
+The documentation from before archiving is in the
+`docs folder <https://github.com/ariebovenberg/quiz/tree/a9f15a97e9e6303e25709e178a307593937adea5/docs>`_.
+
 .. image:: https://img.shields.io/pypi/v/quiz.svg?style=flat-square
    :target: https://pypi.python.org/pypi/quiz
 
@@ -9,9 +14,6 @@
 
 .. image:: https://img.shields.io/pypi/pyversions/quiz.svg?style=flat-square
    :target: https://pypi.python.org/pypi/quiz
-
-.. image:: https://img.shields.io/readthedocs/quiz.svg?style=flat-square
-   :target: http://quiz.readthedocs.io/
 
 .. image:: https://img.shields.io/codecov/c/github/ariebovenberg/quiz.svg?style=flat-square&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAaCAMAAACaYWzBAAABX1BMVEUAAAD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8P/Ub/AAAAdHRSTlMAAQIDBAUGBw0PERIVFhcZGhsgISQmKSorLS8zODk6PUFDR0lLTE1YXF5fYGRlaHB1dnd4eXt/g4eKjJKVlpeYmZqcnqOkpaanqqusrq+xsrW3ubu8vb7Hzc7Q1dfZ3N3e3+Dh4ujp6uzt7/Hz9fb3+Pv9/mHMvTIAAAFPSURBVHgBbdDXcxJRGIbx55zvnI1ijJI1YuxiEkWNsRjsKPYiFuxFsRdREH3//5Hd2YvMLL/bZ76L9yMTYe74o95g+L57qgaRQiC9qbF+X2N35zBHxmj80bC9mFYqs/sv/NLfZXxWAiekq5soTLekJgaRw9IyxOCd8yHCIekoEbaMdITEKFhCQ/9qwB1dIWGNhIu6D9s0qDJlnoIPU8z0tZ1VXSITDMACmfNq8liL0/X6jnXgIcCGXUsLmxf0jA96q7Fv7RQz5m/kI9/pI1+lTw/vvZC0F1YkPb/V6Uk/0Ot6ANJrn2c4KbVmAbfvlTgNmDmosidf6s2AVYpnmoenOlssjUBw5Iyt+lnByLkAhchB3SZQEjmmM8RJYUXnJoXAkp5glHg2/laNZNLJZXUh8a588l3XHWWB3SO9aVTXW7nMv5TUwblS4cCDLzsx4D/omEB2BXPuawAAAABJRU5ErkJggg==
    :target: https://codecov.io/gh/ariebovenberg/quiz
@@ -58,7 +60,7 @@ A quick 'n dirty request to GitHub's new V4 API:
 Features
 --------
 
-1. **Adaptability**. Built on top of `snug <http://snug.readthedocs.io/>`_,
+1. **Adaptability**. Built on top of `snug <https://github.com/ariebovenberg/snug>`_,
    quiz supports different HTTP clients
 
    .. code-block:: python3
